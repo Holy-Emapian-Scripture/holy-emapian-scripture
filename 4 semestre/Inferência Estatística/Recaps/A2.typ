@@ -181,7 +181,7 @@ $
 #definition[
   $forall m in RR$, uma distribuição Gamma$(m/2,1/2)$ é também chamada de $Chi^2_m$ (Chi quadrado com $m$ graus de liberadade). Ou seja, se $X ~ Chi^2_m$:
   $
-    f_X(x) = (1/2)^(m/2) / Gamma(m/2) x^(m/2 - 1) e^(-1/2 x)
+    f_X (x) = (1/2)^(m/2) / Gamma(m/2) x^(m/2 - 1) e^(-1/2 x)
   $
 ]
 
