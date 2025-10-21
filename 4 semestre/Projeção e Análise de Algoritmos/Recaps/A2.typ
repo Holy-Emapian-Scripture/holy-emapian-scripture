@@ -155,14 +155,17 @@ Nada funcionou... Mas e se nosso critério fosse o tempo do término?
 
 Ideia geral:
 
-- Ordene a lista pelo tempo de término em uma lista $T$.
-- Crie um conjunto $T_a$ para armazenar as tarefas a serem alocadas
-- Insira a primeira tarefa da lista $t_0$ em $T_a$ e defina $t_"prev" = t_0$
-- Para cada tarefa $t_k$ em $T$:
-  - se `start[`$t_k$`]` $>=$ `end[`$t_"prev"$`]:`
-    - adicione $t_k$ em $T_a$
-    - defina $t_"prev" = t_k$
-- retorne $T_a$.
+#pseudocode-list[
++ *ordene* $T$ (pelo tempo de término)
++ $T_a [1,...,n] = 0$ 
++ *Insira a primeira tarefa da lista* $t_0$ *em* $T_a$ 
++ $t_"prev" = t_0$
++ *para* $t_k$ *em* $T$:
+  + *se* $"start"[t_k] >= "end"[t_"prev"]:$
+    + *adicione* $t_k$ *em* $T_a$
+    + $t_"prev" = t_k$
++ *retorne* $T_a$.
+]
 
 Essa ideia não é muito difícil. Como a lista é ordenada pelo horário de saída, então o primeiro elemento a ser adicionado é simplesmente o primeiro elemento. Note que, como o objetivo é apenas a quantidade máxima de tarefas, e não o tempo máximo que podemos otimizar para todas as tarefas que temos, então pegar o menor término *desde o início* é o que realmente faz o algoritmo funcionar (por exemplo, se tivéssemos os horários `[(5,10),(5,12)]`,
 pegar o menor tempo de saída nos ajudaria no caso de termos outra tarefa, como `(11,14)`). 
@@ -232,19 +235,24 @@ Seria possível criar um algoritmo capaz de encontrar uma solução ótima para 
 
 Essa ideia de razão parece fazer sentido, já que podemos separar e  pegar a proporção que quisermos. Daí vem a ideia do algoritmo:
 
-`mochila (I, v, w, n, W):`
-  - Ordene os itens pela razão valor/peso
-  - `C, i = W, 1`
-  - Crie um vetor `M[1,...,n]` e inicialize com `0`:
-  - Enquanto $i <= n " e " C >= w_i$:
-    - `M[i] = 1`
-    - `C = C -` $w_i$
-    - `i += 1`
-  - Se `i <= n:`
-    - `M[i] = C/`$w_i$
-  - Retorna `M`
+#pseudocode-list[
 
-Analisando brevemente, ordenamos *descrescentemente* o vetor de itens $II$, e declaramos a variável $C$, de capacidade e $i$, de índice. Criamos o vetor do tamanho $M$, que é o vetor de porcentagem, referente a cada item. Note que como estamos ordenando pela proporção de valor por peso decrescentemente, pegar o primeiro item significa pegar o que item que mais vale a pena. Logo, o while serve para, enquanto couber a capacidade, pegara maior quantidade possível de valores. Quando o while quebra (no índice $i$), o algoritmo verifica se não chegou ao final, e, caso não tenha chegado, pega a proporção máxima da capacidade máxima restante sobre o peso, e retorna a lista de pesos ao final.
++ *Mochila* $ (I, v, w, n, W):$
+  + *ordene* $I$ (pela razão valor/peso)
+  + $C, i = W, 1$
+  + $M[1,...,n] = 0$
+  + *enquanto* $i <= n " e " C >= w_i$:
+    + $M[i] = 1$
+    + $C = C - w_i$
+    + $i += 1$
+  + *se* $i <= n:$
+    + $M[i] = C/w_i$
+  - *retorne* $M $
+]
+
+Onde $I$ é o conjunto de itens, $v$ o vetor de valores de cada item, $w$ o vetor de pesos de cada item, $n$ a quantidade de itens e $W$ é a capacidade máxima da mochila.
+
+Analisando brevemente, ordenamos *descrescentemente* o vetor de itens $II$, e declaramos a variável $C$, de capacidade, e $i$, de índice. Criamos o vetor de zeros $M$ (de tamanho $n$), que é o vetor de porcentagem, referente a cada item. Note que como estamos ordenando pela proporção de valor por peso decrescentemente, pegar o primeiro item significa pegar o que item que mais vale a pena. Logo, o while serve para, enquanto couber a capacidade, pegara maior quantidade possível de valores. Quando o while quebra (no índice $i$), o algoritmo verifica se não chegou ao final, e, caso não tenha chegado, pega a proporção máxima da capacidade máxima restante sobre o peso, e retorna a lista de pesos ao final.
 
 O mais complexo é a ordenação, que pode ser garantido com $Theta(n log(n))$. 
 
@@ -314,9 +322,13 @@ Ok, a ideia está concisa, mas como fazer essa junção? Se ordenarmos cada segm
 
 Para a contagem de inversões para a junção, considere a sequências à esquerda de $L$ e à direita de $R$ e defina $i = 0$.
 
-- Para cada elemento $a_j$ de $R$:
-  - incremente i até `L[i] >` $a_j$
-  - O número de inversões de $a_j$ será igual à `|L| - i`.
+#pseudocode-list[
++ *para* $a_j$ *de* $R$:
+  + *incremente* $i$ *até* $L[i] > a_j$
+  + $"inv"_"aj"$ $= |L| - i$.
+]
+
+Com $"inv"_"aj"$ sendo a quantidade de inversões do elemento $a_j$ de $R$.
 
 Para explicar, considere o exemplo da imagem anterior e relembre um pouco do algoritmo de ordenação MergeSort. Dado que as listas menores já estão ordenadas, se colocarmos um ponteiro no início de cada lista, digamos `l` e `r`, então basta verificar se $L[l] <= R[r]$, e incrementarmos $l$(ou $r$, dependendo da comparação).
 
@@ -327,18 +339,19 @@ Vamos continuar o exemplo (à princípio, pense que apenas juntamos as duas list
 
   Agora que resolvemos esse problema, podemos desenhar o algoritmo final:
 
-  - CountInversions (A):
-    - Se |A| = 1
-      - retorne 0
-    
-    - Divida a lista em duas metades $L$ e $R$ aproximadamente do mesmo tamanho.
-    - $i_l = $ CountInversions(L)
-    - $i_r = $ CountInversions(R)
-    - L = Sort(L)
-    - R = Sort(R)
-    - i = Combine(L, R)
-    
-    - Retorne o número total de inversões ($i_l + i_r + i$)
+#pseudocode-list[
++ *CountInversions* $(A):$
+  + *se* $"len(A)" = 1:$
+    + *retorne* $0$
+  + *divida a lista em* $L$ e $R$
+  + $i_l = "CountInversions"(L)$
+  + $i_r = "CountInversions"(R)$
+  + $L = "Sort"(L)$
+  + $R = "Sort(R)"$
+  + $i = "Combine (L, R)"$
+
+  + *retorne* $i_l + i_r + i $
+]
 
 Avaliando a complexidade desse algoritmo, temos:
 
@@ -352,17 +365,19 @@ Seria possível trazer uma otimização ainda maior? Sim, se eliminassemos a eta
 
 Novo algoritmo:
 
-  - CountInversions (A):
-    - Se |A| = 1
-      - retorne 0 e a lista A
-    
-    - Divida a lista em duas metades $L$ e $R$ aproximadamente do mesmo tamanho.
-    - $i_l, L = $ CountInversions(L)
-    - $i_r, R = $ CountInversions(R)
-    - i = Combine(L, R)
-    - A = Merge(L,R)
-    
-    - Retorne o número total de inversões ($i_l + i_r + i$) e a lista A
+#pseudocode-list[
+
++ *CountInversions* $(A):$
+  + *se* $"len(A)" = 1:$
+    + *retorne* $0, A$
+  + *divida a lista em* $L$ e $R$
+  + $i_l , L= "CountInversions"(L)$
+  + $i_r , R= "CountInversions"(R)$
+  + $i = "Combine (L, R)"$
+  + $A = "Merge"(L,R)$
+
+  + *retorne* $(i_l + i_r + i), A $
+]
 
 Aqui, nós nos aproveitamos da recursão para fazer a ordenação, em vez de fazer isso por outro algoritmo. Dado que a recursão vai até quando só tivermos um elemento, e que sempre fazemos um merge, a lista está garantidamente sempre ordenada. Isso permite a execução do Combine sem problemas.
 
@@ -411,3 +426,4 @@ Dado uma sequência com n pontos em um plano, encontre o par com a menor distân
     #image("images/divide-and-conquer-example5.png", width: 100%)
   ]
 )
+
