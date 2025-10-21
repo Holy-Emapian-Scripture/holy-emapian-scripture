@@ -109,15 +109,16 @@ O método guloso é uma famoso paradigma utilizado para projetos de algoritmo, o
 
 Seguindo essa abordagem, as opções precisam ser ordenadas pro algum critério. Costuma ser simples e eficiente, porém nem todo projeto pode ser resolvido através dessa abordagem.
 
-#example[  Agendamento de tarefas
+=== O problema do agendamento de tarefas
 
- Dado o conjunto de tarefas $T = {t_1, t_2, ... ,t_n}$ com $n$ elementos, cada uma ocm tempo de ínicio ```start [tk]```, e um tempo de término ```end [tk]```, encontre o maior subconjunto de tarefas que pode ser alocado sem sobreposição temporal.
+
+ Dado o conjunto de tarefas $T = {t_1, t_2, ... ,t_n}$ com $n$ elementos, cada uma com tempo de ínicio ```start [tk]```, e um tempo de término ```end [tk]```, encontre o maior subconjunto de tarefas que pode ser alocado sem sobreposição temporal.
 
 #figure(
   caption: [Exemplo do problema de agendamento],
   image("images/agendamentoexample.png",width: 80%)
 )
-]
+
 
 Vamos projetar a solução!
 
@@ -135,21 +136,22 @@ Vamos analisar cada critério tentando construir ao menos um cenário que demons
 Que tal se colocarmos o critério de seleção como o tempo de início do agendamento?
 
 #figure(
-  caption: [Exemplo do problema de agendamento],
+  caption: [Contra-exemplo para uma possível solução do problema de agendamento],
   image("images/agendamentoexruim1.png",width: 80%)
 )
 
-Isso não daria certo, 
-=== pq
+Isso não daria certo, pois nesse caso, por exemplo, o $t_5$ seria escolhido, enquanto a melhor escolha seria pegar as 4 primeiras tarefas.
 
 E se escolhessemos pela menor duração?
 
 #figure(
-  caption: [Exemplo do problema de agendamento],
+  caption: [Contra-exemplo para uma possível solução do problema de agendamento],
   image("images/agendamento-ex-ruim-2.png",width: 80%)
 )
 
-Tudo deu errado... Mas e se nosso critério fosse o tempo do término?
+Isso também daria errado, já que escolheríamos $t_5, t_6 " e " t_7$ enquanto, novamente, a melhor escolha seriam os 4 primeiros.
+
+Nada funcionou... Mas e se nosso critério fosse o tempo do término?
 
 Ideia geral:
 
@@ -163,9 +165,9 @@ Ideia geral:
 - retorne $T_a$.
 
 Essa ideia não é muito difícil. Como a lista é ordenada pelo horário de saída, então o primeiro elemento a ser adicionado é simplesmente o primeiro elemento. Note que, como o objetivo é apenas a quantidade máxima de tarefas, e não o tempo máximo que podemos otimizar para todas as tarefas que temos, então pegar o menor término *desde o início* é o que realmente faz o algoritmo funcionar (por exemplo, se tivéssemos os horários `[(5,10),(5,12)]`,
-pegar o menor tempo de saída nos ajudaria no caso de termos outra tarefa, coomo `(11,14)`).
+pegar o menor tempo de saída nos ajudaria no caso de termos outra tarefa, como `(11,14)`). 
 
-Após selecionarmos a primeira tarefa da lista, basta compararmos os tempos de entrada das próximas tarefas, já que, pelo mesmo raciocínio do porque escolher a menor saída, se a próxima tarefa não colidir com a saída passada, então podemos pegar nossa nova tarefa e atulizar com o tempo de saída da nova tarefa atual.
+Após selecionarmos a primeira tarefa da lista, basta compararmos os tempos de entrada das próximas tarefas, já que, pelo mesmo raciocínio do porque escolher a menor saída, se a próxima tarefa não colidir com a saída passada, então podemos pegar nossa nova tarefa e atulizar com o tempo de saída da nova tarefa atual (como a lista está ordenada pelo tempo de fim, a nova tarefa a ser pega garantiria que seria a melhor tarefa, já que seria a primeira que se encaixa com o tempo de finalização da última tarefa selecionada e a mais curta já que estamos olhando por ordenação).
 
 Nosso pseudocódigo usa apenas um for sem nada demais dentro dele, mas precisamos ordenar a lista antes. Isso nos traz uma complexidade de $Theta(n log(n))$.
 
@@ -173,17 +175,35 @@ Nosso pseudocódigo usa apenas um for sem nada demais dentro dele, mas precisamo
   grid(
   columns: 2,
   column-gutter: 1em,
-  image("images/tarefa-example.png", width: 100%),
-  image("images/tarefa-example-correta.png", width: 100%),
+  image("images/tarefa-example.png", width: 95%),
+  image("images/tarefa-example-correta.png", width: 95%),
 ),
   caption: [Solução para o problema de tarefas usando o algoritmo proposto]
 )
 
-=== explicar pq é ótima
+*Por que essa solução é ótima?*
 
-Vamos a um segundo problema:
+#definition[
+  Escolha gulosa
 
-#example[ Mochila fracionária
+  Uma solução ótima global pode ser atingida realizando uma sequência de escolhas locais ótimas (gulosas).
+  - A escolha local não considera o resultado das escolhas posteriores, e produz um sub-problema contendo um número menor de elementos.
+  - A definição do critério de escolha nos auxilia à organizar os elementos de forma que o algortimo seja eficiente.
+]
+#definition[ Sub-estrutura ótima
+
+Ocorre quando uma solução ótima de um problema apresenta dentro dela soluções ótimas para sub-problemas.
+]
+
+#definition[ Swap argument (Argumento de troca)
+
+Considere que temos uma solução ótima $S$, e a solução gulosa $G$. Então é possível substituir iterativamente os elementos de $S$ por elementos de $G$ sem que a solução deixe de ser viável e ótima, provando assim que $G$ é, no mínimo, tão boa quanto $S$.  
+]
+
+Vamos usar o que apredemos então:
+===  NAO Sei 
+
+=== O problema da mochila
 
 Dado um conjunto de itens $II = {1,2,3,...,n}$ em que cada item $i in II$ tem um peso $w_i$ e um valor $v_i$, e uma mochila com capacidade de peso $W$, encontre o subconjunto $S subset.eq II$ tal que $sum_(i in S)^(|S|) alpha_i w_i <= W $ e $sum_(i in S)^(|S|) alpha_i v_i $ seja máximo, considerando que $0 < alpha_k <= 1$.
 
@@ -192,10 +212,114 @@ Dado um conjunto de itens $II = {1,2,3,...,n}$ em que cada item $i in II$ tem um
   image("images/tabela-mochila.png",width: 40%)
 )
 
-Exemplo:
+#example[
   - W = 9
     - A escolha ${1,2,3}$ tem peso 8, valor 12 e cabe na mochila;
     - A escolha ${3,5}$ tem peso 11, valor 14 e *não* cabe na mochila 
-    - A escolha ${}$
+    - A escolha ${3_"50%", 5_"100%"}$ tem peso 9, valor 11 e cabe na mochila
+    - A escolha ${1_"100%", 3_"75%", 4_"100%"}$ tem peso 9, valor 16.5 e cabe na mochila
 
 ]
+
+Seria possível criar um algoritmo capaz de encontrar uma solução ótima para esse problema?
+
+- Pergunta 1: quais são as opções a serem avaliadas à cada iteração?
+  - Itens (ou fragmentos de itens) que ainda não foram adicionados ou descartados.
+- Pergunta 2: Qual critério iremos utilizar para ordenar as opções?
+  - Menor peso? 
+  - Menor valor?
+  - Maior razão peso/valor?
+
+Essa ideia de razão parece fazer sentido, já que podemos separar e  pegar a proporção que quisermos. Daí vem a ideia do algoritmo:
+
+`mochila (I, v, w, n, W):`
+  - Ordene os itens pela razão valor/peso
+  - `C, i = W, 1`
+  - Crie um vetor `M[1,...,n]` e inicialize com `0`:
+  - Enquanto $i <= n " e " C >= w_i$:
+    - `M[i] = 1`
+    - `C = C -` $w_i$
+    - `i += 1`
+  - Se `i <= n:`
+    - `M[i] = C/`$w_i$
+  - Retorna `M`
+
+Analisando brevemente, ordenamos *descrescentemente* o vetor de itens $II$, e declaramos a variável $C$, de capacidade e $i$, de índice. Criamos o vetor do tamanho $M$, que é o vetor de porcentagem, referente a cada item. Note que como estamos ordenando pela proporção de valor por peso decrescentemente, pegar o primeiro item significa pegar o que item que mais vale a pena. Logo, o while serve para, enquanto couber a capacidade, pegara maior quantidade possível de valores. Quando o while quebra (no índice $i$), o algoritmo verifica se não chegou ao final, e, caso não tenha chegado, pega a proporção máxima da capacidade máxima restante sobre o peso, e retorna a lista de pesos ao final.
+
+O mais complexo é a ordenação, que pode ser garantido com $Theta(n log(n))$. 
+
+=== implementar em Python
+
+== Dividir e Conquistar
+
+O nome já diz muito, e esse paradigma é dividido em três etapas:
+
+#wrap-it.wrap-content(
+  
+  figure(
+    
+    image("images/divide-and-conquer.png", width: 100%),
+    
+  ),
+  [
+    - Dividir o problema em um conjunto de sub-problemas menores.
+
+
+    - Resolver cada sub-problema recursivamente.
+
+  
+    - Combinar os resultados de cada sub-problema gerando a solução.
+    #v(6.5em)
+
+    Figura 6: Exemplificação do paradigma Dividir e Conquistar. 
+  ],
+)
+
+=== O problema de contagem de inversões 
+
+Dado um problema com $n$ números, calcule o número de inversões necessário para torná-la ordenada.
+
+#example[
+  
+  Considere a sequência `A = [3,7,2,9,5]`
+
+  O número de inversões é 4: `(7,2),(3,2),(9,5),(7,5)`
+]
+
+A solução por força bruta seria verificar todos os pares, exigindo $Theta(n^2)$.
+
+A solução baseada em dividir e conquistar deverá definir estratégias para resolver cada sub-problema do número de inversões, e depois juntar, claro. Podemos dividir a sequência em dois grupos com aproximadamente metade (O primeiro array até $n/2$, o segundo de $n/2 + 1$ até $n$). Essa operação é constante, portanto $O(1)$.
+
+A estratégia de resolução deve contar o número de inversões de cada grupo:
+#example[
+#figure(
+  caption: [Exemplo do problema da contagem de inversões],
+  image("images/divide-and-conquer-example.png",width: 75%)
+)
+
+Esse resultado pode ser obtido executando o algoritmo recursivamente ($~ T(n/2)$). Claro que, por fim, teremos que contar as inversões da junção das duas listas: 
+
+#figure(
+  image("images/divide-and-conquer-example2.png",width: 35%)
+)
+
+Totalizando, assim, 18 inversões.
+]
+
+Ok, a ideia está concisa, mas como fazer essa junção? Se ordenarmos cada segmento, e "juntarmos" direto, conseguiríamos fazer isso de forma fácil. Voltemos ao exemplo após ordenar:
+
+#figure(
+  image("images/divide-and-conquer-example3.png",width: 70%)
+)
+
+Para a contagem de inversões para a junção, considere a sequências à esquerda de $L$ e à direita de $R$ e defina $i = 0$.
+
+- Para cada elemento $a_j$ de $R$:
+  - incremente i até `L[i] >` $a_j$
+  - O número de inversões de $a_j$ será igual à `|L| - i`.
+
+Para explicar, considere o exemplo da imagem anterior e relembre um pouco do algoritmo de ordenação MergeSort. Dado que as listas menores já estão ordenadas, se colocarmos um ponteiro no início de cada lista, digamos `l` e `r`, então basta verificar se $L[l] <= R[r]$, e incrementarmos $l$(ou $r$, dependendo da comparação).
+
+Vamos continuar o exemplo (à princípio, pense que apenas juntamos as duas listas): 
+  - Para `l = 0` e `r = 0`, temos $1 <= 3$, que é verdade. 
+
