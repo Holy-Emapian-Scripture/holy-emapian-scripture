@@ -300,7 +300,7 @@ A estratégia de resolução deve contar o número de inversões de cada grupo:
 Esse resultado pode ser obtido executando o algoritmo recursivamente ($~ T(n/2)$). Claro que, por fim, teremos que contar as inversões da junção das duas listas: 
 
 #figure(
-  image("images/divide-and-conquer-example2.png",width: 35%)
+  image("images/divide-and-conquer-example2.png",width: 40%)
 )
 
 Totalizando, assim, 18 inversões.
@@ -321,5 +321,93 @@ Para a contagem de inversões para a junção, considere a sequências à esquer
 Para explicar, considere o exemplo da imagem anterior e relembre um pouco do algoritmo de ordenação MergeSort. Dado que as listas menores já estão ordenadas, se colocarmos um ponteiro no início de cada lista, digamos `l` e `r`, então basta verificar se $L[l] <= R[r]$, e incrementarmos $l$(ou $r$, dependendo da comparação).
 
 Vamos continuar o exemplo (à princípio, pense que apenas juntamos as duas listas): 
-  - Para `l = 0` e `r = 0`, temos $1 <= 3$, que é verdade. 
+  - Para `l = 0` e `r = 0`, temos $1 <= 3$, que é verdade. Incrementamos o `l`.
+  - Para `l = 1` e `r = 0`, temos $2 <= 3$, que ainda é verdade. Incrementamos o `l`.
+  - Para `l = 2` e `r = 0`, temos $4 <= 3$, que é mentira. Então, podemos aplicar o raciocínio: sabendo que todos os elementos após o $4$, como estão ordenados, são maiores ou iguais a $4$ e, portanto, também teriam que ser considerados como maiores do que 3, então do ínidice $l$ atual até $|L|$, uma inversão precisaria ser feita, se concatenássemos as duas listas. Logo, temos $|L| - l$ trocas a serem feitas a partir de $L[l]$. Isso explica o algoritmo para a contagem de inversões para a junção.
 
+  Agora que resolvemos esse problema, podemos desenhar o algoritmo final:
+
+  - CountInversions (A):
+    - Se |A| = 1
+      - retorne 0
+    
+    - Divida a lista em duas metades $L$ e $R$ aproximadamente do mesmo tamanho.
+    - $i_l = $ CountInversions(L)
+    - $i_r = $ CountInversions(R)
+    - L = Sort(L)
+    - R = Sort(R)
+    - i = Combine(L, R)
+    
+    - Retorne o número total de inversões ($i_l + i_r + i$)
+
+Avaliando a complexidade desse algoritmo, temos:
+
+$
+  T(n) = 2 T(n/2) + O (n log(n)) = O(n (log(n))^2)
+$
+
+O $O(n log(n))$ vem da ordenação das duas listas, e o $2 T(n/2)$ das duas listas que separamos. Os métodos de complexidade aprendidos na A1 nos levam a uma solução simples de $O(n(log(n))^2)$, já que sabemos que essa divisão pela metade traz um peso de $log(n)$.
+
+Seria possível trazer uma otimização ainda maior? Sim, se eliminassemos a etapa de ordenação explícita. Podemos fazer isso se, no algoritmo de contagem de inversão, além de contar, invertessemos e realizassemos o merge, trazendo o array ordenado direto.
+
+Novo algoritmo:
+
+  - CountInversions (A):
+    - Se |A| = 1
+      - retorne 0 e a lista A
+    
+    - Divida a lista em duas metades $L$ e $R$ aproximadamente do mesmo tamanho.
+    - $i_l, L = $ CountInversions(L)
+    - $i_r, R = $ CountInversions(R)
+    - i = Combine(L, R)
+    - A = Merge(L,R)
+    
+    - Retorne o número total de inversões ($i_l + i_r + i$) e a lista A
+
+Aqui, nós nos aproveitamos da recursão para fazer a ordenação, em vez de fazer isso por outro algoritmo. Dado que a recursão vai até quando só tivermos um elemento, e que sempre fazemos um merge, a lista está garantidamente sempre ordenada. Isso permite a execução do Combine sem problemas.
+
+A função Combine é $O(n)$, já que apenas conta a quantidade de inversões que precisaríamos. A função Merge também é $O(n)$, já que apenas junta as duas listas. Portanto, temos:
+
+$
+  T(n) = 2 T(n/2) + O(n) = n log(n)
+$
+
+=== implementação em python
+
+=== O problema de pares mais próximos
+
+Dado uma sequência com n pontos em um plano, encontre o par com a menor distância euclidiana.
+
+#wrap-it.wrap-content(
+  
+  figure(
+    image("images/divide-and-conquer-example4.png", width: 100%),
+    
+  ),
+  [
+     A primeira solução que vem a cabeça é simplesmente testar cada par com cada outro par, trazendo uma complexidade de $O(n^2)$
+
+     Como desenvolver uma solução melhor com o método que aprendemos?
+    
+    #v(2em)
+     Figura 10: Exemplificação do problema de pares mais próximos
+  ],
+)
+
+#grid(
+  columns: (1fr, 1fr), 
+  gutter: 1.5em,       
+  [
+
+    Podemos dividir o plano de forma que cada lado tenha aproximadamente o mesmo número de pontos (ordenando pelo eixo x).
+
+    Em seguida, rresolva cada lado encontrando o par mais próximo recursivamente.  
+  
+    #v(1.5em)
+    Figura 11: Exemplificação da solução do problema de pares mais próximos
+  ],
+
+  [
+    #image("images/divide-and-conquer-example5.png", width: 100%)
+  ]
+)
