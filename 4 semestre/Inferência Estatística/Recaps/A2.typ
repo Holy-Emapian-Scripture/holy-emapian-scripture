@@ -589,3 +589,95 @@ Aqui eu vou definir melhor a interpretação com relação a essa definição, q
   $
   é um intervalo de confiança $gamma$-exato
 ]
+
+
+== Intervalos de Confiança Unilaterais
+Nós vimos como encontrar intervalos aleatórios $(A,B)$ que tem probabilidade $gamma$ de conter o parâmetro $theta$, porém, podem acontecer situações que apenas obter um limite superior ou inferior seja suficiente para nós
+
+Dados $gamma_1$ e $gamma_2$ com $gamma_2 > gamma_1$ e $gamma_2 - gamma_1 = gamma$, então:
+$
+  PP(T_(n-1)^(-1) (gamma_1) < U < T_(n-1)^(-1) (gamma_1)) = gamma
+$
+E então obtemos que, perante todos os intervalos aleatórios possíveis, o intervalo de confiança $gamma$ com o menor tamanho é o simétrico
+$
+  gamma_1 = 1 - gamma_2
+$
+Porém, há casos que um intervalo não-simétrico é útil (Como mencionei o caso anterior de apenas limites superiores ou intefiores)
+
+#definition("Intervalo de Confiança Generalizado")[
+  Seja $underline(X) = (X_1,...,X_n)$ uma amostra de uma distribuição parametrizada por $theta$. Seja $g(theta): Omega -> RR$ e seja $A$ uma estatística tal que:
+  $
+    PP(A < g(theta)) >= gamma  wide  forall theta
+  $
+  Então o intervalo aleatório $(A,+infinity)$ é chamado de intervalo de confiança unilateral $gamma$ de limite inferior $A$. A mesma definição vale para a estatística $B$ tal que:
+  $
+    PP(g(theta) < B) >= gamma
+  $
+  Então o intervalo aleatório $(-infinity, B)$ é chamado de intervalo de confiança unilateral $gamma$ de limite superior $B$. Se a desigualdade "$>=gamma$" é uma igualdade para todo $theta$, então tanto o intervalo quanto os limites são chamados de exatos
+]
+
+#theorem("Intervalo unilateral da média da normal")[
+  Seja $X_1,...,X_n ~ N(mu, sigma^2)$, as estatísticas a seguir são, respectivamente, limites inferior e superior exatos com coeficiente $gamma$ para $mu$:
+  $
+    A = overline(X)_n - T_(n-1)^(-1)(gamma) sigma' / sqrt(n)    \
+
+    B = overline(X)_n + T_(n-1)^(-1)(gamma) sigma' / sqrt(n)
+  $
+]
+
+== Intervalo de confiança para outros parâmetros
+Até agora, só vimos a aplicação de intervalos de confiança para a distribuição normal, mas por quê? Pois a normal possui propriedades que tornam encontrar os intervalos de confiança mais fáceis, como por exemplo, encontrarmos estatísticas (Por exemplo $T = sqrt(n)(overline(X)_n - mu)\/sigma'$) que não dependem do parâmetro que queremos estimar, e isso na verdade é uma definição útil que pode nos ajudar:
+
+#definition("Pivô")[
+  Seja $underline(X)=(X_1,...,X_n)$ uma amostra de uma distribuição parametrizada por $theta$ e $V(theta, underline(X))$ uma variável aleatória tal que sua distribuição *não depende de $theta$* e é a mesma $forall theta$, então chamamos $V(theta, underline(X))$ de *quantidade pivotal* ou *pivô*
+]
+
+Podemos então utilizar dessa definição para construir intervalos de confiança. Porém, para isso, precisamos de uma "função inversa" desse $V$, algo do tipo:
+$
+  r(V(theta, underline(X)), underline(X)) = g(theta)
+$<v-pseudo-inverse>
+
+#theorem[
+  Seja $underline(X)=(X_1,...,X_n)$ uma amostra de uma distribuição parametrizada por $theta$. Suponha que existe um pivô $V$. Seja $F_V (v)$ a CDF de $V$ e contínua. Assuma também que a função $r$ tal qual a equação @v-pseudo-inverse existe e é estritamente crescente em $v$ para cada $underline(x)$. Seja $gamma in (0,1)$ e $gamma_2 > gamma_1$ tal que $gamma_2 - gamma_1 = gamma$, então as seguintes estatísticas são endpoints de um invervalo de confiança $gamma$-exato para $g(theta)$
+  $
+    A = r(F_V^(-1)(gamma_1), underline(x))    \
+
+    B = r(F_V^(-1)(gamma_2), underline(x))    \
+  $
+  Se $r$ é estritamente decrescente, então invertemos $A$ e $B$
+]
+#proof[
+  Se $r(theta, underline(x))$ é estritamente crescente em $v$ para todo $underline(x)$, então:
+  $
+    V(theta, underline(X)) < c <=> g(theta) < r(c, underline(X))
+  $
+  Defina $c = F_V^(-1)(gamma_i)$ para $i = 1, 2$, então obtemos:
+  $
+    PP(g(theta) < A) = gamma_1  \
+    PP(g(theta) < B) = gamma_2
+  $<intervals-pivots>
+  Como $V$ tem distribuição contínua e $r$ é estritamente crescente, então:
+  $
+    PP(A = g(theta)) = PP(V(theta,underline(X)) = F_V^(-1)(gamma_1)) = 0
+  $
+  Similarmente com $PP(B = g(theta))$, então combinamos as duas equações na equação @intervals-pivots para obter $PP(A < g(theta) < B) = gamma$
+]
+
+#example[
+  Seja $X_1,...,X_n$ uma amostra aleatória de uma distribuição normal com média $mu$ e variância $sigma^2$ desconhecidos. Vimos anteriormente que:
+  $
+    V(theta, underline(X)) = 1/sigma^2 sum^n_(i=1)(X_i - overline(X)_n)^2 ~ Chi^2_(n-1) wide forall theta=(mu,sigma^2)
+  $
+  Logo, $V$ é um pivô, de forma que conseguimos utilizá-lo para achar intervalos de confiança para $sigma^2$
+]
+
+Porém é bem comum que o pivô não exista em casos discretos
+
+#example[
+  Seja $theta$ a proporção de sucessos em uma população muito grande de pacientes tratados com imipramina. Suponha que os clínicos desejem uma variável aleatória $A$ tal que, para todo $theta$, tenhamos
+  $
+    Pr(A < θ) >= 0.9
+  $
+
+  Isto é, eles querem ter *$90%$ de confiança* de que a proporção de sucesso seja *pelo menos $A$*. Os dados observáveis consistem no número $X$ de sucessos em uma amostra aleatória de *$n = 40$* pacientes. Nenhuma variável pivotal existe neste exemplo, e os intervalos de confiança são mais difíceis de construir
+]
