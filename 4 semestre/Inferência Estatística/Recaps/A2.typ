@@ -212,7 +212,7 @@ $
 ]
 
 #theorem[
-  Se $X_1,...,X_k$ são iid e $X_i ~ Chi^2_m_i$, então $Y = sum^k_(j=1)X_j ~ Chi^2_(sum^k_(j=1)m_j))$
+  Se $X_1,...,X_k$ são iid e $X_i ~ Chi^2_m_i$, então $Y = sum^k_(j=1)X_j ~ Chi^2_(sum^k_(j=1)m_j)$
 ]
 #proof[
   Sabemos que, dado a FGM de $X$ ($psi_X$) e de $Y$ ($psi_Y$) onde $X$ e $Y$ são iid, então a FGM de $X + Y$ é $psi_X psi_Y$. Sabendo disso, calculamos a FGM de $X_1 + ... + X_k$:
