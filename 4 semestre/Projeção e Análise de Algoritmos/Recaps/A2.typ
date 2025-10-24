@@ -434,8 +434,54 @@ $
   T(n) = 2 T(n/2) + O(n) = n log(n)
 $
 
-=== implementação em python
+*Implementação em python*
 
+Para essa implementação, vamos relembrar basicamente a função MergeSort, só que contando a quantidade de inversões. Ainda, vamos juntar as funções CountInversions e a Merge numa mesma.  
+```py
+def combine_merge(v, start_a, start_b, end_b):
+    r = [0] * (end_b - start_a)
+    a_idx = start_a
+    b_idx = start_b
+    r_idx = 0
+    num_inv = 0                         #adicionado
+    
+    while a_idx < start_b and b_idx < end_b:
+        if v[a_idx] <= v[b_idx]:
+            r[r_idx] = v[a_idx]
+            a_idx += 1
+        else:
+            num_inv += start_b - a_idx  #adicionado (explicado anteriormente)
+            r[r_idx] = v[b_idx]
+            b_idx += 1
+        r_idx += 1
+        
+    while a_idx < start_b:
+        r[r_idx] = v[a_idx]
+        a_idx += 1
+        r_idx += 1
+        
+    while b_idx < end_b:
+        r[r_idx] = v[b_idx]
+        b_idx += 1
+        r_idx += 1
+        
+    for i in range(len(r)):
+        v[start_a + i] = r[i]
+
+    return num_inv                      #adicionado
+
+def count_inversions(v, start_idx, end_idx):
+    if (end_idx - start_idx) > 1:
+        mid_idx = (start_idx + end_idx) // 2
+        il = count_inversions(v, start_idx, mid_idx)      #essas linhas mudaram 
+        ir = count_inversions(v, mid_idx, end_idx)        #apenas a igualdade
+        
+        i = combine_merge(v, start_idx, mid_idx, end_idx) #antes não tinha
+      return il + ir + i                #adicionado
+    else:
+      return 0  
+```
+Todo o código (a menos de linhas comentadas) foi tirado da versão original do MergeSort. Como dito, fizemos o MergeSort contando a quantidade de inversões. :)
 === O problema de pares mais próximos
 
 Dado uma sequência com n pontos em um plano, encontre o par com a menor distância euclidiana.
@@ -477,4 +523,88 @@ Dado uma sequência com n pontos em um plano, encontre o par com a menor distân
 Com o plano dividido, combine os resultados comparando O par mais próximo no lado direito, o par mais próximo do lado esquerdo, e o par mais próximo em cada lado. A última comparação parece exigir $Theta(n^2)$, não parece muito bom.
 
 Se pensarmos apenas na comparação da divisão dos planos, sejam $delta_l$ e $delta_r$ os pares com menor distância nos lados esquerdo e direito, respectivamente.
+
+#wrap-it.wrap-content(
+  
+  figure(
+    image("images/divide-and-conquer-example6.png", width: 100%),
+    caption: "Exemplo da distância de comparação."
+    
+  ),
+  [
+    Como estamos procurando o par mais próximo, seja $delta_"min" <= min(delta_l, delta_r)$ (sabemos que $delta_"min"$ está restrito a, no máximo, essa distância).
+
+    Ideia: procurar somente os pontos que estejam no máximo à $delta_min$ da divisória, ordenando os pontos na faixa $2 delta_min$ pela posição o eixo y. 
+
+    Qual seria a complexidade desse algoritmo?
+  ],
+)
+
+Bom, não seria $O(n^2)$, pois a distância em cada lado é no mínimo $delta_min$.
+
+=== como faz isso cara como é 11 7, 5 sla
+
+== Programação Dinâmica
+
+O paradigma de programação dinâmica consiste em quebrar em sub-problemas menores e resolvê-los de forma independente. Semelhante ao dividir e conquistar, porém com foco em sub-problemas que usam repetição. Nessa técnica, um sub-problema só é resolvido caso não tenha sido resolvido antes (caso contrário é usado o resultado anterior guardado previamente).
+
+=== O problema de Fibonacci
+
+#wrap-it.wrap-content(
+  
+  figure(
+    image("images/dynamic-programming-example.png", width: 90%),
+    caption: "Exemplo de como seria fib(6)"
+    
+  ),
+  [
+    Dado um inteiro $n >= 1$, encontre $F_n$. Solução recursiva (e ineficiente):
+
+    ```py
+    def fib(n):
+      if n <= 2:
+        return 1
+      return fib(n-1) + fib(n-2)
+    ```
+  ],
+)
+
+Note como, para $n$, o tempo de execução é exponencial, e que, grande parte dos problemas são re-computados. Podemos utilizar um cachê para reaproveitar resultados. Vamos fazer isso!
+
+#grid(
+  columns: (1fr, 0.8fr), 
+  gutter: 1.5em,       
+  [
+    
+Solução Top-Down (recursiva):
+
+
+    ```py
+    def Fib(n):
+      if n == 0:
+          return 0
+      if n == 1:
+          return 1
+
+      F = [-1] * (n + 1)
+      F[0], F[1], F[2] = 0,1,1
+
+      def FibAux(k):
+        if F[k] == -1:
+          F[k] = FibAux(k - 1) + FibAux(k-2)
+        return F[k]
+
+      return FibAux(n)
+    ```
+  ],
+
+  [
+    #figure(
+    image("images/dynamic-programming-example2.png", width: 100%),
+    caption: [Exemplo de como fica o cachê para $"Fib"(6)$]
+    )
+  ]
+)
+
+ficou top
 
