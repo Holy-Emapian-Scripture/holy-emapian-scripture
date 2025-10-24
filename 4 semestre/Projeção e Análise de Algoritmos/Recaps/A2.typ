@@ -203,8 +203,27 @@ Ocorre quando uma solução ótima de um problema apresenta dentro dela soluçõ
 Considere que temos uma solução ótima $S$, e a solução gulosa $G$. Então é possível substituir iterativamente os elementos de $S$ por elementos de $G$ sem que a solução deixe de ser viável e ótima, provando assim que $G$ é, no mínimo, tão boa quanto $S$.  
 ]
 
-Vamos usar o que apredemos então:
+Vamos usar o que aprendemos então:
 ===  NAO Sei 
+
+*Implementação em Python:*
+
+```py
+def scheduling_problem(tasks):  
+    if len(tasks) == 0:                               #caso de contorno
+        return 0
+
+    sorted_by_end = sorted(tasks, key= lambda x:x[1]) #ordena pelo término
+    choosed_tasks = []
+    choosed_tasks.append(sorted_by_end[0]) 
+    t_prev = sorted_by_end[0]
+
+    for task in sorted_by_end[1:]:                    #começa depois da primeira
+        if task[0] >= t_prev[1]:                      #tempo maior que o de saída
+            choosed_tasks.append(task)
+            t_prev = task
+    return choosed_tasks, len(choosed_tasks)          #retorna lista, quantidade
+```
 
 === O problema da mochila
 
@@ -256,7 +275,35 @@ Analisando brevemente, ordenamos *descrescentemente* o vetor de itens $II$, e de
 
 O mais complexo é a ordenação, que pode ser garantido com $Theta(n log(n))$. 
 
-=== implementar em Python
+*Implementação em Python:*
+
+```py
+
+def bag_problem(I, v, w, max_w):
+  n = len(I)                            #as três listas têm de ser do mesmo tamanho
+  idx_w_ratio = []
+  for i in range(n):
+    ratio = v[i]/w[i]
+    idx_w_ratio.append((i, w[i], ratio))#lista que armazena o índice, peso e razão
+                                        #ordena por razão logo abaixo
+  idx_w_ratio = sorted(idx_w_ratio, key = lambda x: x[2], reverse=True)
+  capacity, i = max_w, 0
+  M = [0] * n
+
+  while i < n and capacity >= idx_w_ratio[i][1]: 
+    M[i] = 1                            #faz o while normal 
+    capacity -= idx_w_ratio[i][1]
+    i += 1
+  if i < n:
+    M[i] = capacity/idx_w_ratio[i][1]
+  
+  itens_choosed = [0] * n               #lista que referencia a cada item a sua 
+  for j in range(n):                    #porcentagem escolhida
+    if M[j] != 0:
+      itens_choosed[idx_w_ratio[j][0]] = M[j]
+    
+  return itens_choosed                  #retorna a lista de índices com a %
+```
 
 == Dividir e Conquistar
 
@@ -416,7 +463,7 @@ Dado uma sequência com n pontos em um plano, encontre o par com a menor distân
 
     Podemos dividir o plano de forma que cada lado tenha aproximadamente o mesmo número de pontos (ordenando pelo eixo x).
 
-    Em seguida, rresolva cada lado encontrando o par mais próximo recursivamente.  
+    Em seguida, resolva cada lado encontrando o par mais próximo recursivamente.  
   
     #v(1.5em)
     Figura 11: Exemplificação da solução do problema de pares mais próximos
@@ -426,4 +473,8 @@ Dado uma sequência com n pontos em um plano, encontre o par com a menor distân
     #image("images/divide-and-conquer-example5.png", width: 100%)
   ]
 )
+
+Com o plano dividido, combine os resultados comparando O par mais próximo no lado direito, o par mais próximo do lado esquerdo, e o par mais próximo em cada lado. A última comparação parece exigir $Theta(n^2)$, não parece muito bom.
+
+Se pensarmos apenas na comparação da divisão dos planos, sejam $delta_l$ e $delta_r$ os pares com menor distância nos lados esquerdo e direito, respectivamente.
 
