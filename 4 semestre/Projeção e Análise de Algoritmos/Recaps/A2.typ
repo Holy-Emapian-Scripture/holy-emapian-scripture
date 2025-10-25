@@ -553,8 +553,8 @@ O paradigma de programação dinâmica consiste em quebrar em sub-problemas meno
 #wrap-it.wrap-content(
   
   figure(
-    image("images/dynamic-programming-example.png", width: 90%),
-    caption: "Exemplo de como seria fib(6)"
+    image("images/dynamic-programming-example.png", width: 89%),
+    caption: [Exemplo de como seria $"fib"(6)$]
     
   ),
   [
