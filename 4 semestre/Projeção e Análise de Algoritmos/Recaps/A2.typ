@@ -225,7 +225,7 @@ def scheduling_problem(tasks):
     return choosed_tasks, len(choosed_tasks)          #retorna lista, quantidade
 ```
 
-=== O problema da mochila
+=== O problema da mochila fracionária
 
 Dado um conjunto de itens $II = {1,2,3,...,n}$ em que cada item $i in II$ tem um peso $w_i$ e um valor $v_i$, e uma mochila com capacidade de peso $W$, encontre o subconjunto $S subset.eq II$ tal que $sum_(i in S)^(|S|) alpha_i w_i <= W $ e $sum_(i in S)^(|S|) alpha_i v_i $ seja máximo, considerando que $0 < alpha_k <= 1$.
 
@@ -606,5 +606,50 @@ Solução Top-Down (recursiva):
   ]
 )
 
-ficou top
+A complexidade desse algoritmo é $Theta(n)$, sabendo que usamos apenas a lista para guardar os valores da lista de Fibonacci. 
 
+Solução Bottom-Up (interativa):
+
+```py
+def Fib(n):
+  if n <= 2:
+      return 1
+  F = [0] * n
+  F[1], F[2] = 1, 1
+  for i in range (3,n + 1,1):
+      F[i] = F[i - 1] + F[i - 2]
+  return F[n]
+```
+
+A complexidade é a mesma da recursiva, desde que continuamos usando apenas um for e usando-a para guardar apenas uma lista.
+
+A abordagem Top-Down é recursiva, somente executa a recursão caso o sub-problema não tenha sido resolvido e inicia no problema maior, enquanto em problemas Bottom-Up a solução é iterativa e resolve os sub-problemas do menor para o  maior. Além disso, em geral apresentam a mesma complexidade.
+
+=== O problema da mochila (não fracionária)
+
+Dado um conjunto de itens $II = {1,2,3,...,n}$ em que cada item $i in II$ tem um peso $w_i$ e um valor $v_i$, e uma mochila com capacidade de peso $W$, encontre o subconjunto $S subset.eq II$ tal que $sum_(i in S)^(|S|) w_i <= W$ e $sum_(i in S)^(|S|) v_i$ seja máximo.
+
+A diferença desse problema para o que vimos no paradigma Guloso é que agora, não podemos pegar uma fração do item, apenas ou o pegamos ou não. Isso faz com que, agora, por mais que o item seja o mais valoroso possível na proporção valor/peso, ainda assim possa existir alguma outra combinação que tenha um valor maior.
+
+
+
+#grid(
+  columns: (1fr, 1fr), 
+  gutter: 1.5em,       
+  [
+    Exemplo:
+
+    W = 11
+
+    A escolha ${1,2,4}$ tem peso 9, valor 29 e cabe na mochila.
+
+    A escolha ${3,5}$ tem peso 12, valor 46 e não cabe na mochila.
+  ],
+
+  [
+    #figure(
+    image("images/dynamic-programming-example3.png", width: 80%),
+    caption: [Exemplo de como fica o cachê para $"Fib"(6)$]
+    )
+  ]
+)
