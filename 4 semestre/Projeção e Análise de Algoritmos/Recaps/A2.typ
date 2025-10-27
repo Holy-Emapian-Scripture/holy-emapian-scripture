@@ -649,7 +649,32 @@ A diferença desse problema para o que vimos no paradigma Guloso é que agora, n
   [
     #figure(
     image("images/dynamic-programming-example3.png", width: 80%),
-    caption: [Exemplo de como fica o cachê para $"Fib"(6)$]
+    caption: [Tabela auxiliar para exemplo]
     )
   ]
 )
+
+Solução(ineficiente): criar um algoritmo de força bruta que testa todas as possibilidades e escolhe a que cabe na mochila com maior valor.
+
+Tentando usar o que estamos aprendendo aqui (programação dinâmica), temos: 
+- para cada item  $i$, considere a possibilidade de adicioná-lo ou não a mochila;
+  - se adiconado, o valor é incrementado de $v_i$ e a capacidade é reduzida de $w_i$
+  - avalie qual o melhor valor obtido em cada caso.
+Após considerar esse item, restam $n-1$ itens disponíveis para serem avaliados (encontramos a sub-estrutura ótima).
+
+Ideia geral (sem cachê):
+
+#pseudocode-list[
+
++ *Mochila* $ (I, v, w, W):$
+  + *se* $|I| = 0$ *ou* $W = 0$
+    +   *retorne* 0
+  + *escolha* um item $i in I$
+  + *se* $w_i > W:$
+    + *retorne Mochila* $ (I - i, v, w, W):$
+  + $"value_using" = v_i +$ *Mochila* $(I - i, v, w, W - w_i)$
+  + $"value_not_using" = $ *Mochila* $(I - i, v, w, W)$
+  + *retorna* $max{"value_using", "value_not_using"}$
+]
+
+Vamos para as soluções definitivas, usando o paradigma que estamos aprendendo.
