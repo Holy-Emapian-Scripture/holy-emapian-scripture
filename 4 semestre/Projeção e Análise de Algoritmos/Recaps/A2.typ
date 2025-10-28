@@ -747,12 +747,44 @@ Onde $i$ é o item que estamos considerando no momento. Essa solução usa a ide
   + *retorna* $M[n][W]$
 ]
 
-Legal. Vamos ver agora como a matriz ficaria no final:
+Sabendo que toda a análise e o algoritmo é baseado na criação da matriz, onde dentro da criação de cada item acontecem apenas verificações, então a complexidade $Theta(n W)$ (o que *não* é polinomial, já que $W$ é um tamanho, não um valor). Vamos ver agora como essa matriz ficaria no final:
 
 #figure(
 image("images/dynamic-programming-example5.png", width: 90%),
 caption: [Resultado final da matriz finalizando o primeiro exemplo da mochila fracionária.]
 )
+
+Lembre qual a função da matriz: o índice $i$ (na linha) representa que podemos pegar qualquer dos itens $1$ até $i$, e o peso $W$ (na coluna) é o peso $w$ que foi escolhido, e o número no índice $n "x" w$ é o valor que conseguimos nessa combinação. Portanto, podemos interpretar que, na segunda linha, na coluna de $w = 0$, temos $0$ itens para ser colocados e podemos colocar até um peso $0$, logo, o valor máximo é 0. Ao continuar dessa linha, conseguimos ver que, a partir de quando o peso fica $>= 1$, conseguimos colocar o único item liberado ($1$), com peso $1$ e valor $1$. Por isso, toda a segunda linha é igual a $1$ a partir do momento que $w >= 1$.
+
+*Nota:* Seguindo esse raciocínio, você, caro leitor, pode verificar cada valor da tabela. Existe *um* erro na tabela. Convido a você interpretá-la e entendê-lá e encontrar o erro. Se quiser validar que encontrou o erro, mande uma mensagem (Thalis).
+
+Para finalizar, precisamos definir quais itens devem ser adicionados à mochila:
+
+
+#wrap-it.wrap-content(
+  
+  figure(
+    image("images/dynamic-programming-example6.png", width: 100%),
+    caption: [Exemplo da busca dos itens adicionados (a parte laranja é...)]
+    
+  ),
+  [
+    #pseudocode-list[
+    + $S, i, j = {}, W, n$
+    + *enquanto* $j >= 1$:
+      + *se* $M[j][i] = M[j-1][i - w_j] + v_j$
+        + $S = S union {j}$
+        + $i = w_j$
+      + $j = j -1$
+    + *retorna* $S$ 
+    ]
+  ],
+)
+
+O que carambolas esse pseudocódigo faz? Descobriremos depois do commit..
+
+
+
 
 === Implementação em Python
 
