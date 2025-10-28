@@ -677,4 +677,83 @@ Ideia geral (sem cachê):
   + *retorna* $max{"value_using", "value_not_using"}$
 ]
 
-Vamos para as soluções definitivas, usando o paradigma que estamos aprendendo.
+Vamos para as soluções definitivas, usando o paradigma que estamos aprendendo. A ideia, como temos que fazer uma comparação a cada item que podemos pegar com e sem ele, é usar uma matriz $I "x" W$, onde o valor de cada célula $M[i][w]$ responde a seguinte pergunta: Qual é o valor máximo que consigo obter usando apenas os itens de 1 até $i$, com uma mochila de capacidade máxima $w$ (não $W$).
+
+
+
+#grid(
+  columns: (1fr, 1fr), 
+  gutter: 1.5em,       
+  [
+    Solução Top-Down:
+
+  #pseudocode-list[
+
+  + *Mochila* $ (n, v, w, W):$
+    + *crie* uma matriz $n "x" W$
+    + *para* $i = 0 $ *até* $W$:
+      + $M[0][i] = 0$
+      + *para* $j = 1$ *até* $n$:
+        + $M[j][0] = 0$
+        + $M[j][i] = -1$
+    + *retorna MocilhaAux*$(n,v,w,W)$
+  ]
+
+  onde $n$ é o total de itens. 
+
+  Continuação da solução:
+  ],
+
+  [
+    #figure(
+    image("images/dynamic-programming-example4.png", width: 80%),
+    caption: [Exemplo da matriz para o algoritmo Top-Down e valores anteriores.]
+    )
+  ]
+)
+
+#pseudocode-list[
+
++ *MochilaAux* $ (i, v, w, W):$
+  + *se* $M[i][W] = -1$:
+    + *se* $w_i > W$:
+      + $M[i][W] =$ *MochilaAux* $(i - 1, v, w, W)$
+    + *caso contrário*:
+      + $"using" =v_i +$ *MochilaAux* $(i - 1,v,w,W - w_i)$
+      + $"not_using" = $ *MochilaAux* $(i -1, v ,w ,W)$
+      + $M[i][W] = max{"using,not_using"}$
+  + *retorna* $M[i][W ]$
+]
+
+Onde $i$ é o item que estamos considerando no momento. Essa solução usa a ideia explicada anteriormente, de fazer a verificação entre o melhor caso, adicionando e não adicionando. Vamos agora para a solução Bottom-Up:
+
+
+#pseudocode-list[
+
++ *Mochila* $ (n, v, w, W):$
+  + *crie* uma matriz $n "x" W$
+  + *para* $i = 0 $ *até* $W$:
+    + $M[0][i] = 0$
+  + *para* $j = 1$ *até* $n$:
+    + $M[j][0] = 0$
+  + *para* $j = 1$ *até* $n$:
+    + *para* $i = 1$ *até* $W$:
+      + *se* $w_j > i:$
+        + $M[j][i] = M[j-1][i]$
+      + *caso contrário*:
+        + $"using" =v_j + M[j -1][i - w_j]$ 
+        + $"not_using" = M[j - 1][i]$ 
+        + $M[j][i] = max{"using,not_using"}$
+  + *retorna* $M[n][W]$
+]
+
+Legal. Vamos ver agora como a matriz ficaria no final:
+
+#figure(
+image("images/dynamic-programming-example5.png", width: 90%),
+caption: [Resultado final da matriz finalizando o primeiro exemplo da mochila fracionária.]
+)
+
+=== Implementação em Python
+
+
