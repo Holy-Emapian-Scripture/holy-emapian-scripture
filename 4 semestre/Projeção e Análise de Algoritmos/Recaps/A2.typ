@@ -202,9 +202,43 @@ Ocorre quando uma solução ótima de um problema apresenta dentro dela soluçõ
 
 Considere que temos uma solução ótima $S$, e a solução gulosa $G$. Então é possível substituir iterativamente os elementos de $S$ por elementos de $G$ sem que a solução deixe de ser viável e ótima, provando assim que $G$ é, no mínimo, tão boa quanto $S$.  
 ]
-
 Vamos usar o que aprendemos então:
-===  NAO Sei 
+
+Seja $T_a = {g_1, g_2, ..., g_k}$ o conjunto de $k$ tarefas selecionadas pelo nosso algoritmo guloso, já ordenadas pelo tempo de término (como no pseudocódigo).
+Seja $S = {s_1, s_2, ..., s_m}$ uma _solução ótima_ qualquer, com $m$ tarefas, também ordenadas por tempo de término.
+
+Nosso objetivo é provar que $T_a$ é ótima, ou seja, que $k = m$.
+
+Queremos primeiro provar que a primeira escolha gulosa, $g_1$, pode fazer parte de _alguma_ solução ótima.
+
++ $g_1$ é a tarefa escolhida por nosso algoritmo, então ela é a tarefa em _todo_ o conjunto $T$ com o _menor tempo de término_.
++ $s_1$ é a primeira tarefa da solução ótima $S$. Ela tem o menor tempo de término _dentro de $S$_.
+
+Por definição, como $g_1$ tem o menor tempo de término de _todas_ as tarefas, seu tempo de término deve ser menor ou igual ao de $s_1$:
+
+$ "end"[g_1] <= "end"[s_1] $
+
+Agora, vamos comparar $g_1$ e $s_1$.
+
++ _Caso 1:_ $g_1 = s_1$.
+  Se a primeira tarefa da solução ótima $S$ é a mesma da solução gulosa $T_a$, então $S$ já começa com a escolha gulosa.
+
++ _Caso 2:_ $g_1 != s_1$.
+  Vamos "trocar" $s_1$ por $g_1$ na solução ótima $S$. Considere uma nova solução $S'$:
+  $S' ={g_1, s_2, s_3, ..., s_m\} $
+  Precisamos verificar se $S'$ ainda é uma solução viável (sem sobreposições).
+  - Como $S$ era uma solução viável, todas as suas tarefas eram compatíveis. Sabemos que $s_2$ devia começar após $s_1$ terminar: $"start"[s_2] >= "end"[s_1] $.
+  - Mas, como vimos na Etapa 1, $"end"[g_1] <= "end"[s_1] $.
+  - Combinando os fatos, temos que $"start"[s_2] >= "end"[g_1] $.
+  - Isso significa que $g_1$ não se sobrepõe a $s_2$, e o resto das tarefas ($s_3, ...$) também não, pois já eram compatíveis com $s_2$.
+  
+A nova solução $S'$ é, portanto, viável. O mais importante é que $S'$ tem $m$ tarefas, o _mesmo tamanho_ da solução ótima $S$. Isso significa que $S'$ _também é uma solução ótima_.
+
+Concluímos que _sempre_ existe uma solução ótima (seja $S$ ou $S'$) que começa com a primeira escolha gulosa $g_1$.
+Podemos repetir esse processo indutivamente. Em cada passo $i$, trocamos $s_i$ por $g_i$, transformando a solução ótima $S$ na solução gulosa $T_a$, sem nunca diminuir o número de tarefas, usando sub-estruturas ótimas.
+Isso só é possível se as duas soluções tiverem o mesmo tamanho desde o início. Portanto, $k = m$.
+
+Logo, a solução gulosa $T_a$ é, de fato, uma solução ótima.
 
 *Implementação em Python:*
 
@@ -277,30 +311,29 @@ O mais complexo é a ordenação, que pode ser garantido com $Theta(n log(n))$.
 
 *Implementação em Python:*
 
-```py
-
-def bag_problem(I, v, w, max_w):
-  n = len(I)                            #as três listas têm de ser do mesmo tamanho
+```py 
+def fractional_bag_problem(I, v, w, max_w):
+  n = len(I)                            #as três listas têm o mesmo tamanho   
   idx_w_ratio = []
   for i in range(n):
-    ratio = v[i]/w[i]
-    idx_w_ratio.append((i, w[i], ratio))#lista que armazena o índice, peso e razão
+      ratio = v[i]/w[i]
+      idx_w_ratio.append((i, w[i], ratio))#lista que armazena o índice, peso e razão
                                         #ordena por razão logo abaixo
   idx_w_ratio = sorted(idx_w_ratio, key = lambda x: x[2], reverse=True)
   capacity, i = max_w, 0
   M = [0] * n
 
   while i < n and capacity >= idx_w_ratio[i][1]: 
-    M[i] = 1                            #faz o while normal 
-    capacity -= idx_w_ratio[i][1]
-    i += 1
+      M[i] = 1                          #faz o while normal 
+      capacity -= idx_w_ratio[i][1]
+      i += 1
   if i < n:
-    M[i] = capacity/idx_w_ratio[i][1]
+      M[i] = capacity/idx_w_ratio[i][1]
   
   itens_choosed = [0] * n               #lista que referencia a cada item a sua 
   for j in range(n):                    #porcentagem escolhida
-    if M[j] != 0:
-      itens_choosed[idx_w_ratio[j][0]] = M[j]
+      if M[j] != 0:
+          itens_choosed[idx_w_ratio[j][0]] = M[j]
     
   return itens_choosed                  #retorna a lista de índices com a %
 ```
@@ -544,6 +577,8 @@ Bom, não seria $O(n^2)$, pois a distância em cada lado é no mínimo $delta_mi
 
 === como faz isso cara como é 11 7, 5 sla
 
+=== Implementação em Python
+
 == Programação Dinâmica
 
 O paradigma de programação dinâmica consiste em quebrar em sub-problemas menores e resolvê-los de forma independente. Semelhante ao dividir e conquistar, porém com foco em sub-problemas que usam repetição. Nessa técnica, um sub-problema só é resolvido caso não tenha sido resolvido antes (caso contrário é usado o resultado anterior guardado previamente).
@@ -762,10 +797,10 @@ Para finalizar, precisamos definir quais itens devem ser adicionados à mochila:
 
 
 #wrap-it.wrap-content(
-  
+  columns: (1.375fr, 1fr),
   figure(
     image("images/dynamic-programming-example6.png", width: 100%),
-    caption: [Exemplo da busca dos itens adicionados (a parte laranja é...)]
+    caption: [Exemplo da busca dos itens adicionados (as células pintadas de laranja são as células visitadas pelo algoritmo)]
     
   ),
   [
@@ -774,18 +809,69 @@ Para finalizar, precisamos definir quais itens devem ser adicionados à mochila:
     + *enquanto* $j >= 1$:
       + *se* $M[j][i] = M[j-1][i - w_j] + v_j$
         + $S = S union {j}$
-        + $i = w_j$
+        + $i = i - w_j$
       + $j = j -1$
     + *retorna* $S$ 
     ]
   ],
 )
 
-O que carambolas esse pseudocódigo faz? Descobriremos depois do commit..
+Vamos entender o código: $j$ itera nas linhas, W nas colunas. Em teoria, a última célula da matriz ($n "x" W$) carrega com certeza o maior valor que satisfaz a condição do problema, e por isso começamos por ela. O que estamos fazendo é verificar se $M[j][i] = M[j-1][i - w_j] + v_j$, ou seja, se o valor da célula voltando o peso do item atual (supondo que ele foi adicionado) e voltando um item ($j - 1$) somado ao valor de $v_j$ é igual ao valor da célula atual, pois, se isso for verdade, significa que adicionamos esse valor ao descobrir o item $j$.
+
+Vamos olhar para o exemplo da tabela:
+- Ponto de partida: $M[5][11]$. Valor $= 40$. O item 5 (peso 7, valor 28) foi usado para obter esse valor de 40?
+  - Comparamos o valor atual ($M[5][11]=40$) com o valor da célula de cima ($M[4][4]=7 + v_j = 7 + 28 != 40$).
+  - Como os valores não são iguais, significa que o item 5 *não* foi incluído. A solução ótima para capacidade 11 já existia sem ele.
+  - Então o algoritmo "sobe" para a célula $M[4][11]$. 
+
+- Posição Atual: Célula $M[4][11]$. Valor $= 40$. O item 4 (peso 6, valor 22) foi usado?
+  -  Comparamos o valor atual ($M[4][11]=40$) com o valor da célula de cima ($M[3][5]=18 + v_j = 18 + 22 = 40 $).
+  - Os valores são iguais. Isso significa que o item 4 *foi* incluído!
+  - Adicionamos o item 4 ao nosso conjunto de solução $S$.O algoritmo "sobe" para a linha anterior ($i=3$) e "anda para a esquerda" subtraindo o peso do item 4 da capacidade: $11 - 6 = 5$. O novo ponto de análise é $M[3][5]$ .
+
+E assim sucessivamente!
+
+*Implementação em Python*
+
+```py
+def bag_problem_bottom_up(n, v, w, W):
+  #primeira parte (criar a matriz e inserir os valores)
+  M = [[0] * (W + 1) for _ in range(n + 1)]
+  for j in range(1, n + 1):
+      for i in range(1, W + 1):
+          peso_item_j = w[j-1]
+          valor_item_j = v[j-1]          
+          if peso_item_j > i:
+              M[j][i] = M[j - 1][i]
+          else:
+              not_using = M[j - 1][i]
+              using = valor_item_j + M[j - 1][i - peso_item_j]
+              M[j][i] = max(using, not_using)
+                
+  #segunda parte (identificar os itens selecionados)
+  itens_selecionados = []
+  valor_maximo = M[n][W]
+  j, i = n, W
+  while j > 0 and i > 0:
+      peso_item_j = w[j-1]
+      valor_item_j = v[j-1]
+      if peso_item_j <= i and M[j][i] == (M[j- 1][i - peso_item_j] + valor_item_j):
+          itens_selecionados.append(j)
+          i -= peso_item_j
+          j -= 1
+  itens_selecionados.reverse()
+  return valor_maximo, M, itens_selecionados
+```
+Convido o caro leitor a implementar a solução Top-Down. 
 
 
 
+#pagebreak()
 
-=== Implementação em Python
+#align(center + horizon)[
+  = Grafos
+]
 
+#pagebreak()
 
+== wow grafos
