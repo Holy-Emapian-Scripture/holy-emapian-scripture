@@ -874,4 +874,46 @@ Convido o caro leitor a implementar a solução Top-Down.
 
 #pagebreak()
 
-== wow grafos
+Sinceramente, fazer uma revisão de conceitos muito básicos de grafos que já vimos em Matemática Discreta é um pouco chato, para não dizer
+desnecessário. Irei relembrar alguns termos e definir outros que não me lembro de termos vistos. Vamos lá:
+
+== Relembrando conceitos
+
+- $V ->$ vértices;
+- $E ->$ arestas;
+- Uma aresta é definida pelo par $(v_i, v_j)$;
+- O *tamanho* de um grafo é definido por $|V| + |E|$, onde $|.|$ é a cardinalidade (quantidade de elementos);
+
+- Dado $e = (v_i, v_j)$, $v_i$ e $v_j$ são *extremos* da aresta se $e$ é incidente em $v_i$ e $v_j$, e $v_i$ e $v_j$ é incidente em $e$;
+- Vértices relacionados por uma aresta são *adjacentes*;
+- Duas arestas são *paralelas* se incidem ao mesmo vértice;
+- *Laço* $= (v_i,v_i)$;
+- $sum_(i = 1)^(|V|) g(v_i) = 2 |E|$, onde $g(v_i)$ é o *grau* do vértice $i$;
+- Um grafo é *completo* se cada vértice possuir todos os demais adjacentes à ele;
+- O número de arestas em um grafo completo é definido por: $(|V|(|V| - 1))/2$ (observe que isso é ligeiramente menor que $(|V|)^2/2 $;
+- Um grafo é *regular* se todos os vértices possuírem o mesmo grau (ou $k$-regular , para grau $k$);
+- O número de arestas em um grafo $k$-regular é $|V|k/2$
+- Um grafo é *denso* se o seu tamanho for proporcional ao quadrado do número de vértices ($|V| + |E| prop |V|^2$), e é esparso se $(|V| + |E|) prop |V|$.
+- O grafo $H = G(V', E')$ é um *subgrafo* de $G = (V, E)$ se $V' subset.eq V$ e $E' subset.eq E$.
+- O grafo $H = G(V', E')$ é um *subgrafo gerador* de $G = (V, E)$ se $H$ for um subgrafo de $G$ e $V' =  V$.
+- O grafo $H = G(V', E')$ é um *grafo induzido* de $G = (V, E)$ se $E'$ for definido por todas as arestas de $E$ adjacentes a um par de vértices $V'$.
+- O grafo $H = G(V', E')$ é um *grafo próprio* de $G = (V, E)$ se $H subset G$.
+- Um *caminho* $P$ em $G(V, E)$ consiste em uma sequência de $n$ vértices, finita e não vazia tal que $v_(i+1)$ é adjacente a $v_i$.
+- Um caminho é *simples* se não possuir vértices repetidos.  
+- Um caminho é *fechado* se $v_1 = v_n$.
+- O *comprimento* de um caminho é definido pelo número de arestas do caminho.
+- Um grafo $G = (V,E)$ é *conexo* se para qualquer par de vértices existe um caminho em $G$.
+- Quando um grafo não é conexo podemos segmentá-lo em *componentes conexos* (um par está no mesmo componente se existe um caminho).
+- Um grafo $G(V,E)$ é uma *árvore* se $G$ for conexo e acíclico (possui $|V| - 1$ arestas, a remoção de qualquer aresta torna o grafo não-conexo e para todo par de vértices existe um único caminho);
+- Um grafo $G(V,E)$ é uma *floresta* se for um grafo acíclico;
+- Um grafo é *planar* se puder ser representado graficamente em um plano de tal forma que não haja cruzamento de arestas;
+- Um grafo $G(V,E)$ é *bipartido* se os vértices puderem ser divididos em dois conjuntos $V_1$ e $V_2$ de forma que toda aresta $e_k$ é incidente em $(v_i, v_j)$ tal que $v_i in V_1$ e $v_j in V_2$;
+- Um grafo $G(V,E)$ é *orientado* se as arestas possuirem um sentido. Nesse caso, a nomenclatura que definimos $(v_i,v_j)$ significa que ela começa em $v_i$ e termina em $v_j$.
+- O grau de *sáida* $g_s (v_i)$ é definido pelo número de arestas que saem de $v_i$. Raciocíno análogo para grau de *entrada* $g_e (v_i)$;
+- $sum_(i = 1)^(|V|)  g_e (v_i) = sum_(i = 1)^(|V|) g_s (v_i) = |E|$;
+- O vértice $v_i$ é uma *fonte* se $g_e (v_i) = 0$;
+- O vértice $v_i$ é um *sorvedouro* se $g_s (v_i) = 0$;
+- O vértice  $v_i$ é *isolado* se for sorvedouro e fonte;
+- Um grafo (orientado ou não) é *ponderado* se cada aresta estiver associado a um peso;
+
+== Estruturas de dados para representar grafos
