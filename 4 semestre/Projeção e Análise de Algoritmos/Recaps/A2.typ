@@ -917,3 +917,52 @@ desnecessário. Irei relembrar alguns termos e definir outros que não me lembro
 - Um grafo (orientado ou não) é *ponderado* se cada aresta estiver associado a um peso;
 
 == Estruturas de dados para representar grafos
+
+Dependendo do problema, a escolha da estrutura pode variar, e, em geral, usamos duas formas de implementar essa representação:
+
+=== Matriz de adjacência
+
+Consiste em um matriz quadrada $A$ de ordem $|V|$ cujas linhas e colunas são indexadas pelos vértices de $V$. Exemplo para grafos orienteados:
+
+#figure(
+    image("images/graph-structure1.png", width: 90%),
+    caption: [Exemplo de matriz de adjacência para o grafo à direita. ]
+    
+)
+
+Analogamente, para não orientados:
+
+#figure(
+    image("images/graph-structure2.png", width: 90%),
+    caption: [Exemplo de matriz de adjacência para o grafo à direita. Nota: a matriz é simétrica! ]
+)
+
+A complexidade de acessar(ou verificar) uma aresta é $Theta(1)$, e claramente conta com uma complexidade de espaço de $Theta(|V|^2)$. Além disso, o fato da matriz ser simétrica para grafos não-orientados faz com que o tamanho se reduza para a metade, podendo se armazenar apenas a diagonal superior ou inferior da matriz.
+
+=== código da implementação 
+
+=== Lista de adjacência
+
+Consiste em uma sequência de vértices contendo na estrutura de cada ponteiro para uma lista encadeada com elemento representando as arestas adjacentes ao vértices. Exemplo para grafo dirigido:
+
+
+#figure(
+    image("images/graph-structure3.png", width: 95%),
+    caption: [Exemplo da lista de adjacência para o grafo à direita.]
+)
+
+Exemplo para grafo não-dirigido:
+
+#figure(
+    image("images/graph-structure4.png", width: 95%),
+    caption: [Exemplo da lista de adjacência para o grafo à direita.]
+)
+
+A complexidade de acessar o conjunto de arestas de um vértice é $Theta(1)$ (mas encontrar uma aresta específica é $Theta(|V|)$ no pior caso).
+
+
+ma lista de adjacência exige um espaço Θ( 𝑉 + |𝐸|)
+
+As estruturas de dados do vértice e da aresta podem ser estendidas para armazenar
+informações específicas do problema.
+
