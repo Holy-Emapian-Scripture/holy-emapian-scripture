@@ -979,3 +979,5 @@ A complexidade de acessar o conjunto de arestas de um vértice é $Theta(1)$ (ma
 
 As estruturas de dados do vértice e da aresta podem ser estendidas para armazenar informações específicas do problema.
 
+*Nota:* Os exercícios passados no slide não serão feitos aqui (pois isso é um "resumo" teórico), e sim no GitHub, na pasta Exercises. 
+
