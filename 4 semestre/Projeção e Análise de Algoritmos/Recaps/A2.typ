@@ -907,14 +907,14 @@ desnecessário. Irei relembrar alguns termos e definir outros que não me lembro
 #example[
   #figure(
     image("images/subgraph-induced.png", width: 80%),
-    caption: [Exemplo de subgrafo induzido (os vértices escolhidos foram ${1,2,3,5}$ e as arestas(e vértices) que não são desses vértices não aparecem no subgrafo induzido). ]  
+    caption: [Exemplo de grafo induzido (os vértices escolhidos foram ${1,2,3,5}$ e as arestas(e vértices) que não são desses vértices não aparecem no subgrafo induzido). ]  
 )
 ]
 - O grafo $H = G(V', E')$ é um *grafo próprio* de $G = (V, E)$ se $H subset G$.
 #example[
   #figure(
     image("images/subgraph-proper.png", width: 80%),
-    caption: [Exemplo de subgrafo próprio (note que é $subset$, não $subset.eq$. Então, um subgrafo próprio é um subgrafo menor, e não igual ao grafo original). ]  
+    caption: [Exemplo de grafo próprio (note que é $subset$, não $subset.eq$. Então, um subgrafo próprio é um subgrafo menor, e não igual ao grafo original). ]  
 )
 ]
 - Um *caminho* $P$ em $G(V, E)$ consiste em uma sequência de $n$ vértices, finita e não vazia tal que $v_(i+1)$ é adjacente a $v_i$.
@@ -957,8 +957,6 @@ Analogamente, para não orientados:
 )
 
 A complexidade de acessar(ou verificar) uma aresta é $Theta(1)$, e claramente conta com uma complexidade de espaço de $Theta(|V|^2)$. Além disso, o fato da matriz ser simétrica para grafos não-orientados faz com que o tamanho se reduza para a metade, podendo se armazenar apenas a diagonal superior ou inferior da matriz.
-
-=== código da implementação 
 
 === Lista de adjacência
 
