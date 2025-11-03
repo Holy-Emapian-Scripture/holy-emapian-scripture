@@ -896,8 +896,27 @@ desnecessário. Irei relembrar alguns termos e definir outros que não me lembro
 - Um grafo é *denso* se o seu tamanho for proporcional ao quadrado do número de vértices ($|V| + |E| prop |V|^2$), e é esparso se $(|V| + |E|) prop |V|$.
 - O grafo $H = G(V', E')$ é um *subgrafo* de $G = (V, E)$ se $V' subset.eq V$ e $E' subset.eq E$.
 - O grafo $H = G(V', E')$ é um *subgrafo gerador* de $G = (V, E)$ se $H$ for um subgrafo de $G$ e $V' =  V$.
+#example[
+  #figure(
+    image("images/subgraph-generator.png", width: 80%),
+    caption: [Exemplo de subgrafo gerador. ]
+   
+)
+]
 - O grafo $H = G(V', E')$ é um *grafo induzido* de $G = (V, E)$ se $E'$ for definido por todas as arestas de $E$ adjacentes a um par de vértices $V'$.
+#example[
+  #figure(
+    image("images/subgraph-induced.png", width: 80%),
+    caption: [Exemplo de subgrafo induzido (os vértices escolhidos foram ${1,2,3,5}$ e as arestas(e vértices) que não são desses vértices não aparecem no subgrafo induzido). ]  
+)
+]
 - O grafo $H = G(V', E')$ é um *grafo próprio* de $G = (V, E)$ se $H subset G$.
+#example[
+  #figure(
+    image("images/subgraph-proper.png", width: 80%),
+    caption: [Exemplo de subgrafo próprio (note que é $subset$, não $subset.eq$. Então, um subgrafo próprio é um subgrafo menor, e não igual ao grafo original). ]  
+)
+]
 - Um *caminho* $P$ em $G(V, E)$ consiste em uma sequência de $n$ vértices, finita e não vazia tal que $v_(i+1)$ é adjacente a $v_i$.
 - Um caminho é *simples* se não possuir vértices repetidos.  
 - Um caminho é *fechado* se $v_1 = v_n$.
@@ -958,11 +977,7 @@ Exemplo para grafo não-dirigido:
     caption: [Exemplo da lista de adjacência para o grafo à direita.]
 )
 
-A complexidade de acessar o conjunto de arestas de um vértice é $Theta(1)$ (mas encontrar uma aresta específica é $Theta(|V|)$ no pior caso).
+A complexidade de acessar o conjunto de arestas de um vértice é $Theta(1)$ (mas encontrar uma aresta específica é $Theta(|V|)$ no pior caso). Ainda, uma lista de adjacência exige um espaço $Theta(|V| + |E|)$
 
-
-ma lista de adjacência exige um espaço Θ( 𝑉 + |𝐸|)
-
-As estruturas de dados do vértice e da aresta podem ser estendidas para armazenar
-informações específicas do problema.
+As estruturas de dados do vértice e da aresta podem ser estendidas para armazenar informações específicas do problema.
 
