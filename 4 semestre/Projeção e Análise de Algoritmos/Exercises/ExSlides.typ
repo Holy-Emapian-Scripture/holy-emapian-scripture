@@ -107,11 +107,42 @@ Enunciado: Dadas duas strings, encontre o comprimento da maior subsequência com
 
 Dado um valor $v$ e uma lista de denominações de moedas (de um sistema canônico), encontre o número de moedas para formar $v$.
 
-== Menor quantidade comparação
+== Menor quantidade de comparações
 
 Dado um array $A$ com $n$ elementos, encontre simultaneamente o maior e o menor elemento usando o menor número possível de comparações.
 
-Solução:
+Uma solução genérica, mas que não atende a menor quantidade de comparações possível é se tivermos duas variáveis, uma para o mínimo e outra para o máximo, e passar pela lista em apenas um for. Infelizmente, a cada elemento o algoritmo deve verificar se o número é o menor ou o maior dentre o valor das variáveis anteriores. Desde que isso traz duas verificações por elementos, ao fim temos $2 n$ comparações. Mas essa não é a solução ótima. 
+
+=== Solução (recursiva):
+
+Essa solução, assim como a outra, depende de uma sacada interessante, em que queremos reduzir a quantidade de comparações $(2n)$ do algoritmo ingênuo. Para isso, usaremos uma estratégia de comparação entre *pares*, utilizando o paradigma Dividir e Conquistar. Tratamos os dois casos base na função e dividimos a lista ao meio para fazer isso recursivamente, até que tenhamos apenas $1$ ou $2$ elementos a serem analisad os, e isso nos traz 3 verificações por elemento (uma para o par ```arr[left] < arr[right]``` ), duas para comparar com os mínimos globais(uma pro máximo, outra pro mínimo), trazendo $approx 3n/2 $ comparações.
+
+
+```py
+def max_min(arr, left, right):
+    if left == right:
+        return arr[left], arr[right]
+    if left == right - 1:
+        if arr[left] < arr[right]:
+            return arr[left], arr[right]
+        else:
+            return arr[right], arr[left]
+        
+    mid = (left + right) // 2
+    min1, max1 = max_min(arr, left, mid)
+    min2, max2 = max_min(arr, mid+1, right)
+
+    min_global = min(min1, min2)
+    max_global = max(max1, max2)
+
+    return (min_global, max_global)
+```
+
+=== Solução (pairwise):
+
+Essa solução é interativa, e usa uma ideia parecida com o algoritmo anterior. Foi separada em duas funções para evitar duplicação de código. Declaramos algumas variáveis para tracking dos mínimos e máximos, e vemos se o tamanho da lista é par ou ímpar. Se for par, então teremos uma quantidade de pares sem nenhuma sobra, e assim executamos ``` pairwise```, que passa na lista de elementos de par em par e verifica o maior (e menor) entre a dupla (uma verificação) e atualiza o máximo e mínimo global (2 verificações).
+
+Para o caso de uma lista de tamanho ímpar, apenas é feita a mesma verificação para o último elemento ainda não verificado.
 ```py
 def pairwise(arr, max_local, min_local, max_global, min_global):
     for i in range(0, len(arr) - 1, 2):
