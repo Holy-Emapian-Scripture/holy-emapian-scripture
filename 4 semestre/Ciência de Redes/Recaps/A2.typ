@@ -254,9 +254,253 @@ Tendo isso em mente, conseguimos dividir as *redes livre-de-escala* em dois regi
 #pagebreak()
 
 #align(center+horizon)[
-  = Robustez
+  = Percolação e Robustez
 ]
 
 #pagebreak()
 
+No contexto de redes, um problema muito comum são nós pararem de funcionar e atrapalharem o fluxo da informação implícita na rede. Por exemplo, pode acontecer de a rede de internet ter falhas aleatórias dentro dela, então alguns roteadores falham. Nosso objetivo aqui é entender quando que essas falhas (Sejam propositais ou não) afetam o fluxo da rede. A *Percorlação* nos diz como e quando uma rede colapsa, enquanto a *Robustez* vai medir e indicar como previnir esse colapso
 
+== Percolação
+Em nosso contexto, vamos definir da seguinte forma. Queremos olhar a *capacidade da rede* de *se manter conexa após perder uma fração de seus nós*. Para começar, não vamos partir para a teoria em si, vamos analisar *um caso específico* primeiro para pegar a noção
+
+#figure(
+  image("images/square-lattice.png"),
+  caption: [Rede quadrada onde cada cruzamento representa um nó (Pode ou não existir)]
+)<square-lattice>
+
+Vamos imaginar um grid onde cada intersecção de linhas é um nó que pode ou não existir com probabilidade $p$ e há uma aresta entre dois nós se eles forem vizinhos. Podemos fazer então duas perguntas:
+- Qual o tamanho esperado do maior cluster?
+- Qual o tamanho médio dos clusters?
+
+Olhando o gráfico presente na @square-lattice, o tamanho médio dos clusters não muda gradativamente de acordo com o valor de $p$, mas ele se explode conforme se aproxima de um valor crítico $p_c$. Isso ocorre porque, conforme $p -> p_c$, os pequenos clusters se aglutinam e formam uma componente maior muito grande
+
+Então, de acordo com o observado podemos fazer algumas definições e observações:
+
+- Tamanho médio de clusters:
+$
+  EE[S] prop |p - p_c|^(-gamma_p)
+$
+
+- Parâmetro de ordem (Probabilidade de um nó selecionado aleatoriamente pertencer ao maior cluster):
+$
+  p_infinity prop (p - p_c)^(beta_p)
+$
+
+- Correlação de tamanho (Distância média entre dois nós do mesmo cluster):
+$
+  xi prop |p-p_c|^(-upsilon)
+$
+
+Perceba que, em $p_c$, o maior cluster tem tamanho infinito, assim ele cobre todo o quadriculado. $gamma_p, beta_p$ e $upsilon$ são chamados de expoentes críticos e a teoria da percolação diz que eles são universais (Não dependem da natureza do grid, pode ser triangular, hexagonal, enfim)
+
+Agora que entendemos um pouco melhor o comportamento do nosso caso específico, vamos analisar ele como uma rede em si. Imagine que vamos remover uma fração $f$ dos nós da rede antes mencionada. Conforme aumentamos a fração $f$, em algum momento, a componente gigante vai se desfazer e, para algum $f_c$, vale que $forall f > f_c => p_infinity = 0$, logo, não há mais uma componente gigante
+
+Para redes aleatórias, *sob falhas aleatórias*, compartilham os mesmos expoentes críticos que uma rede de percolação dimensional-infinita:
+$
+  gamma_p = 1 wide beta_p = 1 wide upsilon = 1/2
+$
+
+Já em uma rede livre-de-escala, os expoentes são:
+$
+  beta_p = cases(
+    1/(3-gamma) "se" 2 < gamma < 3,
+    1 /(gamma-3) "se" 3 < gamma < 4,
+    1 "se" 4 < gamma
+  )
+
+  wide
+
+  gamma_p = cases(
+    1 "se" gamma > 3,
+    -1 "se" 2 < gamma < 3
+  )
+$
+
+Perceba que no regime $2 < gamma < 3$ *sempre há uma componente gigante*. Temos também a relação da *quantidade de componentes de tamanho $s$* ($n_s$)
+$
+  n_s prop s^(-tau) e^(-s\/s^*)
+$
+$
+  s^* prop |p-p_c|^(-sigma)
+$
+$
+  tau = cases(
+    5/2 "se" gamma > 4,
+    (2 gamma - 3)/(gamma - 2) "se" 2 < gamma < 4
+  )
+$
+$
+  sigma = cases(
+    (3-gamma)/(gamma-2) "se" 2 < gamma < 3,
+    (gamma-3)/(gamma-2) "se" 3 < gamma < 4,
+    1/2 "se" gamma > 4
+  )
+$
+
+== Robustez
+Vimos um exemplo específico com redes quadriculadas, mas e se não seguirmos esse padrão? O que fazemos? Na verdade a ideia é bem parecida! Isso nos vai revelar um comportamento muito interessante sobre as redes livre-de-escala.
+
+#figure(
+  image("images/scale-free-network-and-internet.png", width: 80%),
+  caption: [Comparação do tamanho relativo de uma rede livre-de-escala qualquer e da rede de internet conforme removemos uma fração *aleatória* $f$ de seus nós]
+)
+
+Os gráficos acima indicam uma resistência muito forte das redes livre-de-escala contra falhas aleatórias dentro da mesma. Será que podemos encontrar um meio matemático de entender o porquê que isso acontece?
+
+== Critério de Molloy-Reed
+
+#theorem("Critério de Molloy-Reed")[
+  Dado que $K$ é a variável aleatória que representa o grau de um nó selecionado aleatoriamente dentro de uma rede $G(V,E)$. Para que uma componente gigante exista dentro dessa rede, ela deve satisfazer:
+  $
+    EE[K^2] / EE[K] >= 2
+  $
+]
+#proof[
+  Para que minha rede tenha uma componente gigante, um nó *da componente* deve ter grau médio maior ou igual a $2$, já que caso contrário, quer dizer que muitos nós possuem apenas uma ou menos conexões. Defina $PP(delta(v_i)=k_i|v_i <-> v_j)$ como a probabilidade de que $v_i$ tem grau $k$ dado que ele se liga com $j$ *e $j$ está na componente gigante*. Por questões de simplificação de notação, chamemos a probabilidade antes definida como $PP(k_i|i<->j)$. Temos que:
+  $
+    EE[K=k_i|i<->j] = sum_(k_i) k_i PP(k_i|i<->j) >= 2
+  $
+  Vamos calcular alguns termos. Sabemos que:
+  $
+    PP(k_i|i<->j) = (PP(i<->j|k_i) dot PP(k_i))/PP(i<->j)
+  $
+  E também temos que:
+  $
+    PP(i<->j) = (|E|) / (mat(|V|;2)) = EE[K] / (|V| - 1)
+  $
+  Além de que:
+  $
+    PP(i<->j|k_i) = k_i / (|V|-1)
+  $
+  Então, substituindo, vamos ter:
+  $
+    EE[K=k_i|i<->j] = sum_(k_i) k_i (k_i p(k_i))/(EE[K]) = EE[K^2] / EE[K] >=2
+  $
+]
+
+Olhando o caso específico de *redes aleatórias*, nós vamos obter que:
+$
+  EE[K^2]/EE[K] >= 2 <=> EE[K](1 + EE[K])/EE[K] >= 2 <=> EE[K] >= 1
+$
+
+O que coincide com os resultados vistos no primeiro resumo
+
+== Limite Crítico
+Vamos agora utilizar do critério visto anteriormente para entender o porquê de as redes livre-de-escala serem robustas a falhas aleatórias. Primeiro de tudo, ao remover uma fração dos nós de uma rede *aleatoriamente*, existem duas consequências:
+- Altera o grau de alguns nós [$k' <= k$]
+- Muda a distribuição dos graus [$p_k -> p'_k'$]
+
+Vamos primeiro descobrir a nova distribuição dos graus após a remoção da fração $f$. Vamos fixar que estamos analisando um nó $v in V$ que, antes da remoção, tem grau $k$, ou seja, tem $k$ vizinhos. Para saber quantos vizinhos vão sobrar após remover a fração, definimos uma variável indicadora para cada um dos vizinhos do nó $v$
+$
+  II_j = cases(
+    1 "se o vizinho NÃO foi removido com probabilidade" 1-f,
+    0 "se o vizinho foi removido com probabilidade" f
+  )
+$
+
+então a quantidade de vizinhos de $v$ APÓS A REMOÇÃO dos $f$ nós é:
+$
+  sum_(j=1)^k II_j
+$
+
+e como isso é uma soma de bernoullis independentes, essa soma nos dá uma distribuição $"Binomial"(k, 1-f)$, então temos que:
+$
+  PP(K'=k'|K=k) = mat(k;k')f^(k-k')(1-f)^k'
+$
+
+Considere que $K$ é a variável aleatória do grau de um nó selecionado aleatoriamente na rede ANTERIOR à remoção da fração $f$ e $K'$ é selecionando um nó na rede POSTERIOR à remoção da fração. Então para achar a nova distribuição dos graus após as remoções, apenas fazemos:
+$
+  PP(K'=k') &= sum_(i)^infinity PP(K'=k'|K=i)PP(K=i)   \
+  &= sum^(infinity)_(i) PP(K=i) mat(i;k')f^(i-k')(1-f)^(k')
+$
+
+Agora vamos assumir que sabemos $EE[K]$ e $EE[K^2]$ (distribuição original), e queremos calcular $EE[K']$ e $EE[K'^2]$, então fazemos:
+$
+  EE[K'] = EE\[underbrace(EE[K'|K], "Bin"(k, 1-f))\] = EE[(1-f)K] = (1-f) EE[K]
+$
+$
+  EE[K'^2] &= VV[K'] + (EE[K'])^2   \
+  &= VV[K'] + (1-f)^2(EE[K])^2    \
+  
+  VV[K'] &= EE[VV[K'|K]] + VV[EE[K'|K]]   \
+  &= (1-f)f EE[K] + (1-f)^2VV[K]    \
+$
+$
+  => EE[K'^2] &= (1-f)f EE[K] + (1-f)^2 ( VV[K] + EE[K]^2 )   \
+  &= (1-f)f EE[K] + (1-f)^2 EE[K^2]
+$
+
+Agora que sabemos os momentos da distribuição após a remoção dos $f$, podemos aplicar o critério de Molloy-Reed na rede posterior à remoção
+$
+  EE[K'^2] / EE[K'] = 2  <=> ((1-f)f EE[K] + (1-f)^2 EE[K^2]) / ((1-f) EE[K]) = 2   \
+  
+  f + EE[K^2] / EE[K] - f EE[K^2] / EE[K] = 2    \
+
+  f(1-EE[K^2] / EE[K]) = 2 - EE[K^2] / EE[K]   \
+
+  f = 1 - 1/(EE[K^2]/EE[K] - 1)
+$
+
+Note que a fração limite depende única e exclusivamente das informações da distribuição. Se olharmos o caso *específico* das redes aleatórias:
+$
+  f_c = 1 - 1/(EE[K])
+$
+
+Ou seja, quanto mais densa a rede, maior a fração crítica de nós necessários para a remoção. Agora, para redes livre-de-escala, vamos fazer um passo-a-passo diferente. Vamos primeiro calcular o $m$-ésimo momento do grau de uma rede livre-de-escala:
+$
+  EE[K^m] &= (gamma-1) k_"min"^(gamma-1) integral_(k_"min")^(k_"max") k^(m-gamma) dif k   \
+
+  &= (gamma-1)/(m-gamma+1) k_"min"^(gamma-1) [k^(m - gamma + 1)]^(k_"max")_(k_"min")    \
+
+  &= (gamma-1)/(m-gamma+1) k_"min"^(gamma-1) [k_"max"^(m - gamma + 1) - k_"min"^(m - gamma + 1)]
+$
+
+Agora calculamos o limite crítico $f_c$
+$
+  kappa = EE[K^2]/EE[K] = ( (2-gamma)k_"max"^(3-gamma) - k_"min"^(3-gamma) ) / ( (3-gamma)k_"max"^(2-gamma) - k_"min"^(2-gamma) )
+$
+então, obtemos:
+$
+  kappa = |(2-gamma)/(3-gamma)| cases(
+    k_"min" "se" gamma > 3,
+    k_"max"^(3-gamma)k_"min"^(gamma-2) "se" 2 < gamma < 3,
+    k_"max" "se" 1 < gamma < 2
+  )
+$
+daí, utilizando todas as contas que vimos agora relebrando o fato, visto no último resumo, que:
+$
+  k_"max" = k_"min" N^(1/(gamma-1))
+$
+
+vamos obter que:
+$
+  f_c &= 1 - 1/(kappa - 1)    \
+  &= 1 - C/(N^((3-gamma)/(gamma-1)))
+$
+
+== Tolerância a Ataques
+Até agora, vimos apenas falhas aleatórias, na rede de internet, por exemplo, se alguns roteadores falharem aleatoriamente, a rede tem estrutura suficiente para se manter, porém, e se um ataque planejado for feito e derrubar todos os pontos com maiores conexões? Esse é o contexto que vamos analisar, em vez de retirarmos nós aleatoriamente, vamos retirar sempre os nós com *maior grau*
+
+#figure(
+  image("images/scale-free-network-random-failure-vs-attacks.png"),
+  caption: [Tamanho relativo do maior cluster conforme retiramos os nós seguindo o regime de falhas aleatórias e de ataques em uma rede *livre-de-escala*]
+)
+
+Perceba que, para redes livre-de-escala, elas são *muito* mais sucetíveis a ataques direcionados. O que faz bastante sentido, já que a presença de hubs é muito marcante nesse tipo de rede.
+
+Agora a gente gostaria de entender como que a remoção dos hubs afeta a rede e o limite para que ela colapse. Para entender isso, devemos saber que remover um hub afeta a rede de duas formas:
+- Muda o grau máximo de $k_"max"$ para $k'_"max"$
+- A distribuição de graus muda de $p_k$ para $p'_k'$
+
+Lembrando que, para o problema das redes livre-de-escala, temos:
+$
+  p_k = c k^(-gamma)    \
+  k in {k_"min",...,k_"max"}    \
+  c approx (gamma-1)/(k_"min"^(-gamma+1) - k_"max"^(-gamma+1))
+$
+
+Após removermos a fração $f$ de nós, temos que:
+$
+  f = integral_(k'_max)^k_max p_k dif k
+$
