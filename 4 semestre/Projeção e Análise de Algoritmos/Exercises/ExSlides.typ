@@ -107,6 +107,47 @@ Enunciado: Dadas duas strings, encontre o comprimento da maior subsequência com
 
 Dado um valor $v$ e uma lista de denominações de moedas (de um sistema canônico), encontre o número de moedas para formar $v$.
 
-== Exemplo da comparação em array
+== Menor quantidade comparação
 
 Dado um array $A$ com $n$ elementos, encontre simultaneamente o maior e o menor elemento usando o menor número possível de comparações.
+
+Solução:
+```py
+def pairwise(arr, max_local, min_local, max_global, min_global):
+    for i in range(0, len(arr) - 1, 2):
+        if arr[i] >= arr[i+1]:
+            max_local = arr[i]
+            min_local = arr[i + 1]
+        else: 
+            max_local = arr[i + 1]
+            min_local = arr[i]
+        
+        if max_local > max_global:
+            max_global = max_local
+        if min_local < min_global:
+            min_global = min_local
+
+    return min_global, max_global
+
+def comparation_problem(arr):
+    max_global = -float('inf')
+    min_global = float('inf')
+    max_local = 0
+    min_local = 0
+
+    if len(arr) % 2 == 0:
+        min_global, max_global = pairwise(arr, max_local, min_local, max_global, min_global)
+    else:
+        min_global, max_global = pairwise(arr, max_local, min_local, max_global, min_global)
+        
+        k = len(arr) - 1 
+        max_local = arr[k]
+        min_local = arr[k]
+    
+        if max_local > max_global:
+            max_global = max_local
+        if min_local < min_global:
+            min_global = min_local
+
+    return (min_global, max_global)
+```
