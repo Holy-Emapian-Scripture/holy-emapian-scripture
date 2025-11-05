@@ -502,5 +502,118 @@ $
 
 Após removermos a fração $f$ de nós, temos que:
 $
-  f = integral_(k'_max)^k_max p_k dif k
+  f &= integral_(k'_max)^k_max p_k dif k    \
+  
+  &= (gamma-1) k_"min"^(gamma-1) integral_(k'_max)^k_max k^(-gamma) dif k   \
+
+  &= (gamma-1) k_"min"^(gamma-1) [k^(1-gamma) / (1-gamma)]^(k_"max")_(k'_"max")   \
+
+  &= k_"min"^(gamma-1) (k'_"max"^(1-gamma) - k_"max"^(1-gamma))
 $
+
+Normalmente em redes livre-de-escala, o cutoff natural é MUITO grande ($k_"max" >> k'_"max"$), ou seja, o termo $k_"max"^(1-gamma)$ é desprezível, logo, a expressão se torna:
+$
+  f approx (k'_max / k_min)^(1-gamma)
+$
+
+Então chegamos na relação:
+$
+  k'_max approx k_min f^(1/(1-gamma))
+$<finding-the-cutoff>
+
+Agora vamos olhar para a segunda consequência, que é a alteração da distribuição dos graus da rede. Na absência da correlação entre os nós, vamos assumir que os links dos hubs se ligam aleatoriamente entre si. Vamos agora tentar encontrar a fração de *links* removidos da rede:
+$
+  tilde(f) &= (integral_(k'_max)^(k_max) k p_k dif k) / (EE[K])   \
+  
+  &= c/EE[K] integral_(k'_max)^(k_max) k^(-gamma+1) dif k   \
+
+  &= 1/EE[K] dot (1-gamma)/(2-gamma) dot (k'_max^(-gamma+2) - k_max^(-gamma+2))/(k_min^(-gamma+1) - k_max^(-gamma+2))
+$
+
+Como sabemos que o cutoff natural costuma ser muito maior, então podemos ignorar $k_max$ e, usando o fato que:
+$
+  EE[K] approx (gamma-1)/(gamma-2) k_min
+$
+vamos obter que:
+$
+  tilde(f) approx (k'_max / k_min)^(-gamma+2)
+$
+e assim, juntando com a equação @finding-the-cutoff, vamos obter que:
+$
+  tilde(f) approx f^((2-gamma)/(1-gamma))
+$
+O que essa fração nos diz? Conforme $gamma->2$, temos que $tilde(f) -> 1$, ou seja, em redes que $gamma approx 2$, remover uma pequena parte dos hubs já remove quase todas as arestas (O que é compatível com a teoria vista no último resumo).
+
+Agora vamos encontrar a nova distribuição dos graus! Usando o mesmo raciocínio visto para as falhas aleatórias, vamos assumir que $K$ é a variável aleatória de um nó selecionado aleatoriamente antes de remover a fração $f$ e $K'$ após remover a fração de vértices. Sabemos que, dado que eu selecionei um vértice que tem $K=k$, ele possui exatamente $k$ vizinhos, e depois da remoção dos vértices, cada um dos vértices vizinhos ao que escolhi *pode* ou *não* sobreviver e não ser removidos (com probabilidade $1-tilde(f)$), logo, temos uma soma de $k$ variáveis de bernoulli que representam quantos vizinhos meu nó tem após o ataque na rede:
+$
+  &PP(K'=k'|K=k) = mat(k;k') tilde(f)^(k-k') (1-tilde(f))^(k')   \
+
+  &=> PP(K'=k') = sum_(k'=k_min)^(k'_max) PP(K=k) mat(k;k') tilde(f)^(k-k') (1-tilde(f))^(k')
+$
+
+Agora que eu tenho essas informações, posso tentar achar o critério de Molloy-Reed da rede:
+$
+  kappa = EE[K^2]/EE[K] = (2-gamma) / (3-gamma) k_min (f^((3-gamma)/(1-gamma) - 1) / (f^((2-gamma)/(1-gamma) - 1)))
+$
+
+Então consegumos chegar no limiar crítico da fração de nós
+$
+  f_c^((2-gamma)/(1-gamma)) = 2 + (2-gamma)/(3-gamma) k_min (f_c^((3-gamma)/(1-gamma) - 1))
+$
+
+Perceba que, se $gamma -> infinity$, então $f_c -> 1 - 1/(k_min - 1)$
+
+== Melhorando a Robustez
+Certo, temos uma rede, é possível melhorar a sua tolerância, tanto a ataques, quanto a falhas aleatórias? Um primeiro pensamento que opdemos ter é conectar todos os nós periféricos em um hub, além de conectar eles entre si. Porém, na vida real, isso pode não ser aplicável, tendo em vista que, se cada aresta tem um custo para ser mantida, o custo de manutenção da rede pode exceder o viável
+
+Da para maximizar a robustez para ataques e falhas aleatórias sem alterar o custo? Queremos aumentar o limite $f_c$, então temos que aumentar $EE[K^2]$ sem alterar o custo médio $EE[K]$. Isso vai ocorrer em uma distribuição *bimodal* onde todo nó tem grau $k_min$ ou $k_max$, seguindo a seguinte distribuição:
+$
+  p(k) = (1-r) delta(k-k_min) + r delta(k - k_max)
+$
+
+onde $r$ é a fração de nós com grau $k_max$. Então vamos querer maximizar:
+$
+  f_c^("tot") = f_c^("rand") + f_c^("targ")
+$
+
+onde $f_c^("rand")$ é o limite crítico de falhas aleatórias e $f_c^("targ")$ o limite crítico dos ataques direcionados. Dado a distribuição bimodal citada anteriormente:
+$
+  EE[K] &= (1-r)k_min + r k_max
+  \
+  EE[K^2] &= (1-r)k_min^2 + r k_max^2
+$
+
+substituindo isso em $f_c^("rand")$
+$
+  f_c^"rand" = 1 - 1/(EE[K^2]/EE[K] - 1) = (EE[K]^2 - 2 r k_max EE[K] - 2(1-r)EE[K] + r k_max^2) / (EE[K]^2 - 2 r k_max EE[K] - (1-r)EE[K] + r k_max^2)
+$
+
+Agora, para achar $f_c^"targ"$, vamos fazer uma análise mais cuidadosa
+$
+  f_c^("targ") > r => "Todos os hubs foram removidos"   \
+
+  => f_c^("targ") = r + (1-r)/(EE[K]-r k_max) ( EE[K] (EE[K] - r k_max - 2(1-r))/(EE[K] - r k_max - (1-r)) - r k_max )
+$
+$
+  f_c^("targ") < r => "Sobrou alguns hubs"   \
+
+  => f_c^("targ") = (EE[K]^2 - 2r EE[K] k_max + r k_max^2 - 2(1-r)EE[K])/(k_max (k_max - 1)(1-r))
+$
+
+E nós estamos procurando o valor de $k$ que maximiza $f_c^"tot"$. Usando as equações encontradas para $f_c^"targ"$ e $f_c^"rand"$, descobrimos que podemos aproximar $k_max$ por:
+$
+  k_max &approx A r^(-2/3)
+  \
+  A &= [(2(EE[K])^2 (EE[K]-1)^2)/(2EE[K]-1)]^(1/3)
+$
+
+então obtemos que, para $r$ pequeno:
+$
+  f_c^"tot" = 2 - 1/(EE[K]-1) - (3EE[K])/(A^2) r^(1/3) + O(r^(2/3))
+$
+
+Para uma rede com $N$ nós, o máximo de $f_c^"tot"$ ocorre com $r=1/N$
+$
+  => k_max = A N^(2/3)
+$
+ou seja, em redes em que apenas $1$ nó possui grau $k_max$ enquanto o resto possui $k_min$
