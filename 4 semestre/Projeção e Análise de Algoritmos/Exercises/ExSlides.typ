@@ -129,9 +129,28 @@ def string_problem(string1, string2):
     return M[len_str2][len_str1]
 ```
 
-== Exercício da moeda
+== Menor quantidade de moedas
+
 
 * Dado um valor $v$ e uma lista de denominações de moedas (de um sistema canônico), encontre o número de moedas para formar $v$.*
+
+Nesse problema, vamos usar o paradigma Guloso. Considerando a lista de moedas *ordenada*, declaramos duas váriaveis, e para cada moeda da lista, se ```v_fake``` for 0 (significa que nossa soma de moedas chegou no valor que queríamos), acabamos o código. Caso contrário, pegamos a divisão inteira, que no caso significa quantas vezes cada moeda consegue fazer parte do valor, subtraímos do que falta em ```v_fake``` e incrementamos a contagem.
+
+```py
+def coin_problem(v, coins):
+    counting_coins = 0
+    v_fake = v
+
+    for coin in coins:
+        if v_fake == 0:
+            break
+        qtd = v_fake // coin 
+        if qtd > 0:
+            v_fake -= qtd * coin
+            counting_coins += qtd
+
+    return counting_coins
+```
 
 == Menor quantidade de comparações
 
