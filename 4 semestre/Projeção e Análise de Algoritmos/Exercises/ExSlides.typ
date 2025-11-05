@@ -99,17 +99,43 @@
 
 = Técnicas de Projeto
 
-== Exercício de String
+== Maior subsequência de Strings
 
-Enunciado: Dadas duas strings, encontre o comprimento da maior subsequência comum entre elas.
+* Dadas duas strings, encontre o comprimento da maior subsequência comum entre elas.*
+
+=== Solução:
+
+Essa solução usa o paradigma da Programação Dinâmica, onde usaremos uma matriz para guardar os valores de cada sub string. Por exemplo, a matriz no índice $i "x" j$ será o tamanho da maior subsequênciade string dado que nossas substrings são $"string1"$ ```[:i]``` e $"string2"$```[:j]```.
+
+Após construir a matriz, passamos completando cada elemento. Caso as letras sejam iguais, nós atualizamos a tabela somando o valor de um e o valor das substrings passadas, quando não tínhamos nenhuma das duas letras comparadas. Caso contrário, pegamos o maior entre $"string1"$```[:i-1]``` e $"string2"$```[:j]```
+
+=== explicar melhor os casos e pq funciona
+
+```py
+def string_problem(string1, string2):
+    str1 = list(string1)
+    str2 = list(string2)
+    len_str1 = len(str1)
+    len_str2 = len(str2)
+    M = [[0] * (len_str1 + 1) for _ in range(len_str2 + 1)]
+    
+    for j in range (1, len_str2 + 1):
+        for i in range (1, len_str1 + 1):
+            if str1[i - 1] == str2[j - 1]:
+                M[j][i] = 1 + M[j-1][i-1]
+            else:
+                M[j][i] = max(M[j][i - 1], M[j - 1][i])
+            
+    return M[len_str2][len_str1]
+```
 
 == Exercício da moeda
 
-Dado um valor $v$ e uma lista de denominações de moedas (de um sistema canônico), encontre o número de moedas para formar $v$.
+* Dado um valor $v$ e uma lista de denominações de moedas (de um sistema canônico), encontre o número de moedas para formar $v$.*
 
 == Menor quantidade de comparações
 
-Dado um array $A$ com $n$ elementos, encontre simultaneamente o maior e o menor elemento usando o menor número possível de comparações.
+*Dado um array $A$ com $n$ elementos, encontre simultaneamente o maior e o menor elemento usando o menor número possível de comparações.*
 
 Uma solução genérica, mas que não atende a menor quantidade de comparações possível é se tivermos duas variáveis, uma para o mínimo e outra para o máximo, e passar pela lista em apenas um for. Infelizmente, a cada elemento o algoritmo deve verificar se o número é o menor ou o maior dentre o valor das variáveis anteriores. Desde que isso traz duas verificações por elementos, ao fim temos $2 n$ comparações. Mas essa não é a solução ótima. 
 
