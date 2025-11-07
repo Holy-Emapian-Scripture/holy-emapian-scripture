@@ -296,3 +296,35 @@ Em breve
 
 Considerando que os vértices são sempre sequências de inteiros de $0$ a $n -1$, podemos fazer apenas uma lista de listas em vez de usar ponteiros em Python. Caso não fosse, poderíamos usar uma hashtable de listas, ou algo semelhante.
 
+```py
+class GraphAdjList:
+
+    def __init__(self, num_vertices):
+        self.num_vertices = num_vertices
+        self.listadj = [[] for _ in range(num_vertices)]
+        
+    def has_edge(self, v1, v2):
+        for i in range(len(self.listadj[v1])):
+            if v2 in self.listadj[v1]:
+                return True
+        return False
+
+    def add_edge(self, v1, v2):
+        self.listadj[v1].append(v2)
+        self.listadj[v2].append(v1)
+        
+    def remove_edge(self, v1, v2):
+        self.listadj[v1].remove(v2)
+        self.listadj[v2].remove(v1)
+
+    def print_listadj(self):
+        for vertex in range(self.num_vertices):
+            print(f'{vertex}: {self.listadj[vertex]}')
+    
+    def print_matrix(self):
+        matrix = [[0 for _ in range(self.num_vertices)] for i in range(self.num_vertices)]
+        for vertex in range(self.num_vertices):
+            for edge in self.listadj[vertex]:
+                matrix[vertex][edge] = 1
+            print(matrix[vertex]) 
+```
