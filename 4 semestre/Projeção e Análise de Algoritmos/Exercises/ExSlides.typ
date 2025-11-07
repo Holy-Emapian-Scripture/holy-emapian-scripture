@@ -103,8 +103,6 @@
 
 * Dadas duas strings, encontre o comprimento da maior subsequência comum entre elas.*
 
-=== Solução:
-
 Essa solução usa o paradigma da Programação Dinâmica, onde usaremos uma matriz para guardar os valores de cada sub string. Por exemplo, a matriz no índice $i "x" j$ será o tamanho da maior subsequênciade string dado que nossas substrings são $"string1"$ ```[:i]``` e $"string2"$```[:j]```.
 
 Após construir a matriz, passamos completando cada elemento. Caso as letras sejam iguais, nós atualizamos a tabela somando o valor de um e o valor das substrings passadas, quando não tínhamos nenhuma das duas letras comparadas. Caso contrário, pegamos o maior entre $"string1"$```[:i-1]``` e $"string2"$```[:j]```
@@ -227,3 +225,18 @@ def comparation_problem(arr):
 
     return (min_global, max_global)
 ```
+
+#pagebreak()
+
+= Grafos
+
+== Matriz de adjacência
+
+Implemente uma classe para representar um grafo utilizando matriz de adjacência.
+
+=== C++
+
+Em breve
+
+=== Python
+
