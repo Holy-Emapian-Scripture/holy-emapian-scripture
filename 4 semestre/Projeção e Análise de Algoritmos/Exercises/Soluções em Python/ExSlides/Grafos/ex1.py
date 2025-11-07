@@ -23,7 +23,7 @@ class GraphMatrix:
         else:
             print("Erro")
         
-    def print(self):
+    def print_listadj(self):
         for v1 in range(self.num_vertices):
             list_adj = []
             for v2 in range(self.num_vertices):
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     g.add_edge(3, 4)
 
     g.print_matrix()
-    g.print()
+    g.print_listadj()
 
     print(f"\nTem aresta 0-1? {g.has_edge(0, 1)}")  # Deve ser True
     print(f"Tem aresta 0-2? {g.has_edge(0, 2)}")  # Deve ser False

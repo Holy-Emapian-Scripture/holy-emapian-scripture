@@ -232,7 +232,7 @@ def comparation_problem(arr):
 
 == Matriz de adjacência
 
-Implemente uma classe para representar um grafo utilizando matriz de adjacência.
+*Implemente uma classe para representar um grafo utilizando matriz de adjacência.*
 
 === C++
 
@@ -283,4 +283,16 @@ class GraphMatrix:
                 row.append(self.matrix[v1][v2])
             print(row)
 ```
+
+== Lista de adjacências
+
+*Implemente uma classe para representar um grafo utilizando lista de adjacências.*
+
+=== C++
+
+Em breve
+
+=== Python
+
+Considerando que os vértices são sempre sequências de inteiros de $0$ a $n -1$, podemos fazer apenas uma lista de listas em vez de usar ponteiros em Python. Caso não fosse, poderíamos usar uma hashtable de listas, ou algo semelhante.
 
