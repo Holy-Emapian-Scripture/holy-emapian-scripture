@@ -362,3 +362,7 @@ def is_subgraph_list(glist,hlist):
     return True
 ```
 
+== Verificação de caminho e caminho simples
+
+*Dado um grafo $G = (V,E)$ e um caminho $P$ composto por uma sequência de vértices, verifique se $P$ é um caminho de $G$, e se o caminho é simples.*
+

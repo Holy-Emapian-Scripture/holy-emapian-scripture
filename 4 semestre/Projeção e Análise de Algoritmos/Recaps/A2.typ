@@ -979,5 +979,62 @@ A complexidade de acessar o conjunto de arestas de um vértice é $Theta(1)$ (ma
 
 As estruturas de dados do vértice e da aresta podem ser estendidas para armazenar informações específicas do problema.
 
-*Nota:* Os exercícios passados no slide não serão feitos aqui (pois isso é um "resumo" teórico), e sim no GitHub, na pasta Exercises. 
+*Nota:* Os exercícios passados no slide não serão feitos aqui (pois isso é um "resumo" teórico), e sim na pasta Exercises. 
 
+== Busca em Grafos
+
+
+
+
+#grid(
+  columns: (0.8fr, 1fr), 
+  gutter: 1.5em,       
+  [
+    Após relembrar conceitos e aprender algumas estruturas, temos um novo problema:
+
+    Dado um par de vértices $v_i$ e $v_j$ verificar se $v_j$ pode ser alcançado iniciando um caminho em $v_i$.
+
+    Como resolver esse problema?
+  ],
+
+  [
+    #figure(
+    image("images/graph-search-example1.png", width: 70%),
+    caption: [Exemplo do caminho $P = {1,2,5,6}$]
+    )
+  ]
+)
+
+A ideia principal é passar pelo grafo e marcar cada nó e aresta visitada, voltando ao nó anterior se chegar a uma junção já visitada ou sorvedouro.
+Podemos escrever um algoritmo que percorre o grafo a partir do vértice $v_i$ armazenando os vértices visitados, e, ao final, verificar se $v_j$ foi visitado. Exemplo dessa ideia em Python para a estrutura de matriz de adjacência:
+
+```py
+def _reach_recursive_matrix(v_atual, visited, matrix, num_vertices):
+    visited[v_atual] = True
+    for v_vizinho in range(num_vertices):
+        if matrix[v_atual][v_vizinho] == 1 and not visited[v_vizinho]:
+            _reach_recursive_matrix(v_vizinho, visited, matrix, num_vertices)
+
+def can_reach_matrix(matrix, v1, v2):
+    num_vertices = len(matrix)
+    visited = [0] * num_vertices
+    _reach_recursive_matrix(v1, visited, matrix, num_vertices)
+    return visited[v2]
+```
+
+Como seria a execução desse algoritmo no que grafo que acabamos de ver?
+
+#figure(
+image("images/graph-search-example2.png", width: 90%),
+caption: [Exemplo da execução do algoritmo can_reach para o mesmo grafo]
+)
+
+À esquerda temos a aresta escolhida e ao lado a iteração anterior   (começando do vértice 1). Observe que o resultado também indica todos os demais vértices que podem ser alcançados a partir de $v_i$.
+
+Um *algoritmo de busca* em grafo é qualquer algoritmo que visita todos os vértices percorrendo as arestas definidas (a ordem de pesquisa depende do algoritmo). 
+
+O algoritmo de *busca em profundidade (Depth First Search)* consiste em visitar todos os vértices ao menos uma vez e levantar propriedades sobre a estrutura do grafo 
+
+Vamos  começar identificando a ordem de descoberta dos vértices (ou pré-ordem).
+
+=== código do dfs
