@@ -369,6 +369,7 @@ def is_subgraph_list(glist,hlist):
 === Matriz de adjacência
 
 Basta passar a matriz e a cada $v_i$ e $v_(i + 1)$ verificar se é $1$ na matriz.
+Eu decidi verificar se é um caminho simples em uma função separada, mas o leitor pode fazer junto se quiser. (a função serve tanto para lista quanto para matriz, por isso não irei repeti-la). É só olhar o tamanho da lista de caminhos se for igual quanto a transformamos em conjunto.
 
 ```py
 def is_path_matrix(matrix, path):
