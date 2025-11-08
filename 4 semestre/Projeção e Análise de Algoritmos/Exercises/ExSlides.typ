@@ -366,3 +366,32 @@ def is_subgraph_list(glist,hlist):
 
 *Dado um grafo $G = (V,E)$ e um caminho $P$ composto por uma sequência de vértices, verifique se $P$ é um caminho de $G$, e se o caminho é simples.*
 
+=== Matriz de adjacência
+
+Basta passar a matriz e a cada $v_i$ e $v_(i + 1)$ verificar se é $1$ na matriz.
+
+```py
+def is_path_matrix(matrix, path):
+    for order in range(len(path) - 1):
+        if matrix[path[order]][path[order + 1]] != 1:
+            return False
+    return True
+
+def is_simple_path(path):
+    if len(set(path)) != len(path):
+        return False
+    return True
+```
+
+=== Lista de adjacência
+
+
+Basta passar a lista e a cada $v_i$ e $v_(i + 1)$ verificar se existe o vértice na lista de arestas de $v_i$
+```py
+
+def is_path_list(list, path):
+    for order in range(len(path) - 1):
+        if path[order + 1] not in list[path[order]]:
+            return False
+    return True 
+```
