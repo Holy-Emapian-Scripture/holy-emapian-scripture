@@ -981,9 +981,15 @@ As estruturas de dados do vértice e da aresta podem ser estendidas para armazen
 
 *Nota:* Os exercícios passados no slide não serão feitos aqui (pois isso é um "resumo" teórico), e sim na pasta Exercises. 
 
-== Busca em Grafos
 
 
+#pagebreak()
+
+#align(center + horizon)[
+  = Busca em Grafos
+]
+
+#pagebreak()
 
 
 #grid(
@@ -1033,7 +1039,7 @@ caption: [Exemplo da execução do algoritmo can_reach para o mesmo grafo]
 
 Um *algoritmo de busca* em grafo é qualquer algoritmo que visita todos os vértices percorrendo as arestas definidas (a ordem de pesquisa depende do algoritmo). 
 
-=== DFS
+== DFS
 
 O algoritmo de *busca em profundidade (Depth First Search)* consiste em visitar todos os vértices ao menos uma vez e levantar propriedades sobre a estrutura do grafo 
 
@@ -1107,4 +1113,20 @@ A abordagem de tentar percorrer a partir de cada vértice garante que todos os v
 Falando de complexidade, sabemos pelo algoritmo que cada vértice será processado uma única vez, e em cada vértice são verificadas cada $g_s (v_i)$ arestas.
 Sabendo que isso soma $|E|$, fica claro que temos uma complexidade de $Theta(|V| + |E|)$ usando lista de adjacências, e $Theta(|V|^2)$ para matriz de adjacência.
 
-=== grafo topologico
+== Grafo topológico
+
+Um *grafo topológico* é um grafo que admite uma ordenação dos vértice de
+forma que para toda aresta $(v_i, v_j)$ temos que $i < j$. 
+
+#figure(
+image("images/graph-search-example4.png", width: 90%),
+caption: [Exemplo da grafo topológico (Note que se os vértices forem dispostos em ordem crescente toda aresta irá apontar para o sentido de crescimento dos números).]
+)
+
+Algumas propriedades de grafos topológicos:
+- Não apresentam ciclos;
+- Todo vértice é: 
+  - o término de um caminho que começa numa fonte;
+  - a origem de um caminho que termina num sorvedouro;
+- Se um grafo é topológico, podem existir várias numerações topológicas diferentes;
+

@@ -362,6 +362,11 @@ def is_subgraph_list(glist,hlist):
     return True
 ```
 
+#pagebreak()
+
+= Busca em Grafos
+
+
 == Verificação de caminho e caminho simples
 
 *Dado um grafo $G = (V,E)$ e um caminho $P$ composto por uma sequência de vértices, verifique se $P$ é um caminho de $G$, e se o caminho é simples.*
@@ -396,3 +401,8 @@ def is_path_list(list, path):
             return False
     return True 
 ```
+
+== Verificação de númeração topológica
+
+Crie um algoritmo que verifica se a numeração dos vértices de um grafo $G = (V,E)$ é topológica.
+
