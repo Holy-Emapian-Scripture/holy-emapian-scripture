@@ -406,3 +406,32 @@ def is_path_list(list, path):
 
 Crie um algoritmo que verifica se a numeração dos vértices de um grafo $G = (V,E)$ é topológica.
 
+=== Matriz de adjacência
+Trivialmente, basta verificar se cada $i>=j$(evitando laços). Como a matriz não é simétrica, não podemos ignorar metade da matriz.
+
+```py
+def is_topological_matrix(matrix):
+    num_vertices = len(matrix)
+    for i in range (num_vertices):
+        for j in range (num_vertices):
+            if matrix[i][j] == 1 and i >= j:
+                return False
+    return True
+```
+
+=== Lista de adjacência
+
+Análogo, só que para lista :D
+
+```py
+def is_topological_list(list):
+    num_vertices = len(list)
+    for i in range (num_vertices):
+        for j in range(len(list[i])):
+            if i >= list[i][j]:
+                return False
+    return True
+```
+=== Verificação de ordenação topológica (e determinação)
+
+Crie um algoritmo para determinar se um grafo possui ordenação topológica e determiná-la.
