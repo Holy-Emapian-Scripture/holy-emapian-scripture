@@ -1215,7 +1215,7 @@ def dfs_parents(adj_list):
 
   for v in range(num_vertices):
       if preorder[v] == -1:
-          parents[v] = v  # Marca a si mesmo como raiz 
+          parents[v] = v   
           counter = dfs_recursive_parents(v, preorder,parents, counter, adj_list)
   return preorder, parents
 ```
@@ -1226,4 +1226,125 @@ image("images/graph-search-example6.png", width: 100%),
 caption: [Exemplo do algoritmo ``dfs_parents`` para o grafo de exemplo.]
 )
 
+um vértice é *exaurido* (essa definição não é minha e não está nos slides do Thiago) no momento em que a busca já explorou todos os caminhos possíveis que saem daquele vértice.
+
+Uma outra informação que podemos gerar a partir da execução de um DFS é a ordem em que os vértices são exauridos (essa sequência é conhecida como pós-ordem).
+
+O algoritmo de DFS pode ser modificado de forma que registre o momento em que o algoritmo termina a avaliação do vértice, da seguinte forma:
+
+```cpp
+void dfs(int * preOrder, int * postOrder,
+         int * parents) {
+    int preCounter = 0;
+    int postCounter = 0;
+    for (vertex v=0; v < m_numVertices; v++) {
+        preOrder[v] = -1;
+        parents[v] = -1;
+        postOrder[v] = -1;
+    }
+
+    for (vertex v=0; v < m_numVertices; v++) {
+        if (preOrder[v] == -1) {
+            parents[v] = v;
+            dfsRecursive(
+                v, preOrder, preCounter,
+                postOrder, postCounter, parents);
+        }
+    }
+}
+
+void dfsRecursive(vertex v1, int * preOrder, int & preCounter, int * postOrder,
+                  int & postCounter, int * parents) {
+    preOrder[v1] = preCounter++;
+    EdgeNode * edge = m_edges[v1];
+    while (edge) {
+        vertex v2 = edge->otherVertex();
+        if (preOrder[v2] == -1) {
+            parents[v2] = v1;
+            dfsRecursive(v2, preOrder, preCounter,
+                         postOrder, postCounter, parents);
+        }
+        edge = edge->next();
+    }
+    postOrder[v1] = postCounter++;
+}
+```
+
+Note que ele é o mesmo algoritmo que o do DFS modificado, a menos de uma declaração da lista de pós-ordem e preenchimento no fim do while, após exaurir o vértice. Note que
+
+```py
+def dfs_recursive_full(v_atual, preorder, postorder, parents, pre_counter, post_counter, adj_list):
+    preorder[v_atual] = pre_counter
+    pre_counter += 1
+    for v_vizinho in adj_list[v_atual]:
+        if preorder[v_vizinho] == -1:
+            parents[v_vizinho] = v_atual
+            pre_counter, post_counter = dfs_recursive_full(v_vizinho, preorder, postorder, parents, pre_counter, post_counter, adj_list)
+    postorder[v_atual] = post_counter
+    post_counter += 1
+    return pre_counter, post_counter
+
+def dfs_full(adj_list):
+    num_vertices = len(adj_list)
+    preorder = [-1] * num_vertices
+    postorder = [-1] * num_vertices
+    parents = [-1] * num_vertices
+    pre_counter = 0
+    post_counter = 0
+    for v in range(num_vertices):
+        if preorder[v] == -1:
+            parents[v] = v  
+            pre_counter, post_counter = dfs_recursive_full(v, preorder, postorder, parents, pre_counter, post_counter, adj_list)
+return preorder, postorder, parents
+```
+
+Focando na pós-ordem, como seria a execução desse algoritmo nos grafos que vimos até agora?
+
+#figure(
+image("images/graph-search-example7.png", width: 100%),
+caption: [Exemplo do algoritmo ``dfs_parents_full`` para o grafo de exemplo.]
+)
+
+O *intervalo de vida (lifespan)* de um vértice no contexto da busca ocorre entre o momento que ele é descoberto e o momento em que ele é exaurido. Ele não pode ser definido como ``(preOrder[v], postOrder)``, pois são numerações independentes (isso APENAS no algoritmo passado, normalmente o lifespan é definido dessa forma).
+
+Considere dois vértices $v_1$ e $v_2$.
+- Se $v_1$ é descoberto antes de $v_2$, então $v_1$ é exaurido:
+  - Antes de $v_2$ ser descoberto ($v_2$ não tem nenhum parentesco próximo de $v_1$, por isso $v_1$ e seus filhos são vistos, $v_1$ é exaurido e só depois $v_2$ é descoberto);
+  - Depois de $v_2$ ser exaurido (para o caso em que $v_2$ é filho de $v_1$, que acontece porque na chamada recursiva o filho tem que ser limpo primeiro).
+
+Como podemos representar o intervalo de vida da execução do DFS no grafo a seguir?
+
+#figure(
+image("images/graph-search-example8.png", width: 100%),
+caption: [Exemplo do mapeamento do lifespan no grafo de exemplo.]
+)
+
+À esquerda temos a aresta escolhida e ao lado a iteração anterior (começando do vértice 1). a listagem à direita da escolha à esquerda é o histórico da chamada de funções para o vértice i. A lista em baixo representa visualmente o lifespan de cada vértice.
+
+Dado dois vértices $v_1$ e $v_2$ de uma floresta radicada produzida pro uma execução DFS, o relacionamento desses dois vértices pode ser:
+
+- Ancestral: $v_1$ é ancestral de $v_2$ se, para chegar em $v_2$, o algoritmo DFS "passou por" $v_1$ primeiro. (lifespan de $v_2$ contido no lifespan de $v_1$);
+- Descendente: É o oposto de ancestral. $v_2$ é descendente de $v_1$ se $v_1$ for seu ancestral.;
+- Primo descreve qualquer par de vértices que não tem relação de ancestralidade (lifespans disjuntos).
+
+Primos ainda podem ser comparados:
+- $v_1$ é primo mais velho de $v_2$ se:
+  - ``preOrder[v1] < preOrder[v2]``
+- $v_1$ é primo mais novo de $v_2$ se:
+  - ``preOrder[v1] > preOrder[v2]``
+
+Arestas que não pertencem à floresta DFS podem ser classificados de acordo com o grau do parentesco:
+- Uma aresta é de retorno caso $v_j$ seja ancestral de $v_i$;
+- Uma aresta é de avanço caso $v_j$ seja descendente de $v_i$;
+- Uma aresta é cruzada caso $v_j$ seja primo de $v_i$.
+
+Algumas outras características:
+
+- Vértices de arestas cruzadas podem estar em diferentes árvores da floresta;
+- Arestas cruzadas são sempre de um primo mais novo para um primo mais velho;
+- Grafos não-orientados não possuem arestas cruzadas.
+
+*Problema:* Dada uma aresta não pertencente à floresta DFS, como determinar algoritmicamente se:
+
+cansei
 
