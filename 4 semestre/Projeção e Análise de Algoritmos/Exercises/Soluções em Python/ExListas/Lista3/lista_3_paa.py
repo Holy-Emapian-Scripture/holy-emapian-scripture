@@ -73,7 +73,21 @@ def problema_1(n: int, A: List[int]) -> int:
     Retorne um único inteiro $Q$, a quantidade máxima total de sorvete
     que Sisi pode obter.
     """
-    pass
+    qtd = 0
+    sorv = [0] * n
+    sorv[n-1] = A[n-1]
+    qtd += A[n-1]
+    for i in range (n-2, -1, -1):
+        if sorv[i+1] > A[i]:
+            qtd += A[i]
+            sorv[i] = A[i]
+        elif sorv[i+1] <= A[i]:
+            prev = sorv[i + 1] - 1
+            if prev > 0:
+                qtd += prev
+                sorv[i] =  sorv[i + 1] - 1
+    return qtd
+
 
 
 # ==============================================================================
