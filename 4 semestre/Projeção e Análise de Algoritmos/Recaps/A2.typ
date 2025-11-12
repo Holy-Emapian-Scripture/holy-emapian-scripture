@@ -1155,6 +1155,8 @@ Podemos eliminar uma fonte $g_e (v_k) = 0$ de $G$ produzindo um subgrafo $G'$, e
   ]
 )
 
+=== fazer exercício de numeração topológica
+
 == DFS modificado
 
 Dado que o grau de entrada de cada vértice é no máximo $1$, podemos representar a floresta DFS como um vetor de pais (parents). Portanto, o algoritmo pode ser modificado para gerar a árvore DFS da seguinte forma:
@@ -1305,6 +1307,10 @@ image("images/graph-search-example7.png", width: 100%),
 caption: [Exemplo do algoritmo ``dfs_parents_full`` para o grafo de exemplo.]
 )
 
+== Propriedades úteis advindas do DFS
+
+Algumas delas já vimos: ordenação topológica, floresta DFS, etc. Vamos ver outras
+
 O *intervalo de vida (lifespan)* de um vértice no contexto da busca ocorre entre o momento que ele é descoberto e o momento em que ele é exaurido. Ele não pode ser definido como ``(preOrder[v], postOrder)``, pois são numerações independentes (isso APENAS no algoritmo passado, normalmente o lifespan é definido dessa forma).
 
 Considere dois vértices $v_1$ e $v_2$.
@@ -1345,6 +1351,49 @@ Algumas outras características:
 - Grafos não-orientados não possuem arestas cruzadas.
 
 *Problema:* Dada uma aresta não pertencente à floresta DFS, como determinar algoritmicamente se:
+  - É uma aresta de avanço:
+    - se o intervalo de $v_i$ está contido no intervalo de $v_i$, ou seja:
+    - `preOrder[vi] < preOrder[vj] AND postOrder[vi] > postOrder[vj]` 
+  - É uma aresta de retorno:
+    - se o intervalo de $v_j$ contém o intervalo de $v_i$, ou seja:
+    - `preOrder[vi] > preOrder[vj] AND postOrder[vi] < postOrder[vj]`
+  - É uma aresta cruzada:
+    - se o intervalo de $v_j$ ocorre antes do intervalo de $v_i$, ou seja:
+    - `preOrder[vi] > preOrder[vj] AND postOrder[vi] > postOrder[vj]`
 
-cansei
+=== explicar visualmente
 
+Algumas outras propriedades:
+
+- Um grafo é acíclico se e somente se possuir uma numeração topológica.
+- Grafos acíclicos também são chamados de *DAGs* (Direct acyclic graphs).
+- Uma floresta radicada é um DAG sem vértices com grau de entrada maior que 1.
+- Uma árvore radicada é um DAG em que exatamente um vértice tem grau de entrada zero, e os demais grau de entrada 1.
+
+*Problema:* Como determinar se um grafo $G = (V,E)$ possui ao menos um ciclo?
+
+Basta executar a busca DFS e procurar por uma aresta de retorno comparando os intervalos de vida encontrados para cada vértice. Veja o código em C++:
+
+```cpp
+bool hasCycle(int * preOrder, int * postOrder) {
+dfs(preOrder, postOrder);
+for (vertex v1=0; v1 < m_numVertices; v1++) {
+    EdgeNode * edge = m_edges[v1];
+    while(edge) {
+        vertex v2 = edge->otherVertex();
+        if (preOrder[v1] > preOrder[v2]
+            && postOrder[v1] < postOrder[v2]) {
+            return true;
+        }
+        edge = edge->next();
+    }
+}
+return false;
+}
+  ```
+
+=== explicação e implementação em Python
+
+== BFS
+
+O algoritmo de busca em largura (BFS - Breadth First Search) é uma outra estratégia de varredura em um grafo. A ideia principal é:
