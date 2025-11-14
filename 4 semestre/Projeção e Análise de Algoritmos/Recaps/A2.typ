@@ -1397,3 +1397,54 @@ return false;
 == BFS
 
 O algoritmo de busca em largura (BFS - Breadth First Search) é uma outra estratégia de varredura em um grafo. A ideia principal é:
+
+#grid(
+  columns: (0.8fr, 1fr), 
+  gutter: 1.5em,       
+  [
+    Percorrer o grafo por camadas, ou seja:
+    - Inicia visitando um grafo $v_0$;
+    - Visita seus vértices adjacentes;
+    - Visita os adjacentes dos adjacentes (que ainda não foram visitados);
+    - Continua até todos os vértices terem sido visitados.
+
+    Assim como o DFS, define a ordem de descoberta dos vértices.
+  ],
+
+  [
+    #figure(
+    image("images/graph-search-example9.png", width: 85%),
+    caption: [Exemplo do algoritmo BFS (note que cada nível está de uma cor). ]
+    )
+  ]
+)
+
+Uma implementação comum desse algoritmo utiliza uma fila para armazenar os vértices descobertos que ainda não foram explorados. Vamos ver o código:
+
+```cpp
+void bfs(vertex v0, int * order) {
+    queue<int> queue;
+    int counter = 0;
+    for (int i=0; i < m_numVertices; i++) {
+        order[i] = -1;
+    }
+
+    order[v0] = counter++;
+    queue.push(v0);
+    while (!queue.empty()) {
+        int v1 = queue.front();
+        queue.pop();
+        EdgeNode * edge = m_edges[v1];
+        while (edge) {
+            vertex v2 = edge->otherVertex();
+            if (order[v2] == -1) {
+                order[v2] = counter++;
+                queue.push(v2);
+            }
+            edge = edge->next();
+        }
+    }
+}
+```
+
+
