@@ -1015,16 +1015,16 @@ A ideia principal é passar pelo grafo e marcar cada nó e aresta visitada, volt
 Podemos escrever um algoritmo que percorre o grafo a partir do vértice $v_i$ armazenando os vértices visitados, e, ao final, verificar se $v_j$ foi visitado. Exemplo dessa ideia em Python para a estrutura de matriz de adjacência:
 
 ```py
-def _reach_recursive_matrix(v_atual, visited, matrix, num_vertices):
+def reach_recursive_matrix(v_atual, visited, matrix, num_vertices):
     visited[v_atual] = True
     for v_vizinho in range(num_vertices):
         if matrix[v_atual][v_vizinho] == 1 and not visited[v_vizinho]:
-            _reach_recursive_matrix(v_vizinho, visited, matrix, num_vertices)
+            reach_recursive_matrix(v_vizinho, visited, matrix, num_vertices)
 
 def can_reach_matrix(matrix, v1, v2):
     num_vertices = len(matrix)
     visited = [0] * num_vertices
-    _reach_recursive_matrix(v1, visited, matrix, num_vertices)
+    reach_recursive_matrix(v1, visited, matrix, num_vertices)
     return visited[v2]
 ```
 
@@ -1053,7 +1053,6 @@ void dfs(int * preOrder) {
     for (vertex v=0; v < m_numVertices; v++) {
         preOrder[v] = -1;
     }
-    
     for (vertex v=0; v < m_numVertices; v++) {
         if (preOrder[v] == -1) {
             dfsRecursive(v, preOrder, counter);
@@ -1428,7 +1427,6 @@ void bfs(vertex v0, int * order) {
     for (int i=0; i < m_numVertices; i++) {
         order[i] = -1;
     }
-
     order[v0] = counter++;
     queue.push(v0);
     while (!queue.empty()) {
@@ -1446,5 +1444,128 @@ void bfs(vertex v0, int * order) {
     }
 }
 ```
+
+Essa função recebe um vértice inicial `v[0]` e um ponteiro para a lista de ordem que será dada a ele. Inicia-se também uma fila (estrutura de dados que vimos em ED) e um counter que vai determinar a posição de cada vértice (a ordem). Após preencher o a lista de ordem como -1, ele marca a posição do elemento `v[0]` na lista de ordem e faz o push de $v_0$ na fila.
+
+Continuando, enquanto a fila não for vazia, chamamos de $v_1$ o primeiro item da fila, o retiramos da fila e pegamos sua lista de adjacência. Enquanto tiverem vértices nessa lista, pegamos o vértice do outro lado da aresta ($v_2$) e verificamos se ele não está na lista de ordem (já visitado). Caso já não tenha sido visitado, ele é adicionado na fila, e passamos para o próximo vértice.
+
+O que podemos ver aqui é que a utilização da fila como estrutura de dados para esse algoritmo faz total diferença, já que isso faz com que, começando do vértice $v_0$, passamos por todos os seus filhos, e o uso da fila faz com que apenas os próximos $i$ a serem visitados sejam exatamente os $i$ filhos de $v_0$, e assim sucessivamente, trazendo uma busca em nível. Observe que essa implementação númera apenas os vértices a partir de $v_0$ (funciona bem quando você sabe que é um grafo com apenas uma componente conexa e com $v_0$ como raiz).
+
+Como faríamos para garantir um algoritmo que numera todos os vértices?
+
+```cpp
+void bfsForest(int * order) {
+    int counter = 0;
+    for (int i=0; i < m_numVertices; i++) { order[i] = -1; }
+    for (int i=0; i < m_numVertices; i++) {
+        if (order[i] != -1) { 
+            continue; 
+            }
+        order[i] = counter++;
+        queue<int> queue;
+        queue.push(i);
+        while (!queue.empty()) {
+            int v1 = queue.front();
+            queue.pop();
+            EdgeNode * edge = m_edges[v1];
+            while(edge) {
+                vertex v2 = edge->otherVertex();
+                if (order[v2] == -1) {
+                    order[v2] = counter++;
+                    queue.push(v2);
+                }
+                edge = edge->next();
+            }
+        }
+    }
+}
+```
+
+O que muda desse algoritmo para o anterior é simplesmente a inicialização, pois agora nos baseamos no número de vértices para preencher a ordem como $-1$ e além disso, fazemos um for para passar por todos os vértices. Mas a ideia é a mesma, pois dentro desse for continuamos se ele já foi visitado, e se não foi, marcamos sua posição, e fazemos a mesma verificação para a lista de adjacências dele.
+
+Legal, temos um array (`order`) que mostra a ordem de visitação, mas isso não me mostra exatamente como chegar de um vértice a outro diretamente. E se marcassemos o pai de cada vértice?
+
+```cpp
+void bfs(vertex v0, int * order, int * parent) {
+    queue<int> queue;
+    int counter = 0;
+    for (int i=0; i < m_numVertices; i++) {
+        order[i] = -1;
+        parent[i] = -1;
+    }
+    order[v0] = counter++;
+    parent[v0] = v0;
+    queue.push(v0);
+    while (!queue.empty()) {
+        int v1 = queue.front();
+        queue.pop();
+        EdgeNode * edge = m_edges[v1];
+        while (edge) {
+            vertex v2 = edge->otherVertex();
+            if (order[v2] == -1) {
+                order[v2] = counter++;
+                parent[v2] = v1;
+                queue.push(v2);
+            }
+            edge = edge->next();
+        }
+    }
+}
+```
+Note que precisamos voltar com o $v_0$, já que marcar o vértice no caminho mais curto vindo da origem sem uma origem não faz muito sentido.
+
+Ele é exatamente igual o algoritmo anterior, a menos do vetor `parents`, que inicialment é declarado como $-1$ para todo vértice e, quando entra no if do não visitado, é marcado que $v_1$ é seu pai. Simples assim!
+
+Analisando a complexidade (do último algoritmo), passamos por um for no número de vértices ($O(V)$), depois fazemos um while na queue. Como a queue terá no máximo tamanho $|V|$, pois o if verifica se já foi adicionado, e no while de dentro passamos por cada aresta de $v_i$ (que sabemos que $sum_(i =1)^(|V|) g_s (v_i) = |E|$), temos uma complexidade de no máximo $Theta(V + E)$ ao utilizar lista de adjacências. 
+
+Ao utilizar matriz de adjacências, teríamos que buscar cada ligação de cada vértice sem receber uma lista pronta com isso, o que traria uma complexidade de $Theta( V^2)$. Ainda, para grafos densos, ambas as estruturas de dados traria uma complexidade de $Theta(V^2)$.
+ 
+=== Implementação em Python
+
+#pagebreak()
+
+#align(center + horizon)[
+  = Menor caminho em Grafos
+]
+
+#pagebreak()
+
+Na seção anterior, tentamos verificar que o caminho existe. Agora, temos um novo problema:
+
+Dados dois vértices $v_i$ e $v_j$ em um grafo $G = (V, E)$, encontre o caminho mínimo $P$ que começa em $v_i$ e termina em $v_j$.
+
+Se o grafo for tiver mais de uma componente conexa, pode não existir um caminho entre $v_i$ e $v_j$ (podemos dizer que a distância é infinita). Além disso, se o grafo for orientado, a distância entre $v_i$ e $v_j$ pode ser diferente de $v_j$ para $v_i$. 
+
+Para encontrar o caminho mais curto entre $v_i$ e $v_j$ é inevitável encontrar todos os caminhos que iniciam em $v_i$. A árvore produzida pela busca do menor caminho é chamada de Árvore de caminhos mais curtos (SPT - Shortest Path Tree).
+
+A árvore SPT é uma sub-árvore radicada de $G$:
+  - Todos os vértices de $G$ estão presentes na SPT.
+  - Todo caminho na SPT a partir da raiz é mínimo no grafo $G$.
+
+Um grafo possui uma SPT caso todos os vértices sejam acessíveis a partir de $v_i$. Caso não exista uma SPT para um grafo $G$ a partir de um grafo $v_i$, existe uma SPT para um sub-grafo induzido de $G$ com os vértices acessíveis a partir de $v_i$.
+
+Portanto, para encontrar o menor caminho entre $v_i$ e $v_j$ precisamos encontrar a árvore radicada desse sub-grafo com raiz em $v_i$.
+
+== Caminho mais curto em um DAG
+
+
+#grid(
+  columns: (0.4fr, 1fr), 
+  gutter: 1.5em,       
+  [
+
+    *Problema:* Como criar um algoritmo capaz de gerar a SPT de um DAG iniciando na sua única fonte? (Considere que você possui uma possível ordem topológica para o DAG)
+
+    Dica: use as propriedades do DAG!
+
+  ],
+
+  [
+    #figure(
+    image("images/spt-example1.png", width: 100%),
+    caption: [Exemplo de DAG com uma fonte (verde) e um sorvedouro (vermelho)]
+    )
+  ]
+)
 
 
