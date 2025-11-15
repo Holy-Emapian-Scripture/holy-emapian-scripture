@@ -1154,8 +1154,6 @@ Podemos eliminar uma fonte $g_e (v_k) = 0$ de $G$ produzindo um subgrafo $G'$, e
   ]
 )
 
-=== fazer exercício de numeração topológica
-
 == DFS modificado
 
 Dado que o grau de entrada de cada vértice é no máximo $1$, podemos representar a floresta DFS como um vetor de pais (parents). Portanto, o algoritmo pode ser modificado para gerar a árvore DFS da seguinte forma:
@@ -1351,7 +1349,7 @@ Algumas outras características:
 
 *Problema:* Dada uma aresta não pertencente à floresta DFS, como determinar algoritmicamente se:
   - É uma aresta de avanço:
-    - se o intervalo de $v_i$ está contido no intervalo de $v_i$, ou seja:
+    - se o intervalo de $v_j$ está contido no intervalo de $v_i$, ou seja:
     - `preOrder[vi] < preOrder[vj] AND postOrder[vi] > postOrder[vj]` 
   - É uma aresta de retorno:
     - se o intervalo de $v_j$ contém o intervalo de $v_i$, ou seja:
@@ -1360,7 +1358,13 @@ Algumas outras características:
     - se o intervalo de $v_j$ ocorre antes do intervalo de $v_i$, ou seja:
     - `preOrder[vi] > preOrder[vj] AND postOrder[vi] > postOrder[vj]`
 
-=== explicar visualmente
+#figure(
+image("images/graph-search-example-10.png", width: 70 %),
+caption: [Exemplo de arestas de avanço, retorno e cruzada.]
+)
+
+*Nota:* essa propriedades para as arestas que não são da árvore são apenas quando
+=== parei aqui pq o preview travou
 
 Algumas outras propriedades:
 
