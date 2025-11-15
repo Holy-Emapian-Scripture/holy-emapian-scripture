@@ -1568,4 +1568,13 @@ Portanto, para encontrar o menor caminho entre $v_i$ e $v_j$ precisamos encontra
   ]
 )
 
+Solução:
+
+  - Inicialize cada vértice com a distância infinita para a raiz ($d[v_i] =  infinity$) e pai indefinido ($"parent"[v_i] =  -1$)
+  - Defina a raiz com distância zero ($d[v_1] = 0$)
+  - Percorra os vértices seguindo a ordem topológica
+    - Avalie para cada vértice adjacente se $d[v_i] + 1 <= d[v_j]$
+      - se for, atualiza $d[v_j]$ no vértice adjacente com a menor distância e define o novo pai do vértice adjacente.
+
+  
 
