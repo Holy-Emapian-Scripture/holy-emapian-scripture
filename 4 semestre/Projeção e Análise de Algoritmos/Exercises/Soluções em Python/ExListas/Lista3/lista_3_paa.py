@@ -94,21 +94,46 @@ def problema_1(n: int, A: List[int]) -> int:
 # Problema 2 - Minimizando Custos de Reparo
 # ==============================================================================
 
-def problema_2(n: int, k: int, C1: int, C2: int, A: List[int]) -> int:
-    """
-    Desenvolva um algoritmo com complexidade $O(k * log k)$ que encontre o
-    custo mínimo para reparar a estrada.
+def problema_2(n: int, k: int, C1: int, C2: int, A: list[int]) -> int:
+    def decider (inicio_estrada, fim_estrada, idx_buraco_inicio, idx_buraco_fim, A_ord):
+        num_buracos = 0
+        if idx_buraco_fim >= idx_buraco_inicio:
+            num_buracos = (idx_buraco_fim - idx_buraco_inicio) + 1
+        comprimento_segmento = (fim_estrada - inicio_estrada) + 1
+        custo_consertar = 0
+        if num_buracos == 0:
+            custo_consertar = C1
+        else:
+            custo_consertar = C2 * num_buracos * comprimento_segmento
 
-    Entrada:
-    - $n$: O expoente do comprimento da estrada ($L = 2^n$).
-    - $C1$, $C2$: As constante de custo.
-    - $A = [a_1, a_2,  dots, a_k]$: Uma lista com as $k$ posições dos buracos.
+        if comprimento_segmento == 1:
+            return custo_consertar
 
-    Saída:
-    - Retorne um único inteiro: o custo mínimo total para reparar toda a estrada.
-    """
-    pass
+        ponto_meio_estrada = inicio_estrada + (comprimento_segmento // 2) - 1
 
+        low = idx_buraco_inicio
+        high = idx_buraco_fim
+        idx_ponto_divisao_buracos = idx_buraco_fim + 1 
+
+        while low <= high:
+            mid = (low + high) // 2
+            if A_ord[mid] > ponto_meio_estrada:
+                idx_ponto_divisao_buracos = mid
+                high = mid - 1
+            else:
+                low = mid + 1
+        
+        custo_esquerda = decider (inicio_estrada,ponto_meio_estrada,idx_buraco_inicio,idx_ponto_divisao_buracos - 1, A_ord)
+        custo_direita = decider (ponto_meio_estrada + 1,fim_estrada,idx_ponto_divisao_buracos,idx_buraco_fim,A_ord)
+        custo_dividir = custo_esquerda + custo_direita
+
+        return min(custo_consertar, custo_dividir)
+
+    if k == 0:
+        return C1
+    A = sorted(A)    
+    L = 2**n
+    return decider (1, L, 0, k - 1, A)
 
 # ==============================================================================
 # Problema 3 - Subsequências radicais
