@@ -1359,12 +1359,18 @@ Algumas outras características:
     - `preOrder[vi] > preOrder[vj] AND postOrder[vi] > postOrder[vj]`
 
 #figure(
-image("images/graph-search-example-10.png", width: 70 %),
+image("images/graph-search-example-10.png", width: 70%),
 caption: [Exemplo de arestas de avanço, retorno e cruzada.]
 )
 
-*Nota:* essa propriedades para as arestas que não são da árvore são apenas quando
-=== parei aqui pq o preview travou
+*Nota:* essas propriedades para as arestas que não são da árvore são apenas quando usamos o `preOrder` e o `postOrder` com a contagem junta, ou seja, dependentes, da forma:
+
+```py
+# Índices:     0  1  2  3  4
+pre_order  = [ 4, 2, 3, 7, 1]
+post_order = [ 5, 9, 6, 8, 10]
+```
+Nesse caso, as definições valem do jeito que foram passadas.
 
 Algumas outras propriedades:
 
@@ -1392,10 +1398,22 @@ for (vertex v1=0; v1 < m_numVertices; v1++) {
     }
 }
 return false;
-}
-  ```
+}```
 
-=== explicação e implementação em Python
+
+*Implementação em Python:*
+
+Indo para Python, vamos considerar que passamos as listas de preorder e postorder:
+
+```py
+def has_cycle(adj_list, preorder, postorder):
+    num_vertices = len(adj_list)
+    for v1 in range(num_vertices):
+        for v2 in adj_list[v1]:            
+            if preorder[v1] > preorder[v2] and postorder[v1] < postorder[v2]:
+                return True
+    return False
+```
 
 == BFS
 
@@ -1449,7 +1467,7 @@ void bfs(vertex v0, int * order) {
 }
 ```
 
-Essa função recebe um vértice inicial `v[0]` e um ponteiro para a lista de ordem que será dada a ele. Inicia-se também uma fila (estrutura de dados que vimos em ED) e um counter que vai determinar a posição de cada vértice (a ordem). Após preencher o a lista de ordem como -1, ele marca a posição do elemento `v[0]` na lista de ordem e faz o push de $v_0$ na fila.
+Essa função recebe um vértice inicial `v[0]` e um ponteiro para a lista de ordem que será dada a ele. Inicia-se também uma fila (estrutura de dados que vimos em ED) e um counter que vai determinar a posição de cada vértice (a ordem). Após preencher a lista de ordem como -1, ele marca a posição do elemento `v[0]` na lista de ordem e faz o push de $v_0$ na fila.
 
 Continuando, enquanto a fila não for vazia, chamamos de $v_1$ o primeiro item da fila, o retiramos da fila e pegamos sua lista de adjacência. Enquanto tiverem vértices nessa lista, pegamos o vértice do outro lado da aresta ($v_2$) e verificamos se ele não está na lista de ordem (já visitado). Caso já não tenha sido visitado, ele é adicionado na fila, e passamos para o próximo vértice.
 
@@ -1580,5 +1598,59 @@ Solução:
     - Avalie para cada vértice adjacente se $d[v_i] + 1 <= d[v_j]$
       - se for, atualiza $d[v_j]$ no vértice adjacente com a menor distância e define o novo pai do vértice adjacente.
 
-  
+Como seria a execução desse algoritmo para o grafo de exemplo?
 
+#figure(
+image("images/spt-example2.png", width: 100%),
+caption: [Exemplo do algoritmo para o grafo dado anteriormente.]
+)
+
+Esse algoritmo funciona pois o vetor `parent` define uma árvore radicada $T$ com raiz em $v_0$ e, para toda aresta $e = (v_i, v_j)$, se $v_i$ foi processado então $e$ já foi avaliada. Por fim, ao término de execução $T$ é uma árvore radicada de um grafo induzido $H$, induzido de $G$, contendo os vértices acessíveis a partir de $v_0$, toda aresta de $H$ foi avaliada e $T$ é uma árvore geradora de $H$.
+
+*Nota:* a implementação disso está nos Exercises
+
+=== implementar
+
+== Caminho mais curto em grafos não-dirigidos/ciclo
+
+A comparação $d[v_i] + 1 <= d[v_j]$ e a eventual atualização no vetor de distância é conhecida como *operação de relaxamento.* Uma aresta está *relaxada* se $d[v_j] - d[v_i] <= 1$ e *tensa* se $d[v_j] - d[v_i] > 1$.
+
+Chamamos de potencial relaxado uma numeração para os vértices que torne todas as aresta do grafo relaxadas. O vetor de distâncias resultante do algoritmo anterior é um potencial relaxado.
+
+Voltando ao problema inicial: desejamos encontrar o caminho mais curto entre dois vértices em qualquer grafo. Como produzir uma solução para grafos não-dirigidos e/ou que possuem ciclos?
+
+Podemos adaptar o algoritmo de busca em largura (BFS) de forma que a numeração dos vértices represente a distância para a raiz.
+
+*Ideia geral:* modificar o ciclo do BFS para remover o vértice $v_i$ da fila, visitar seus vértices adjacentes e:
+  - se $d[v_j]$ não estiver definida:
+    - $d[v_j] = d[v_i] + 1$
+    - $"parent"[v_j] = v_i$
+    - inserir $v_j$ na fila
+
+Note que o valor $d[v]$ é alterado somente uma vez.
+
+
+== Caminho mais barato em grafos 
+
+Um grafo (orientado ou não) é ponderado se cada aresta estiver associada à um valor (pode ser custo, peso, capacidade, etc).
+
+*Problema:* dado dois vértices $v_i$ e $v_j$ em um grafo, encontre o caminho $p$ com o custo mínimo que comea-ça em $v_i$ e termina em $v_j$. (O custo é a soma das arestas e o custo mínimo é o menor valor possível de custo de um caminho de $v_i$ a $v_j$).
+
+A distância entre $v_i$ e $v_j$ é definida pelo comprimento do caminho mais barato. Essa distância pode ser negativa se existirem arstas negativas, se não existir caminho entre dois vértices podemos dizer que a distância é infinita. Ainda, a distância entre os mesmos dois vértices podem ser diferentes caso o grafo seja orientado.
+
+Um *ciclo negativo* é um ciclo cujo custo restante da soma de suas arestas é negativo. Se um grafo possuir ciclos negativos o caminho mais barato entre dois vértices pode não ser simples.
+
+#figure(
+image("images/spt-example3.png", width: 45%),
+caption: [Exemplo de grafo com ciclo negativo.]
+)
+
+O problema de busca pelo caminho mais barato se torna muito mais simples quando não existem ciclos negativos, já que se $v_0$ é um vértice que não possui negativos ao seu alcance, todo caminho $p$ é simples e todo trecho inicial de $p$ entre $v_0$ e $v_k$ é o caminho mais barato de $v_0$ e $v_k$.
+
+A árvore encontrada na busca pelo caminho mais barato é chamada de Árvore de caminhos mais barato - CPT (Cheapest Path Tree)
+
+Essa árvore é sub-radicada em $G$:
+  - Todos os vértices de $G$ estão presentes na $"CPT"$;
+  - Todo caminho na $"CPT"$ a partir da raiz é mínimo no grafo $G$.
+
+=== Djikstra
