@@ -97,4 +97,105 @@
 
 #pagebreak()
 
+#align(center+horizon)[
+  = Método do Gradiente
+]
 
+#pagebreak()
+
+É o método de otimização mais clássico que existe! Vamos supor que queremos resolver o problema:
+$
+  min_(x in RR^n) f(x)
+$
+
+Lembra do que vimos em cálculo? Que $gradient f(x)$ é o vetor que aponta pra direção em que $f(x)$ aumenta? Então que tal a gente seguir na direção contrária a $f(x)$? Isso faz bastante sentido, e funciona! Mas deve ter um motivo mais matemático por trás, não é? Vamos primeiro mostrar o algoritmo:
+
+#figure(
+  pseudocode-list(
+    booktabs: true
+  )[
+    + *func* GradientDescent($f$) {
+      + $x^((0)) in RR^n$
+      + $alpha > 0$
+      + *for* $t in [T]$ *do* {
+        + $x^((t+1)) = x^((t)) - alpha gradient f(x^((t)))$
+      +  }
+      + *return* $x^((T))$
+    + }
+  ],
+  supplement: [Algoritmo],
+  caption: [Gradient Descent]
+)<gradient-descent>
+
+Antes de entender um motivo mais matemático por trás do algoritmo, vamos ver algumas definições
+
+#definition([Funções $M$-Lipschitz])[
+  Dizemos que uma função $f: RR^n -> RR^m$ é $M$-Lipschitz quando:
+  $
+    ||f(x)-f(y)|| <= M ||x-y|| wide forall x, y in RR^n
+  $
+]
+
+#definition([Função $L$-Suave])[
+  Uma função $f: RR^n -> RR$ é $L$-suave quando seu gradiente é $L$-Lipschitz:
+  $
+    ||gradient f(x) - gradient f(y)|| <= L ||x - y|| wide forall x,y in RR^n
+  $
+]
+
+Essa definição de suavidade tem uma interpretação, imagine que, se eu estou na posição $x$ e vou pra posição $y$, a variação que eu vou ter na função, dentro dessa passada, não ultrapassa o quanto eu andei vezes uma constante $L$. Então funções muito onduladas, e com ondulações
+
+#figure(
+  image("images/func-nao-suave.png", width: 30%),
+  caption: [Função bem desregular, mas suave, $f(x) = sin(10x)+cos(10y)$]
+)
+
+#theorem("Aproximação linear de funções suaves")[
+  Seja $f: RR^n -> RR$ uma função diferenciável. Então $f$ é $L$-suave se, e somente se, $forall x, y in RR^n$:
+  $
+    |f(y)-f(x)+gradient f(x) ^T (y - x)|<= L/2 ||y-x||^2_2
+  $
+]
+
+Usando esse teorema, a gente pode escrever isso:
+$
+  f(x^((t+1))) &<= f(x^((t))) + gradient f(x^((t)))^T (x^((t+1))-x^((t))) + L/2 ||x^((t+1))-x^((t))||^2   \
+  &<= f(x^((t))) - alpha ||gradient f(x^((t)))||^2 + (alpha^2 L)/2 ||gradient f(x^((t)))||^2    \
+  &<= f(x^((t))) - alpha (1 - (alpha L)/2) ||gradient f(x^((t)))||^2
+$<iterated-aproximation>
+
+E isso vale quando $alpha in (0, 2/L)$, ou seja, se o ponto atual $x^((t))$ *NÃO É ESTACIONÁRIO*, o valor da função no próximo ponto será *menor* que o valor do ponto atual menos o tamanho do gradiente ao quadrado vezes um termo de regulação. Parece complicado, mas o que isso quer dizer? Eu vou usar esse fato para mostrar que, independente do ponto que eu iniciar o método do gradiente, eu *sempre vou encontrar um ponto mínimo local utilizando o método do gradiente*
+
+#theorem[
+  Suponha que $f: RR^n -> RR$ é $L$-suave. Tome qualquer passo:
+  $
+    alpha = beta/L
+  $
+  para algum $beta in (0, 2)$. Então:
+  $
+    min_(t in [T])||gradient f(x^((t)))||^2_2 <= 1/T sum^(T)_(t=1) ||gradient f(x^((t)))||^2_2 <= ((2\/beta)/(2-beta)) (L(f(x^((1))) - f^*))/(T)
+  $
+]
+#proof[
+  Sabemos que, dado $n$ pontos $x_i$, a média $1/n sum^n_(i=1)x_i in [min(x_i), max(x_i)]$, então a desigualdade inicial já está provada. Vamos provar a segunda. Usando a equação @iterated-aproximation, temos que:
+  $
+    alpha (1 - (alpha L)/2) ||gradient f(x^((t)))||^2 <= f(x^((t))) - f(x^((t+1)))
+  $
+  isso para todo $t in [T]$, então vamos somar todos os termos para obter:
+  $
+    alpha (1 - (alpha L)/2) sum^(T)_(t=1)||gradient f(x^((t)))||_2^2 &<= sum^(T)_(t=1) (f(x^((t))) - f(x^((t+1))))   \
+    
+    &<= f(x^((1))) - f(x^((T+1)))   \
+
+    &= f(x^((1))) - f^* + f^* + f(x^((T+1)))    \
+
+    &<= f(x^((1))) - f^*
+  $
+  A primeria desigualdade eu fiz uma soma telescópica, depois eu somei $0$ ($f^* - f^*$) e, como $f^*$ é o valor mínimo da função, com certeza subtrair a parte que eu somei $f^*$ vai dar um valor maior, então eu obtenho o resultado do enunciado do teorema dividindo tudo por $alpha(1-(alpha L)/2)T$
+]
+
+Por que esse teorema mostra que, independentemente do lugar, o algoritmo converge para um ponto estacionário? Ele ta me dizendo isso daqui:
+$
+  min_(t in [T]) ||gradient f(x^((t)))||_2^2 = O(1/T)
+$
+Ou seja, o mínimo *converge para $0$* conforme $T -> infinity$ *independentemente do ponto inicial $x^((0))$*
