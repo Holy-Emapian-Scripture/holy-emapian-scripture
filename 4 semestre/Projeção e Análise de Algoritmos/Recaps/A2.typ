@@ -1654,3 +1654,76 @@ Essa árvore é sub-radicada em $G$:
   - Todo caminho na $"CPT"$ a partir da raiz é mínimo no grafo $G$.
 
 === Djikstra
+
+Esse famoso algoritmo, que provavelmente você, caro leitor, já viu em MD, é capaz de encontrar caminhos mais baratos em um grafo $G=(V,E)$ que possua arestas com custos positivos.
+
+A solução consiste em crescer uma árvore radicada a partir do vértice inicial $v_0$ até que ela seja uma árvore geradora do subgrafo induzido a partir de $v_0$.
+
+Antes de explicar melhor, a *franja* de uma árvore radicada $T$ com raiz em $v_0$ é o conjunto das arestas $(v_i, v_j)$ que possuem $v_i$ em $T$ e $v_j$ fora de $T$. A franja pode ser vista como o grau de saída do conjunto de vértices de $T$.
+
+#figure(
+image("images/djikstra-1.png", width: 50%),
+caption: [Exemplo de franja. Os vértices $(1,2,3)$ já estão árvore radicada, e a franja é o conjuntos de arestas pontilhadas de peso $(2, 4, 1)$. ]
+)
+
+Essa é a ideia geral:
+
+#pseudocode-list[
++ *insira* $v_0$ *em* $T$ 
++ *defina* $d[v_0] = 0$
++ *enquanto a franja não estiver vazia:*
+  + *escolha $v_k$ de menor distância*
+  + *aplique a operação de relaxamento em todas as arestas de $v_k$ da franja*
+  + *insira $v_k$ em $T$*  
+]
+
+Veja a implementação em C++:
+
+```cpp
+void cptSeekLowest(const int *distance, const bool *checked, int &minDistance, vertex &v1) {
+    for (vertex i = 0; i < m_numVertices; i++) {
+        if (checked[i]) continue;
+        if (distance[i] < minDistance) {
+            minDistance = distance[i];
+            v1 = i;
+        }
+    }
+}
+
+void cptDijkstraSlow(vertex v0, vertex *parent, int *distance) {
+    std::vector<bool> checked(m_numVertices);
+    for (vertex v = 0; v < m_numVertices; v++) {
+        parent[v] = -1;
+        distance[v] = INT_MAX;
+        checked[v] = false;
+    }
+
+    parent[v0] = v0;
+    distance[v0] = 0;
+    while (true)
+    {
+        int minDistance = INT_MAX;
+        vertex v1 = -1;
+        cptSeekLowest(distance, checked, minDistance, v1);
+        if (minDistance == INT_MAX) break;
+        EdgeNode *edge = m_edges[v1];
+        while (edge)
+        {
+            vertex v2 = edge->otherVertex();
+            if (!checked[v2])
+            {
+                int cost = edge->cost();
+                if (distance[v1] + cost < distance[v2])
+                {
+                    parent[v2] = v1;
+                    distance[v2] = distance[v1] + cost;
+                }
+            }
+            edge = edge->next();
+        }
+        checked[v1] = true;
+    }
+}
+```
+
+
