@@ -374,7 +374,7 @@ A abordagem recomenda organizar o data lake em quatro zonas e uma sandbox. Em to
   - Propósito: Preparação final para consumo, muitas vezes com modelagem dimensional (como a de um Data Warehouse).
   - Característica: Otimizada para desempenho de consulta. Usada por ferramentas de BI e aplicações finais.
 
-== Arquitetura Inmon (Dados)
+=== Arquitetura Inmon (Dados)
 Antes, precisamos contextualizar o cenário, Inmon dizia que em um Data Lake puro, apenas Cientistas de Dados (Profissionais escassos) conseguem extrair algum tipo de valor, o que os torna muito requisitados, até mesmo depois de contratados, por questões internas. Então que tal montar uma arquitetura em que todos conseguem gerar algum tipo de valor? Para isso, precisamos de alguns ingredientes:
 - *Metadados*: Usado para decifrar os dados encontrados no Data Lake.
 - *Mapa de integração*: Demonstra como os dados podem ser integrados no Data Lake. Como vencer os "silos" isolados de dados.
