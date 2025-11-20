@@ -1615,6 +1615,12 @@ Esse algoritmo funciona pois o vetor `parent` define uma árvore radicada $T$ co
 
 A comparação $d[v_i] + 1 <= d[v_j]$ e a eventual atualização no vetor de distância é conhecida como *operação de relaxamento.* Uma aresta está *relaxada* se $d[v_j] - d[v_i] <= 1$ e *tensa* se $d[v_j] - d[v_i] > 1$.
 
+#example[ 
+  estou no vértice $v_i$, e quero ir para o meu vizinho $v_j$, sabendo que $d[v]$ é a distância mínima conhecida até agora da origem até aquele vértice. Se $d[v_j] - d[v_i] <= 1$ (considerando que os pesos são inteiros e unitários), significa que a aresta $(e_i, e_j)$, mesmo com peso 1, não conseguiria fazer com que o valor de $d[v_j]$ mude, pois ele já é o menor possível, e então essa aresta é relaxada. Pelo contrário, se $d[v_j] - d[v_i] > 1$, significa que se o peso da aresta entre os dois vértices é 1, então $d[v_j]$ consegue ser atualizado, por isso é uma aresta tensa.
+]
+
+*Nota:* a implementação disso está nos Exercises
+
 Chamamos de potencial relaxado uma numeração para os vértices que torne todas as aresta do grafo relaxadas. O vetor de distâncias resultante do algoritmo anterior é um potencial relaxado.
 
 Voltando ao problema inicial: desejamos encontrar o caminho mais curto entre dois vértices em qualquer grafo. Como produzir uma solução para grafos não-dirigidos e/ou que possuem ciclos?
