@@ -2,21 +2,21 @@ from collections import deque
 
 def problema_4(n: int) -> list[list[int]]:
     board = [[-1] * n for i in range(n)]                                                #começamos com o tabuleiro completo de -1
-    fila = deque()                                                                      
-    board[0][0] = 0
-    fila.append([0,0])
+    fila = deque()                                                                      #iniciamos um deque para servir de fila (adicionar a direita e retirar a esquerda em O(1))
+    board[0][0] = 0                                                                     #vertice inicial marcado
+    fila.append([0,0])                                                                  #adicionamos a fila as coordenadas 
 
-    positions = [(2,1), (2,-1), (-2, 1), (-2, -1),
+    positions = [(2,1), (2,-1), (-2, 1), (-2, -1),                                      #fazemos a lista de todas as posições que um cavalo pode ir dado uma coordenada
                  (1,2), (-1,2), (1,-2), (-1, -2)]
-    while fila:
-        x, y = fila.popleft()
-        for dx, dy in positions:
-            nx = x + dx 
+    while fila:                                                                         #enquanto a fila não estiver vazia, ou seja, enquanto pudermos nos mover
+        x, y = fila.popleft()                                                           #retiro a posição mais velha
+        for dx, dy in positions:                                                        #para cada posição possível que podemos ir partindo da posição que pegamos da fila
+            nx = x + dx                                                                 #essa seria a nova posição possivel (soma da posição atual + as possíveis pro cavalo)
             ny = y + dy
-            if 0 <= nx <= n - 1 and 0 <= ny <= n - 1 and board[nx][ny] == -1:
-                board[nx][ny] = board[x][y] + 1
-                fila.append([nx, ny])
-    return board
+            if 0 <= nx <= n - 1 and 0 <= ny <= n - 1 and board[nx][ny] == -1:           #se não sairmos dos limites da borda e a célula ainda não tiver sido visitada
+                board[nx][ny] = board[x][y] + 1                                         #somo a posição antiga + 1 
+                fila.append([nx, ny])                                                   #coloco essa nova posição para ser analisada na fila
+    return board                                                                        
 
 def print_bonito(matriz):
     for linha in matriz:
