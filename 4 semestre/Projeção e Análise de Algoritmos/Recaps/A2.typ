@@ -891,7 +891,7 @@ desnecessário. Irei relembrar alguns termos e definir outros que não me lembro
 - $sum_(i = 1)^(|V|) g(v_i) = 2 |E|$, onde $g(v_i)$ é o *grau* do vértice $i$;
 - Um grafo é *completo* se cada vértice possuir todos os demais adjacentes à ele;
 - O número de arestas em um grafo completo é definido por: $(|V|(|V| - 1))/2$ (observe que isso é ligeiramente menor que $(|V|)^2/2 $;
-- Um grafo é *regular* se todos os vértices possuírem o mesmo grau (ou $k$-regular , para grau $k$);
+- Um grafo é *regular* se todos os vértices possuírem o mesmo grau (ou $k$-regular , para grau $k$); 
 - O número de arestas em um grafo $k$-regular é $|V|k/2$
 - Um grafo é *denso* se o seu tamanho for proporcional ao quadrado do número de vértices ($|V| + |E| prop |V|^2$), e é esparso se $(|V| + |E|) prop |V|$.
 - O grafo $H = G(V', E')$ é um *subgrafo* de $G = (V, E)$ se $V' subset.eq V$ e $E' subset.eq E$.
@@ -1617,8 +1617,6 @@ A comparação $d[v_i] + 1 <= d[v_j]$ e a eventual atualização no vetor de dis
   estou no vértice $v_i$, e quero ir para o meu vizinho $v_j$, sabendo que $d[v]$ é a distância mínima conhecida até agora da origem até aquele vértice. Se $d[v_j] - d[v_i] <= 1$ (considerando que os pesos são inteiros e unitários), significa que a aresta $(e_i, e_j)$, mesmo com peso 1, não conseguiria fazer com que o valor de $d[v_j]$ mude, pois ele já é o menor possível, e então essa aresta é relaxada. Pelo contrário, se $d[v_j] - d[v_i] > 1$, significa que se o peso da aresta entre os dois vértices é 1, então $d[v_j]$ consegue ser atualizado, por isso é uma aresta tensa.
 ]
 
-*Nota:* a implementação disso está nos Exercises
-
 Chamamos de potencial relaxado uma numeração para os vértices que torne todas as aresta do grafo relaxadas. O vetor de distâncias resultante do algoritmo anterior é um potencial relaxado.
 
 Voltando ao problema inicial: desejamos encontrar o caminho mais curto entre dois vértices em qualquer grafo. Como produzir uma solução para grafos não-dirigidos e/ou que possuem ciclos?
@@ -1633,6 +1631,7 @@ Podemos adaptar o algoritmo de busca em largura (BFS) de forma que a numeração
 
 Note que o valor $d[v]$ é alterado somente uma vez.
 
+*Nota:* a implementação disso está nos Exercises
 
 == Caminho mais barato em grafos 
 

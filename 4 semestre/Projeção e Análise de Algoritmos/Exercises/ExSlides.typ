@@ -541,3 +541,33 @@ def dag_spt(list_adj):
 O código cria um vetor de distâncias e um vetor de pais de cada vértice, e preenche o inicial, considerando ordenação topológica. Graças a característica da ordenação topológica existente, o for que fazemos passa por cada vértice da lista, e depois por cada vizinho, verificando se suas arestas estão relaxadas ou não (considerando o peso de cada aresta sempre 1), se ela tiver tensa, então atualizamos com a distância do vetor pai $+1$.
 
 Criamos dois vetores $O(V)$, e o for de fora passa por todos os vértices ($O(V)$) e o for de dentro passa por todos os vértices (no total, não a cada iteração), trazendo $O(E)$ ao final dos dois fors. Portanto, a complexidade é $Theta(V + E)$.
+
+== Caminho mais curto em grafo não-dirigido/com ciclos
+
+*Dado um grafo $G=(V,E)$, implemente a adaptação do algoritmo BFS para encontrar o caminho mais curto entre um vértice e todos os acessíveis por ele.*
+
+A diferença agora é que não fazemos o for na ordem dos vértices, ou seja, na ordem topológica, e agora, partimos de um $v_0$, e usamos um deque para administrar a ordem com que colocamos na fila, para fazermos uma busca em profundidade.
+
+```py
+from collections import deque
+
+def spt(v0, list_adj):
+    inf = len(list_adj)
+    distance = [inf] * inf
+    parent = [-1] * inf
+    distance[v0] = 0
+    parent[v0] = 0
+
+    fila = deque()
+    fila.append(v0)
+    while fila:
+        v1 = fila.popleft()
+        for vizinho in list_adj[v1]:
+            if distance[vizinho] == inf:
+                distance[vizinho] = distance[v1] + 1
+                parent[vizinho] = v1
+                fila.append(vizinho)
+
+    return distance, parent
+```
+Agora, o nosso if também verifica apenas se a distância não foi alterada, trazendo assim apenas uma alteração por valor `distance[v]`. Ainda, como estamos fazendo uma verificação por nível, fica claro que a distância é sempre a do pai $+ 1$, e que  
