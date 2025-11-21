@@ -1727,7 +1727,7 @@ image("images/djikstra-1.png", width: 50%),
 caption: [Exemplo de franja. Os vértices $(1,2,3)$ já estão árvore radicada, e a franja é o conjuntos de arestas pontilhadas de peso $(2, 4, 1)$. ]
 )
 
-Essa é a ideia geral:
+Depois de entender esse conceito, essa é a ideia geral para o Djikstra:
 
 #pseudocode-list[
 + *insira* $v_0$ *em* $T$ 
@@ -1741,50 +1741,82 @@ Essa é a ideia geral:
 Veja a implementação em C++:
 
 ```cpp
-void cptSeekLowest(const int *distance, const bool *checked, int &minDistance, vertex &v1) {
-    for (vertex i = 0; i < m_numVertices; i++) {
-        if (checked[i]) continue;
-        if (distance[i] < minDistance) {
-            minDistance = distance[i];
-            v1 = i;
-        }
-    }
-}
-
 void cptDijkstraSlow(vertex v0, vertex *parent, int *distance) {
-    std::vector<bool> checked(m_numVertices);
-    for (vertex v = 0; v < m_numVertices; v++) {
-        parent[v] = -1;
-        distance[v] = INT_MAX;
-        checked[v] = false;
-    }
+  std::vector<bool> checked(m_numVertices);
+  for (vertex v = 0; v < m_numVertices; v++) {
+      parent[v] = -1;
+      distance[v] = INT_MAX;
+      checked[v] = false;
+  }
+  parent[v0] = v0;
+  distance[v0] = 0;
 
-    parent[v0] = v0;
-    distance[v0] = 0;
-    while (true)
-    {
-        int minDistance = INT_MAX;
-        vertex v1 = -1;
-        cptSeekLowest(distance, checked, minDistance, v1);
-        if (minDistance == INT_MAX) break;
-        EdgeNode *edge = m_edges[v1];
-        while (edge)
-        {
-            vertex v2 = edge->otherVertex();
-            if (!checked[v2])
-            {
-                int cost = edge->cost();
-                if (distance[v1] + cost < distance[v2])
-                {
-                    parent[v2] = v1;
-                    distance[v2] = distance[v1] + cost;
-                }
-            }
-            edge = edge->next();
-        }
-        checked[v1] = true;
-    }
+  while (true) {
+      int minDistance = INT_MAX;
+      vertex v1 = -1;
+      for (vertex i = 0; i < m_numVertices; i++) {
+          if (!checked[i] && distance[i] < minDistance) {
+              minDistance = distance[i];
+              v1 = i;
+          }
+      }
+      if (minDistance == INT_MAX || v1 == -1) break;
+      checked[v1] = true;
+      EdgeNode *edge = m_edges[v1];
+      while (edge) {
+          vertex v2 = edge->otherVertex();
+          if (!checked[v2]) {
+              int cost = edge->cost();
+              if (distance[v1] != INT_MAX && distance[v1] + cost < distance[v2]) {
+                  parent[v2] = v1;
+                  distance[v2] = distance[v1] + cost;
+              }
+          }
+          edge = edge->next();
+      }
+  }
 }
 ```
 
+O algoritmo inicializa os vetores do começo `parent`, `distance` e `checked`, e declara as informações iniciais de $v_0$. Depois, inicializa um while onde, a cada iteração declara a maior distância como um inteiro máximo, e, após isso, o vértice escolhido de $-1$(pois não escolhemos ainda). Nosso objetivo no for de baixo é escolher, dentre os que tem distância definida e ainda não foram checados (ou seja, a franja), quem tem a menor distância. Após selecionar esse vértice e verificarmos a condição de parada(se a menor distância não mudou, então não temos mais vértices para checar), marcamos ele como checado e fazemos a análise para cada vizinho.
 
+Para cada vizinho, chamamos de $v_2$ o vizinho a ser analisado. Se ele não tiver sido checado, pegamos o seu custo e se a distância do $v_1 +$ custo da aresta for menor, então atualizamos a distância e o pai de $v_2$, e passamos para o próximo vértice. (a outra verificação desse if é pra evitar overflow).
+
+*Implementação em Python* 
+
+Aqui, consideramos que a lista de adjacências é da forma:
+```py 
+[
+[(vértice, custo), (vértice, custo)], #arestas do vértice 0
+[(vértice, custo), (vértice, custo)], #arestas do vértice 1
+]
+```
+Isso é apenas a transformação do código para Python, usando essa estrutura mais simples, que fica dessa forma:
+
+```py
+def cpt_djikstra_slow(v0, list_adj):
+    num_vertices = len(list_adj)
+    checked = [0] * num_vertices
+    parent = [-1] * num_vertices
+    distance = [float('inf')] * num_vertices
+    parent[v0] = v0
+    distance[v0] = 0
+
+    while True:
+        mindistance = float('inf')
+        v1 = -1
+        for i in range(num_vertices):
+            if checked[i] == False and distance[i] < mindistance:
+                mindistance = distance[i]
+                v1 = i
+        if mindistance == float('inf') or v1 == -1:
+            break
+        checked[v1] = True
+        for vizinho, custo in list_adj[v1]:
+            if checked[vizinho] == False:
+                if distance[v1] != float('inf') and distance[v1] + custo < distance[vizinho]:
+                    parent[vizinho] = v1
+                    distance[vizinho] = distance[v1] + custo
+
+    return parent,  distance 
+```
