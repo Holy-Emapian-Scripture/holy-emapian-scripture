@@ -1609,8 +1609,6 @@ Esse algoritmo funciona pois o vetor `parent` define uma árvore radicada $T$ co
 
 *Nota:* a implementação disso está nos Exercises
 
-=== implementar
-
 == Caminho mais curto em grafos não-dirigidos/ciclo
 
 A comparação $d[v_i] + 1 <= d[v_j]$ e a eventual atualização no vetor de distância é conhecida como *operação de relaxamento.* Uma aresta está *relaxada* se $d[v_j] - d[v_i] <= 1$ e *tensa* se $d[v_j] - d[v_i] > 1$.

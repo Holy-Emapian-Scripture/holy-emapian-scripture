@@ -511,5 +511,32 @@ def has_topologic_order(list_adj):
 
 `in_degree()` é $O(V + E)$, o primeiro for é $O(V)$, e o while passa ou deveria passar, se existir a ordem topológica, em todos  os vértices, e dentro dele ainda passamos por todos as suas ligações, trazendo $O(V + E)$, ou seja, $O(V+ E) + O(V+ E) + O(V) = O(V+ E)$.
 
+#pagebreak()
 
+= Menor caminho em grafos
+
+== Caminho mais curto em um DAG
+
+*Dado um grafo $G = (V,E)$, como criar um algoritmo capaz de gerar a SPT de um DAG iniciando na sua única fonte?*
+
+Lembre-se: nesse código, estamos considerando uma ordenação topológica já pré-determinada, por isso nosso for é simples e não precisamos olhar vértices novamente.
+
+```py
+def dag_spt(list_adj):
+    inf = len(list_adj)
+    distance = [inf] * inf
+    parent = [-1] * inf
+    distance[0] = 0
+    parent[0] = 0
+
+    for i in range(inf):
+        for vizinho in list_adj[i]:
+            if distance[i] + 1 < distance[vizinho]:
+                distance[vizinho] = distance[i] + 1
+                parent[vizinho] = i
+    
+    return distance, parent
+```
+
+O código cria um vetor de distâncias e um vetor de pais de cada vértice, e preenche o inicial, considerando ordenação topológica. Graças a característica da ordenação topológica existente, o for que fazemos passa por cada vértice da lista, e depois por cada vizinho, verificando se suas arestas estão relaxadas ou não (considerando o peso de cada aresta sempre 1), se ela tiver tensa, então atualizamos com a distância do vetor pai $+1$.
 
