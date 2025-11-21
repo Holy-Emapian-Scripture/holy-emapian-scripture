@@ -1820,3 +1820,62 @@ def cpt_djikstra_slow(v0, list_adj):
 
     return parent,  distance 
 ```
+
+Esse código é bem parecido com os que já vimos, ele faz várias declarações de variáveis $O(V)$, e o while True roda no máximo $V$ vezes, já que depende de um for que roda também $V$ vezes (pois a verificação em algum intervalo $[0, |V|]$ é interrompida, porque cai no caso de condição de parada). Esse for só faz verificações constantes, e por isso é $O(V)$. continuando, temos um if e outro for que passa por $g_s (v_k)$ arestas, que ao final somam $E$. Portanto, dentro do while temos $O(V( V + g_s (v_k))) = O(V^2 + E)$, já que $sum_(i = 1)^(|V|) g_s (v_i) = |E|  $.
+
+Existe uma característica importante nesse algoritmo: a cada iteração onde verificamos o elemento da franja a ser escolhido (passando por mais elementos que o necessário para escolher o menor, pois passamos por todos), uma iteração qualquer é sempre semelhante à iteração anterior. Com essa informação, como podemos melhorar o desempenho do algoritmo?
+
+=== Djikstra "Rápido"
+
+*Ideia*: manter os vértices da franja em uma fila de prioridades, implementada como um heap mínimo e que contém todos os vértices que ainda não foram verificados.
+
+#figure(
+  caption: [Exemplo do estado do algoritmo após processar o vértice 1. A imagem à esquerda mostra o heap nessa iteração.],
+  image("images/djikstra-4.png",width: 90%)
+)
+
+```py
+def cpt_djikstra_fast(v0, list_adj):
+    num_vertices = len(list_adj)
+    checked = [0] * num_vertices
+    parent = [-1] * num_vertices
+    distance = [float('inf')] * num_vertices
+    parent[v0] = v0
+    distance[v0] = 0
+
+    while True:
+        mindistance = float('inf')
+        v1 = -1
+        for i in range(num_vertices):
+            if checked[i] == False and distance[i] < mindistance:
+                mindistance = distance[i]
+                v1 = i
+        if mindistance == float('inf') or v1 == -1:
+            break
+        checked[v1] = True
+        for vizinho, custo in list_adj[v1]:
+            if checked[vizinho] == False:
+                if distance[v1] != float('inf') and distance[v1] + custo < distance[vizinho]:
+                    parent[vizinho] = v1
+                    distance[vizinho] = distance[v1] + custo
+
+    return parent,  distance 
+```
+
+=== Bellman-Ford
+
+Esse algoritmo é capaz de encontrar caminhos mais baratos em um grafo $G = (V,E)$ mesmo que as arestas possuam custos positivos e negativos. Ele retorna falso se detectar um ciclo negativo.
+
+O algoritmo consiste em relaxar as arestas do grafo sistematicamente,reduzindo progressivamente uma estimativa $d[v]$ para cada vértice $v in V$ do grafo, até alcançar a menor distância.
+
+Essa é a ideia geral:
+#pseudocode-list[
++ *insira* $v_0$ *em* $T$ 
++ *defina* $d[v_0] = 0$
++ *execute V - 1 vezes:*
+  + *para cada arsta $(v_i, v_j)$:*
+    + *aplique o relaxamento*  
++ *execute o relaxamento sobre todas as arestas*
+  + *se alguma distância $d[v_k]$ for reduzida, ciclo negativo*
+]
+
