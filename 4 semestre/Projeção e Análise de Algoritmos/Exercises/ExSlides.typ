@@ -570,4 +570,10 @@ def spt(v0, list_adj):
 
     return distance, parent
 ```
-Agora, o nosso if também verifica apenas se a distância não foi alterada, trazendo assim apenas uma alteração por valor `distance[v]`. Ainda, como estamos fazendo uma verificação por nível, fica claro que a distância é sempre a do pai $+ 1$, e que  
+Agora, o nosso if também verifica apenas se a distância não foi alterada, trazendo assim apenas uma alteração por valor `distance[v]`. Ainda, como estamos fazendo uma verificação por nível, fica claro que a distância é sempre a do pai $+ 1$, e que agora também funciona em ciclos, já que ele só processa o vizinho se nunca tiver visto ele antes.
+
+A complexidade é a mesma, já que o deque é $O(1)$ para tirar à esquerda e para appendar. É a mesma complexidade $O(V + E)$, pelos mesmos motivos.
+
+Podemos avaliar a corretude desse algoritmo através das suas invariantes: primeiro, toda aresta $(v_i, v_j)$ de $T$ (a árvore definida por parent) está relaxada com relação à distance; segundo, para cada aresta $(v_i, v_j)$, se $v_i$ está em $T$ e $v_j$ está fora de $T$, então $v_i$ está na fila. Ao término da execução, a fila está vazia e, a partir da invariante (2), conclui-se que toda aresta com $v_i$ em $T$ também possui $v_j$ em $T$. O vetor distance é um potencial relaxado, portanto, $T$ é uma SPT e distance fornece o comprimento do caminho entre a raiz e os demais vértices acessíveis a partir dela.
+
+== Djikstra fast
