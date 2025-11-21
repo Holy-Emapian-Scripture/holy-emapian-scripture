@@ -540,3 +540,4 @@ def dag_spt(list_adj):
 
 O código cria um vetor de distâncias e um vetor de pais de cada vértice, e preenche o inicial, considerando ordenação topológica. Graças a característica da ordenação topológica existente, o for que fazemos passa por cada vértice da lista, e depois por cada vizinho, verificando se suas arestas estão relaxadas ou não (considerando o peso de cada aresta sempre 1), se ela tiver tensa, então atualizamos com a distância do vetor pai $+1$.
 
+Criamos dois vetores $O(V)$, e o for de fora passa por todos os vértices ($O(V)$) e o for de dentro passa por todos os vértices (no total, não a cada iteração), trazendo $O(E)$ ao final dos dois fors. Portanto, a complexidade é $Theta(V + E)$.
