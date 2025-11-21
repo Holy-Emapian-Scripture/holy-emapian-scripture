@@ -1542,7 +1542,65 @@ Analisando a complexidade (do último algoritmo), passamos por um for no número
 
 Ao utilizar matriz de adjacências, teríamos que buscar cada ligação de cada vértice sem receber uma lista pronta com isso, o que traria uma complexidade de $Theta( V^2)$. Ainda, para grafos densos, ambas as estruturas de dados traria uma complexidade de $Theta(V^2)$.
  
-=== Implementação em Python
+*Implementação em Python*
+
+Vamos implementar os dois últimos algoritmos, pois são os mais completos. Forest:
+
+```py
+from collections import deque
+
+def bfs_forest (list_adj):
+    num_vertices = len(list_adj)
+    counter = 0
+    order = [-1] * num_vertices
+    for i in range(num_vertices):
+        if order[i] != -1:
+            continue
+        fila = deque()
+        order[i] = counter
+        counter += 1
+        fila.append(i)
+        while fila:
+            v1 = fila.popleft()
+            for vizinho in list_adj[v1]:
+                if order[vizinho] == -1:
+                    order[vizinho] = counter
+                    counter += 1
+                    fila.append(vizinho)
+    
+    return order
+```
+
+Note que ambos precisam de usar deque(fila com ponteiros para início e fim) para funcionarem com as mesmas complexidades. BFS:
+
+```py
+from collections import deque
+
+def bfs (v0, list_adj):
+    num_vertices = len(list_adj)
+    fila = deque()
+    counter = 0
+    order = [-1] * num_vertices
+    parent = [-1] * num_vertices
+
+    order[v0] = counter
+    counter += 1
+    parent[v0] = v0
+    fila.append(v0)
+    while fila:
+        v1 = fila.popleft()
+        for vizinho in list_adj[v1]:
+            if order[vizinho] == -1:
+                order[vizinho] = counter 
+                counter += 1
+                parent[vizinho] = v1
+                fila.append(vizinho)
+    return parent, order
+```
+
+Fim! Mas agora, como achar o menor caminho em um grafo??
+
+
 
 #pagebreak()
 
