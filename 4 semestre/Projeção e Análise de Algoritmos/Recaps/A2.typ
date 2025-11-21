@@ -1834,33 +1834,83 @@ Existe uma característica importante nesse algoritmo: a cada iteração onde ve
   image("images/djikstra-4.png",width: 90%)
 )
 
+Esse é o código em C++:
+
+```cpp
+void cptDijkstraFast(vertex v0, vertex * parent, int * distance) {
+    bool checked[m_numVertices];
+    Heap heap; // Create the heap
+    for (vertex v=0; v < m_numVertices; v++) {
+        parent[v] = -1;
+        distance[v] = INT_MAX;
+        checked[v] = false;
+    }
+    parent[v0] = v0;
+    distance[v0] = 0;
+
+    heap.insert_or_update(distance[v0], v0);
+    while (!heap.empty()) {
+        vertex v1 = heap.top().second; // Min vertex
+        heap.pop(); // Remove from heap
+        if (distance[v1] == INT_MAX) { break; }
+        EdgeNode * edge = m_edges[v1];
+        while (edge) {
+            vertex v2 = edge->otherVertex();
+            if (!checked[v2]) {
+                int cost = edge->cost();
+                if (distance[v1] + cost < distance[v2]) {
+                    parent[v2] = v1;
+                    distance[v2] = distance[v1] + cost;
+                    heap.insert_or_update(distance[v2], v2);
+                }
+            }
+            edge = edge->next();
+        }
+        checked[v1] = true;
+    }
+}
+```
+Sabendo que o heap ordena pelo menor valor e no caso de adicionarmos (distância, vértice) ele ordena pelo primeiro elemento, o código atualiza o heap inicial com $v_0$, e, enquanto o heap não estiver vazio, chamamos de $v_2$ o próximo vizinho e, se ele não tiver sido visitado, acessa seu custo e verifica se pode relaxar a aresta. Se puder, adiciona também ao heap. Por fim, marca como checado.
+
+*Implementação em Python*
+
 ```py
-def cpt_djikstra_fast(v0, list_adj):
+import heapq
+
+def cpt_dijkstra_fast(v0, list_adj):
     num_vertices = len(list_adj)
-    checked = [0] * num_vertices
+    checked = [False] * num_vertices
     parent = [-1] * num_vertices
     distance = [float('inf')] * num_vertices
     parent[v0] = v0
     distance[v0] = 0
+    heap = []
+    heapq.heappush(heap, (0, v0))
 
-    while True:
-        mindistance = float('inf')
-        v1 = -1
-        for i in range(num_vertices):
-            if checked[i] == False and distance[i] < mindistance:
-                mindistance = distance[i]
-                v1 = i
-        if mindistance == float('inf') or v1 == -1:
+    while heap:
+        dist_v1, v1 = heapq.heappop(heap)
+        if dist_v1 > distance[v1]:
+            continue
+        if distance[v1] == float('inf'):
             break
+        for v2, cost in list_adj[v1]:
+            if not checked[v2]:
+                if distance[v1] + cost < distance[v2]:
+                    parent[v2] = v1
+                    distance[v2] = distance[v1] + cost
+                    heapq.heappush(heap, (distance[v2], v2))
         checked[v1] = True
-        for vizinho, custo in list_adj[v1]:
-            if checked[vizinho] == False:
-                if distance[v1] != float('inf') and distance[v1] + custo < distance[vizinho]:
-                    parent[vizinho] = v1
-                    distance[vizinho] = distance[v1] + custo
-
-    return parent,  distance 
+    return parent, distance
 ```
+
+A explicação é análoga. Para analisar a complexidade, note que o heappop é feito dentro do while que acontece para cada vértice(pois o while heap roda no máximo $V$ vezes), e que o heappush acontece dentro do for das arestas (que já discutirmos ter complexidade $E$). Portanto, é fácil ver que a complexidade é $O(log(V)(V + E))$. Note:
+ - Se todos os vértices forem acessíveis a partir de $v_0$, temos $O(E log(V))$ (pois isso significa que o grafo é conexo e, sabemos que $E >= V-1$, e, por isso, $E$ domina).
+ - Se o grafo for esparso (onde $E approx V$), a complexidade será $O(V log(V))$.
+ - Se o grafo for denso (onde $E approx V^2$), temos que a complexidade é $O(V^2 log(V))$.Ou seja, apresenta um desempenho inferior à abordagem anterior, que mantém $O(V^2)$ fixo independentemente da densidade das arestas.
+
+=== eventualmente adicionar corretude
+
+Por fim, como seria a implementação de um algoritmo que funcionasse em grafos com ciclos negativos?  
 
 === Bellman-Ford
 
