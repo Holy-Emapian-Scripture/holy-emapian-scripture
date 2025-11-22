@@ -1,98 +1,67 @@
-import heapq
-
-def cpt_dijkstra_fast(v0, list_adj):
+def bellman_ford(v0, list_adj):
     num_vertices = len(list_adj)
-    checked = [False] * num_vertices
     parent = [-1] * num_vertices
     distance = [float('inf')] * num_vertices
     parent[v0] = v0
     distance[v0] = 0
-    heap = []
-    heapq.heappush(heap, (0, v0))
+    for i in range(num_vertices - 1):
+        for j in range(num_vertices):
+            for vizinho, custo in list_adj[j]:
+                if distance[j] + custo < distance[vizinho]:
+                    parent[vizinho] = j
+                    distance[vizinho] = distance[j] + custo
 
-    while heap:
-        dist_v1, v1 = heapq.heappop(heap)
-        if dist_v1 > distance[v1]:
-            continue
-        if distance[v1] == float('inf'):
-            break
-        for v2, cost in list_adj[v1]:
-            if not checked[v2]:
-                if distance[v1] + cost < distance[v2]:
-                    parent[v2] = v1
-                    distance[v2] = distance[v1] + cost
-                    heapq.heappush(heap, (distance[v2], v2))
-        checked[v1] = True
+    for j in range(num_vertices):
+        for vizinho, custo in list_adj[j]:
+            if distance[j] + custo < distance[vizinho]:
+                return False
+    
     return parent, distance
 
-def executar_teste(nome, grafo, inicio, exp_parent, exp_dist):
-    print(f"Executando: {nome}...", end=" ")
-    parent, distance = cpt_dijkstra_fast(inicio, grafo)
+def run_test(nome, grafo, inicio):
+    print(f"--- {nome} ---")
+    resultado = bellman_ford(inicio, grafo)
     
-    passou = True
-    if parent != exp_parent:
-        print("\n[FALHA] Parent incorreto.")
-        print(f"   Obtido:   {parent}")
-        print(f"   Esperado: {exp_parent}")
-        passou = False
-    
-    if distance != exp_dist:
-        print("\n[FALHA] Distance incorreto.")
-        print(f"   Obtido:   {distance}")
-        print(f"   Esperado: {exp_dist}")
-        passou = False
-        
-    if passou:
-        print("OK!")
+    if resultado == False:
+        print("Resultado: CICLO NEGATIVO DETECTADO")
+    else:
+        pais, dists = resultado
+        print(f"Distâncias: {dists}")
+        print(f"Pais:       {pais}")
+    print()
 
 if __name__ == "__main__":
-    print("=== INICIANDO TESTES ===\n")
-
-    # CASO 1: O Grafo Padrão (da nossa discussão)
-    # 0->1(5), 0->2(2), 2->1(1), 1->3(4), 2->3(8)
-    # Caminho para 3: 0 -> 2 -> 1 -> 3 (Custo 2+1+4 = 7)
-    grafo_1 = [
-        [(1, 5), (2, 2)], # 0
-        [(3, 4)],         # 1
-        [(1, 1), (3, 8)], # 2
-        []                # 3
+    # CASO 1: Grafo Normal (Dijkstra também resolveria)
+    # 0->1(5), 0->2(2), 2->1(1)
+    # Caminho 0->1 custa 5. Caminho 0->2->1 custa 3.
+    grafo_normal = [
+        [(1, 5), (2, 2)],
+        [],
+        [(1, 1)]
     ]
-    executar_teste("Teste Básico", grafo_1, 0, 
-                   exp_parent=[0, 2, 0, 1], 
-                   exp_dist=[0, 3, 2, 7])
+    run_test("Teste 1: Grafo Simples", grafo_normal, 0)
+    # Esperado: Dist [0, 3, 2]
 
-    # CASO 2: Grafo Desconectado
-    # 0 conecta com 1. 2 conecta com 3. Não há ponte entre os grupos.
-    grafo_2 = [
-        [(1, 10)], # 0
-        [],        # 1
-        [(3, 5)],  # 2
-        []         # 3
+    # CASO 2: Arestas Negativas (mas SEM ciclo negativo)
+    # 0->1 (custo 10)
+    # 1->2 (custo -5)
+    # Total 0->2 é 5. Tudo válido.
+    grafo_negativo_valido = [
+        [(1, 10)],
+        [(2, -5)],
+        []
     ]
-    # Espera-se que 2 e 3 fiquem com dist infinita e parent -1
-    executar_teste("Teste Desconectado", grafo_2, 0, 
-                   exp_parent=[0, 0, -1, -1], 
-                   exp_dist=[0, 10, float('inf'), float('inf')])
+    run_test("Teste 2: Negativo Válido", grafo_negativo_valido, 0)
+    # Esperado: Dist [0, 10, 5]
 
-    # CASO 3: Grafo Linear (Linguiça)
-    # 0->1->2->3->4 (peso 1 cada)
-    grafo_3 = [
-        [(1, 1)], # 0
-        [(2, 1)], # 1
-        [(3, 1)], # 2
-        [(4, 1)], # 3
-        []        # 4
+    # CASO 3: Ciclo Negativo (O pesadelo)
+    # 0->1 (1)
+    # 1->2 (2)
+    # 2->1 (-5) -> Ciclo entre 1 e 2 com custo líquido -3
+    grafo_ciclo = [
+        [(1, 1)],       # 0
+        [(2, 2)],       # 1
+        [(1, -5)]       # 2
     ]
-    executar_teste("Teste Linear", grafo_3, 0,
-                   exp_parent=[0, 0, 1, 2, 3],
-                   exp_dist=[0, 1, 2, 3, 4])
-
-    # CASO 4: Nó Único (Grafo de tamanho 1)
-    grafo_4 = [
-        [] # 0
-    ]
-    executar_teste("Teste Nó Único", grafo_4, 0,
-                   exp_parent=[0],
-                   exp_dist=[0])
-
-    print("\n=== TESTES FINALIZADOS ===")
+    run_test("Teste 3: Ciclo Negativo", grafo_ciclo, 0)
+    # Esperado: CICLO NEGATIVO DETECTADO
