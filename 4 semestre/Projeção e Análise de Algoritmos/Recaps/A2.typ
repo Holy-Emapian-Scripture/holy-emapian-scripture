@@ -2065,6 +2065,7 @@ Se $G = (V,E)$ for um grafo não-dirigido com custos nas arestas (com valores po
   [
 Esse algoritmo é capaz de encontrar a MST de um grafo $G = (V,E)$.
 
+=== Prim Slow
 Dada uma árvore $T$ de $G$, considere a franja de $T$ como o corte cuja margem é composta pelos vértices em $T$. Ideia geral do algoritmo:
 
     #pseudocode-list[
@@ -2083,7 +2084,6 @@ Dada uma árvore $T$ de $G$, considere a franja de $T$ como o corte cuja margem 
   )
   ]
 )
-=== Prim Slow
 
 ```cpp
 void mstPrimSlow(vertex * parent) {
@@ -2148,5 +2148,96 @@ Uma coisa que podemos observar no algoritmo é que essa versão calcula a franja
 
 === Prim Fast
 
+Uma estratégia consiste em manter uma estrutura de dados com o custo de cada vértice que pode ser adicionado a $T$. Considere como *fronteira* todos os vértices que podem ser acessados à partir da franja e não pertencem a $T$. A nova ideia é:
 
+    #pseudocode-list[
++ *Escolha a raiz de $T$*
++ *Enquanto a franja não estiver vazia:*
+  + *Procure $v_k$ na fronteira com o menor custo* 
+  + *Insira $V_k$ em $T$*
+  + *Atualize a fronteira adicionando os acessíveis de $v_k$*
+]
+
+```cpp
+void mstPrimFastV1(vertex * parent) {
+    bool inTree[m_numVertices];
+    int vertexCost[m_numVertices];
+    for (vertex v = 0; v < m_numVertices; v++) {
+        parent[v] = -1;
+        inTree[v] = false;
+        vertexCost[v] = INT_MAX;
+    }
+    parent[0] = 0;
+    inTree[0] = true;
+    EdgeNode * edge = m_edges[0];
+    while (edge) {
+        vertex v2 = edge->otherVertex();
+        parent[v2] = 0;
+        vertexCost[v2] = edge->cost();
+        edge = edge->next();
+    }
+    while (true) {
+        int minCost = INT_MAX;
+        vertex v1 = -1;
+        for (vertex v = 0; v < m_numVertices; v++) {
+            if (!inTree[v] && vertexCost[v] < minCost) {
+                minCost = vertexCost[v];
+                v1 = v;
+            }
+        }
+        if (minCost == INT_MAX) {
+            break;
+        }
+        inTree[v1] = true;
+        edge = m_edges[v1];
+        while (edge) {
+            vertex v2 = edge->otherVertex();
+            int cost = edge->cost();
+            if (!inTree[v2] && cost < vertexCost[v2]) {
+                vertexCost[v2] = cost;
+                parent[v2] = v1;
+            }
+            edge = edge->next();
+        }
+    }
+}
+```
+
+No código, usaremos três listas, e declaramos e preenchemos elas inicialmente. Após declararmos para o vértice inicial $0$ em `parent[0] = 0` e `inTree[0] = 1`, fazemos um while especificamente para as arestas do vértice inicial para preencher o array `vertexCost` com os respectivos pesos de cada vizinho. 
+
+Iniciamos um while para fazer a verificação de cada vértice, e iniciamos `minCost` e `v1`. Para cada vértice, verificamos se ele não está na árvore e se o custo desse vértice é menor que o mínimo. Se for, atualizamos o custo e o vértice. Verificamos a condição de parada e marcamos `v1` como true na árvore, pois é o menor que achamos. 
+
+Passamos no outro while por cada aresta do vértice selecionado para atualizar os custos dos seus vizinhos (`v2`). Verificamos se esse vizinho ainda não está incluído na árvore e se o peso da aresta atual é menor do que o custo que já tínhamos registrado para ele em `vertexCost`. Se for menor, atualizamos o `vertexCost[v2]` com esse novo peso (pois achamos uma conexão mais barata) e definimos o `parent[v2]` como sendo o `v1` (isso é a atualização da franja). Ao fim, temos o menor custo possível para cada vértice em `VertexCost` e a árvore mínima pelo `parent`.
+
+*Implementação em Python*
+
+```py
+def mst_prim_fastv1(list_adj):
+    num_vertices = len(list_adj)
+    parent = [-1] * num_vertices
+    intree = [False] * num_vertices
+    vertexcost = [float('inf')] * num_vertices
+    parent[0] = 0
+    intree[0] = True
+    for vizinho, custo in list_adj[0]:
+        parent[vizinho] = 0
+        vertexcost[vizinho] = custo
+    
+    while True:
+        mincost = float('inf')
+        v1 = -1
+        for v in range(num_vertices):
+            if not intree[v] and vertexcost[v] < mincost:
+                mincost = vertexcost[v]
+                v1 = v
+        if mincost == float('inf'):
+            break
+        intree[v1] = True
+        for v2,custo in list_adj[v1]:
+             if not intree[v2] and custo < vertexcost[v2]:
+                vertexcost[v2] = custo
+                parent[v2] = v1
+    
+    return parent
+```
 
