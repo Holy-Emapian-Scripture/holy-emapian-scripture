@@ -2333,3 +2333,96 @@ juntando com a explicação de complexidades anteriores, isso dá simplesmente $
 
 == Algoritmo de Kruskal
 
+A estratégia desse algoritmo consiste em crescer uma floresta $F = (V', E')$ até que
+ela se torne uma árvore geradora $F = (V, E')$, diferente de crescer arbitrariamente como o Prim.
+
+Uma aresta $e_k$ é externa a floresta $F$ se $e_k in.not F$ e o grafo $F + e_k$ é uma floresta.
+Ideia geral do algoritmo:
+
+#pseudocode-list[
+  + *Inicialize a floresta com todos os vértices e nenhuma aresta*
+  + *Escolha a aresta $e_k = (v_i, v_j)$ de $G$ que possua o menor custo*
+  + *Insira $e_k$ em $F$.*
+]
+
+Vamos ver como seria a implementação disso:
+
+```cpp
+void mstKruskalSlow(Edge * edges) {
+    vertex group[m_numVertices];
+    for (vertex v=0; v < m_numVertices; v++) { group[v] = v; }
+    int k = 0;
+    while (true) {
+        int minCost = INT_MAX;
+        vertex minV1, minV2 = -1;
+        for (vertex v1=0; v1 < m_numVertices; v1++) {
+            EdgeNode * edge = m_edges[v1];
+            while (edge) {
+                vertex v2 = edge->otherVertex();
+                int cost = edge->cost();
+                if (v1 < v2 && group[v1] != group[v2] && cost < minCost) {
+                    minCost = cost;
+                    minV1 = v1;
+                    minV2 = v2;
+                }
+                edge = edge->next();
+            }
+        }
+        if (minCost == INT_MAX) return;
+        edges[k++] = Edge(minV1, minV2, minCost);
+        vertex leaderV1 = group[minV1];
+        vertex leaderV2 = group[minV2];
+        for (vertex v=0; v < m_numVertices; v++) {
+            if (group[v] == leaderV2) {
+                group[v] = leaderV1;
+            }
+        }
+    }
+}
+```
+
+No algoritmo, recebemos uma lista vazia denominada `edges`, onde iremos colocar as arestas da forma `(vértice1, vértice2, custo)`.
+Criamos um vetor para entendermos de que parte da floresta cada vértice pertence, o `group`. E o `k` vai servir como contador de arestas.
+Após preenchermos cada vértice a cada grupo próprio, iniciamos o while com o `mincost` e o `minV1` e `minV2`, pra marcar a aresta.
+
+Então, para cada vértice eu pego suas arestas, e faço 3 verificações para atualizar parâmetros: 
+- `v1 < v2` - Para evitar duplicatas em caso de grafo não dirigido, por exemplo a aresta $(0,1)$ é a mesma que $(1,0)$.
+- `group[v2] != group[v1]` - as arestas devem ser de grupos diferentes, caso contrário certamente já pegamos a menor para a árvore.
+- e o custo tem que ser menor que o último.
+Se passou nessas verificações, então ele deve ser atualizado, e atualizamos a aresta de menor custo, em `minV1` e `minV2`. Após a verificação de contorno e a declaração de da aresta no edges. 
+Por fim, salvamos os líderes de cada grupo e atualizamos o grupo de um dos grupos.
+
+Que ideia do caramba!
+
+*Implementação em Python*
+
+```py
+def mst_kruskal_slow(list_adj):
+    num_vertices = len(list_adj)
+    group = [v for v in range(num_vertices)]
+    edges = []
+    while True:
+        mincost = float('inf')
+        minv1, minv2 = -1, -1
+        for v in range(num_vertices):
+            for vizinho, custo in list_adj[v]:
+                if v < vizinho and group[v] != group[vizinho] and custo < mincost:
+                    mincost = custo
+                    minv1 = v
+                    minv2 = vizinho
+
+        if mincost == float('inf'):
+            break
+        edges.append((minv1, minv2, mincost))
+        leader1 = group[minv1]
+        leader2 = group[minv2]
+        for v in range(num_vertices):
+            if group[v] == leader2:
+                group[v] = leader1
+    
+    return edges
+```
+
+A explicação é análoga à anterior, e, olhando para a complexidade, o while True passa em cada vértice $V$ vezes, e os dois primeiros fors passam por todas as arestas (a cada iteração!). Por fim, o for final percorre todos os vértices novamente, trazendo uma complexidade de $O(V(V+E))$.
+
+
