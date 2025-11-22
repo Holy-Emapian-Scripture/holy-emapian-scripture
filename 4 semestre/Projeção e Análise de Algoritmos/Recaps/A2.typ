@@ -2083,6 +2083,7 @@ Dada uma árvore $T$ de $G$, considere a franja de $T$ como o corte cuja margem 
   )
   ]
 )
+=== Prim Slow
 
 ```cpp
 void mstPrimSlow(vertex * parent) {
@@ -2113,5 +2114,39 @@ void mstPrimSlow(vertex * parent) {
 O código preenche o vetor de `parent` e abrimos um while true que só para de funcionar quando o `min` não mudou durante toda uma interação. Iniciamos o min, e as variáveis `treeV`, que é o vértice pertencente a $T$, e `newV`, que é o vértice a ser avaliado.
 
 Então, percorremos todos os vértices que já estão na árvore (chamamos de $v_1$ e fazemos a verificação vendo se eles já foram incluidos no vetor `parent`), e para cada aresta de `newV` (que chamamos de $v_2$), verificamos o custo de adicionar a árvore. Se for menor do que o mínimo, marcamos o respectivo pai e filho, e depois do for acabar, adicionamos essa aresta no vetor de `parent`.
+
+*Implementação em Python*
+
+```py
+def mst_prim_slow(v0, list_adj):
+    num_vertices = len(list_adj)
+    parent = [-1] * num_vertices
+    parent[v0] = v0
+    while True:
+        min = float('inf')
+        treeV, newV = -1, -1
+        for i in range(num_vertices):
+            if parent[i] == -1:
+                continue
+            for vizinho, custo in list_adj[i]:
+                if parent[vizinho] == -1 and custo < min:
+                    min = custo
+                    treeV = i
+                    newV = vizinho
+        if min == float('inf'):
+            break
+        parent[newV] = treeV
+
+    return parent        
+```
+
+A ideia é a mesma, claro. Olhando para complexidade, a cada iteração, adicionamos um novo vértice à árvore. No pior caso, onde todos os vértices tem pai, o for passa por todas as arestas para adicionar um único vértice novo, e como rodamos até $V$ vezes, o algoritmo é $O(V + E)$.
+
+A *corretude* do algoritmo pode ser avaliada através do critério de minimalidade baseado em cortes. Uma árvore geradora $T$ é uma MST se e somente se cada aresta $e_k in T$ apresentar o menor custo no corte fundamental de $e_k$ relativo à $T$.
+
+Uma coisa que podemos observar no algoritmo é que essa versão calcula a franja a cada iteração, em vez de modificar gradualmente à medida que a árvore é construída. Como melhoramos isso?
+
+=== Prim Fast
+
 
 
