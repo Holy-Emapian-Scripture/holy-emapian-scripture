@@ -2241,3 +2241,95 @@ def mst_prim_fastv1(list_adj):
     return parent
 ```
 
+É análoga a ideia em C++. Analisando a complexidade, vemos que a cada iteração do while de fora, passamos por todos os vértices, e a cada aresta desse vértice. Como queremos passar por todos os vértices, sabemos que temos que fazer isso $V$ vezes. Isso intuitivamente dá, então, $O(V^2 + E)$. Como $E < V^2$(ou $E prop V^2$), isso é simplesmente $O(V^2)$. Será que tem como ficar ainda melhor?
+
+=== Prim Fast V2
+
+E se mantessemos os vértices da fronteira em ordem crescente de custo? Dessa forma, não seria necessário procurar o vértice que apresenta o menor custo à cada iteração (basta usar o famoso heap mínimo).
+
+```cpp
+void mstPrimFastV2(vertex * parent) {
+    bool inTree[m_numVertices];
+    int vertexCost[m_numVertices];
+    for (vertex v = 0; v < m_numVertices; v++) {
+        parent[v] = -1;
+        inTree[v] = false;
+        vertexCost[v] = INT_MAX;
+    }
+    parent[0] = 0;
+    inTree[0] = true;
+    EdgeNode * edge = m_edges[0];
+    while (edge) {
+        vertex v2 = edge->otherVertex();
+        parent[v2] = 0;
+        vertexCost[v2] = edge->cost();
+        edge = edge->next();
+    }
+    Heap heap;
+    for (vertex v = 1; v < m_numVertices; v++) { 
+        heap.insert_or_update(vertexCost[v], v); 
+    }
+    while (!heap.empty()) {
+        vertex v1 = heap.top().second; 
+        heap.pop(); 
+        if (vertexCost[v1] == INT_MAX) {
+            break;
+        }
+        inTree[v1] = true;
+        edge = m_edges[v1];
+        while (edge) {
+            vertex v2 = edge->otherVertex();
+            int cost = edge->cost();
+            if (!inTree[v2] && cost < vertexCost[v2]) {
+                vertexCost[v2] = cost;
+                parent[v2] = v1;
+                heap.insert_or_update(vertexCost[v2], v2);
+            }
+            edge = edge->next();
+        }
+    }
+}
+```
+
+A implementação é muito parecida, e o que muda é que, antes de fazer o while principal, iniciamos o heap, e preenchemos com os custos iniciais de cada vértice (incluindo os que já atualizamos que vem da raiz). Ainda, no while principal, pegamos o topo diretamente do heap e depois retiramos ele ($log(V)$), e, na hora de 
+atualizarmos a franja, também inserimos no heap.
+
+```py
+import heapq
+
+def mst_prim_fastv2(v0, list_adj):
+    num_vertices = len(list_adj)
+    parent = [-1] * num_vertices
+    intree = [False] * num_vertices
+    vertexcost = [float('inf')] * num_vertices
+    parent[v0] = v0
+    intree[v0] = True
+    for vizinho, custo in list_adj[v0]:
+        parent[vizinho] = v0
+        vertexcost[vizinho] = custo
+    heap = []
+    for v in range(num_vertices):
+        if v != v0:
+            heapq.heappush(heap, (vertexcost[v], v))
+
+    while heap:
+        custo_v1, v1 = heapq.heappop(heap)
+        if intree[v1] or custo_v1 > vertexcost[v1]:
+            continue
+        if custo_v1 == float('inf'):
+            break
+        intree[v1] = True
+        for v2, custo in list_adj[v1]:
+            if not intree[v2] and custo < vertexcost[v2]:
+                vertexcost[v2] = custo
+                parent[v2] = v1
+                heapq.heappush(heap, (vertexcost[v2], v2))
+
+    return parent
+```
+
+Para a complexidade, muito parecido com o djikstra, o que vemos aqui é que temos um heap pop quando passamos por todos os vértices e temos um heap push quando temos que adicionar(ao passarmos pelas arestas). Ou seja, 
+juntando com a explicação de complexidades anteriores, isso dá simplesmente $O((V+E)log(V))$.
+
+== Algoritmo de Kruskal
+
