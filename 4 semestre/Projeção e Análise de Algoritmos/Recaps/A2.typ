@@ -2024,5 +2024,94 @@ Show! Mas, como achar a árvore mais barata que gera o grafo??
 
 #pagebreak()
 
+== Árvore Geradora Mínima
+
+Uma árvore geradora de um grafo $G=(V,E)$ é um subgrafo $T$ que não possua ciclos e que contenha todos os vértices de $G$. Se um grafo $G$ possui uma árvore geradora, então ele é conexo (claro, uma árvore é conexa) e possui sempre $V-1$ arestas. Considere abaixo grafos conexos e não-dirigidos.
+
+Um *corte* é um conjunto de arestas que conecta duas partes de um grafo.Dado um conjunto $A$ de vértices, as arestas que possuem uma ponta em $A$ e a outra ponta no complemento de $Ã$ representam um corte.
+
+#figure(
+  caption: [Exemplo de corte em grafo],
+  image("images/minimal-tree-1.png",width: 50%)
+)
+
+Dada uma árvore geradora, temos duas operações básicas:
+- A adição de uma aresta em uma árvore geradora cria um ciclo.
+- A remoção de uma aresta em uma árvore geradora cria um corte.
+
+Dada uma árvore geradora $T$ e um grafo $G = (V,E)$, a propriedade dos ciclos consiste em :
+  - Se $e_i in.not T$, o grafo $T + e_i$ possui um único ciclo $C$.
+  - Se $e_j in C$, o grafo $T + e_i - e_j$ é uma árvore geradora.
+Claro que, se existir um $e_k in T$, $T - e_k$ produz uma florest com duas componentes conexas em $G$.
+
+Dada as mesmas coisas, a propriedade dos cortes consiste em:
+- Dado $e_i in T$ e $e_j in "corte"(T - e_i)$.
+- $T - e_i + e_j$ é uma árvore geradora.
+
+#figure(
+  caption: [Exemplo da propriedade dos cortes: Se retirarmos a aresta $(2,5)$, o corte que conectaria as duas árvores geradoras seria qualquer aresta $[(3,5),(3,6),(4,5),(4,6)]$.],
+  image("images/minimal-tree-2.png",width: 50%)
+)
+
+Se $G = (V,E)$ for um grafo não-dirigido com custos nas arestas (com valores positivos e negativos), sabemos que o custo de um subgrafo $H$ de $G$ é calculado pelo somatório de custos das arestas em $H$. Com isso, podemos definir que uma *Árvore Geradora Mínima* (Mininum Spamming Tree - MST) de um grafo $G$ é qualquer árvore geradora cujo custo seja mínimo.
+
+*Problema:* dado $G = (V,E)$ não-dirigido com custos nas arestas encontre uma árvore geradora mínima.
+
+== Algoritmo de Prim
+
+#grid(
+  columns: (1fr, 1fr), 
+  gutter: 1.5em,       
+  [
+Esse algoritmo é capaz de encontrar a MST de um grafo $G = (V,E)$.
+
+Dada uma árvore $T$ de $G$, considere a franja de $T$ como o corte cuja margem é composta pelos vértices em $T$. Ideia geral do algoritmo:
+
+    #pseudocode-list[
++ *Escolha a raiz de $T$*
++ *Enquanto a franja não estiver vazia:*
+  + *Escolha a aresta de menor custo*
+  + *Insira a aresta e o vértice em $T$*
+]
+  Vamos ver sua implementação:
+  ],
+
+  [
+    #figure(
+  caption: [Exemplo da franja para $T = {1,2,4}$, com as arestas em verde sendo a franja.],
+  image("images/minimal-tree-3.png",width: 100%)
+  )
+  ]
+)
+
+```cpp
+void mstPrimSlow(vertex * parent) {
+    for (vertex v=0; v < m_numVertices; v++) { parent[v] = -1; }
+    parent[0] = 0;
+    while (true) {
+        int min = INT_MAX;
+        vertex treeV, newV = -1;
+        for (vertex v1=0; v1 < m_numVertices; v1++) {
+            if (parent[v1] == -1) { continue; }
+            EdgeNode * edge = m_edges[v1];
+            while (edge) {
+                vertex v2 = edge->otherVertex();
+                int cost = edge->cost();
+                if (parent[v2] == -1 && cost < min) {
+                    min = cost;
+                    treeV = v1;
+                    newV = v2;
+                }
+                edge = edge->next();
+            }
+        }
+        if (min == INT_MAX) { break; }
+        parent[newV] = treeV;
+    }
+}
+```
+O código preenche o vetor de `parent` e abrimos um while true que só para de funcionar quando o `min` não mudou durante toda uma interação. Iniciamos o min, e as variáveis `treeV`, que é o vértice pertencente a $T$, e `newV`, que é o vértice a ser avaliado.
+
+Então, percorremos todos os vértices que já estão na árvore (chamamos de $v_1$ e fazemos a verificação vendo se eles já foram incluidos no vetor `parent`), e para cada aresta de `newV` (que chamamos de $v_2$), verificamos o custo de adicionar a árvore. Se for menor do que o mínimo, marcamos o respectivo pai e filho, e depois do for acabar, adicionamos essa aresta no vetor de `parent`.
 
 
