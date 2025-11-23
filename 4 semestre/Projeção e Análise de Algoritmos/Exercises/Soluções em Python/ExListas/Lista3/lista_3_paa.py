@@ -363,4 +363,24 @@ def problema_8(n: int, m: int, transicoes: List[Tuple[int, int]]) -> int:
     - Retorne um único inteiro: o número de formas distintas de ir do
       estado 1 ao estado $n$.
     """
-    pass
+    adj = [[] for _ in range(n + 1)]
+    for u, v in transicoes:
+        adj[u].append(v)
+
+    memo = [-1] * (n + 1)
+
+    def dfs(u):
+        if u == n:
+            return 1
+        
+        if memo[u] != -1:
+            return memo[u]
+        
+        total = 0
+        for v in adj[u]:
+            total += dfs(v)
+        
+        memo[u] = total
+        return total
+
+    return dfs(1)
