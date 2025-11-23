@@ -2336,6 +2336,7 @@ juntando com a explicação de complexidades anteriores, isso dá simplesmente $
 A estratégia desse algoritmo consiste em crescer uma floresta $F = (V', E')$ até que
 ela se torne uma árvore geradora $F = (V, E')$, diferente de crescer arbitrariamente como o Prim.
 
+=== Kruskal Slow
 Uma aresta $e_k$ é externa a floresta $F$ se $e_k in.not F$ e o grafo $F + e_k$ é uma floresta.
 Ideia geral do algoritmo:
 
@@ -2425,4 +2426,83 @@ def mst_kruskal_slow(list_adj):
 
 A explicação é análoga à anterior, e, olhando para a complexidade, o while True passa em cada vértice $V$ vezes, e os dois primeiros fors passam por todas as arestas (a cada iteração!). Por fim, o for final percorre todos os vértices novamente, trazendo uma complexidade de $O(V(V+E))$.
 
+A corretude do algoritmo pode ser avaliada através do critério de minimalidade baseado em ciclos. Uma árvore geradora $T$ é uma MST de $G$ se e somente se cada aresta $e_k in.not T$ apresentar o maior custo no ciclo fundamental de $e_k$ relativo à $T$ (não entendi, e espero que vocês acreditem).
 
+Essa versão é um pouco lenta pois:
+
+- A cada iteração todas as arestas são verificadas em busca da com menor custo.
+- A cada iteração todos os vértices são verificados para avaliar se é necessário atualizar seu grupo.
+
+Como melhorar isso? 
+
+=== Kruskal Fast
+
+Podemos ordenar as arestas por seu custo e utilizar uma estrutura de dados mais eficiente para fazer a busca e união dos vértices.
+
+#grid(
+  columns: (1fr, 1fr), 
+  gutter: 1.5em,       
+  [
+    Na estrutura *union-find*, todo elemento é associado à um conjunto:
+    - `group[v] = v`, se for o líder do grupo;
+    - `group[v] = v'`, se não for o líder.
+
+    Essa representação força uma estrutura de árvore entre os elementos de mesmo conjunto (também armazenamos o tamanho).
+
+    Seguindo essa abordagem podemos comparar se dois elementos pertencem ao mesmo grupo verificando se o líder de cada grupo é o mesmo.
+  ],
+
+  [
+    #figure(
+  caption: [Exemplo bobo do tal do union-find.],
+  image("images/kruskal-1.png",width: 80%)
+  )
+  ]
+)
+
+Como precisamos chegar na raiz, isso consome até $O(log(n))$ no pior caso. A união de grupos passa a ser realizada definindo como
+pai do menor conjunto o pai do maior conjunto.
+
+Voltando ao Kruskal, podemos otimizá-lo usando o que acabamos de aprender. Veja a ideia:
+
+#pseudocode-list[
+  + *Inicialize a floresta com todos os vértices e sem nenhuma aresta*
+  + *Crie a lista de arestas ordenando-a pelo custo*
+  + *Para cada aresta $e_k = (v_i, v_j)$*
+    + *Obtenha os líderes dos vértices*
+    + *Se forem diferentes, una-os*
+    + *insira $e_k$ em $F$*
+    + *Pare ao encontrar $V-1$ arestas*
+]
+
+```cpp
+void mstKruskalFast(Edge * mstEdges) {
+    vector<Edge> edges(m_numEdges);
+    int currentEdge = 0;
+    for (vertex v1=0; v1 < m_numVertices; v1++) {
+        EdgeNode * edge = m_edges[v1];
+        while (edge) {
+            vertex v2 = edge->otherVertex();
+            if (v1 < v2) {
+                edges[currentEdge++] = Edge(v1, v2, edge->cost());
+            }
+            edge = edge->next();
+        }
+    }
+    sort(edges.begin(), edges.end(), compareEdges);
+    UnionFind uf(m_numVertices);
+    currentEdge = 0;
+    for (int e=0; currentEdge < m_numVertices - 1; e++) {
+        Edge & edge = edges[e];
+        vertex leaderV1 = uf.findE(edge.v1());
+        vertex leaderV2 = uf.findE(edge.v2());
+        if (leaderV1 != leaderV2) {
+            uf.unionE(leaderV1, leaderV2);
+            mstEdges[currentEdge++] = edge;
+        }
+    }
+}
+```
+Após montar a estrutura edges bonitinha e ordenada pelo custo, fazemos literalmente o que foi dito no pseudocódigo - passamos por cada vértice, identificamos os líderes e, se os líderes forem diferentes, adicionamos na lista de retorno a aresta escolhida.
+
+Não vou implementar isso em Python por falta de tempo
