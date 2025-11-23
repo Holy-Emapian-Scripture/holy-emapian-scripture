@@ -317,7 +317,31 @@ def problema_7(n: int, m: int, estradas: List[Tuple[int, int, int]]) -> int:
     Saída:
     - Retorne o custo mínimo total para conectar todas as $n$ cidades.
     """
-    pass
+    adj = [[] for _ in range(n + 1)]
+    
+    for u, v, c in estradas:                        #pega os vértices e o custo
+        adj[u].append((v, c))                       #fazemos uma lista de adjacência digna
+        adj[v].append((u, c)) 
+    pq = [(0, 1)]                                   #pra iniciar o heap (peso 0, vértice 1)
+    
+    visited = [False] * (n + 1)
+    total_cost = 0
+    nodes_connected = 0
+    while pq:
+        cost, u = heapq.heappop(pq)                 #popamos o primeiro
+        if visited[u]:                              #se conseguirmos visitar o u com alguma entrada melhor, só passamos
+            continue
+        visited[u] = True                           #se passou, marcamos como visitado
+        total_cost += cost                          #somamos ao custo
+        nodes_connected += 1                        #somamos a quantidade de nós
+        if nodes_connected == n:                    #se tivermos chegado em todos os nós, quebramos 
+            break
+        for v, weight in adj[u]:                    #e para cada vizinho no menor escolhido
+            if not visited[v]:
+                heapq.heappush(pq, (weight, v))     #adicionamos ao heap
+    if nodes_connected < n:                         #se após o while, não conseguirmos conectar todas as arestas, então não satisfizemos o problema
+        return -1         
+    return total_cost                               #retorna o custo total
 
 
 # ==============================================================================
