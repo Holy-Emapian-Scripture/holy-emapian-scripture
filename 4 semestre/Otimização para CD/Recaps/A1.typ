@@ -168,13 +168,13 @@ Agora vamos lembrar algumas coisas que vimos em cálculo (Alguns teoremas que s�
 ]
 
 #definition("Gradiente")[
-  Dada $f: RR^n -> RR$ e $exists (diff f)/(diff x_i)$, $i = 1,...,n$, o vetor gradiente de $f$ é definido como:
+  Dada $f: RR^n -> RR$ e $exists (partial f)/(partial x_i)$, $i = 1,...,n$, o vetor gradiente de $f$ é definido como:
   $
     nabla f(x) = mat(
-      (diff f)/(diff x_1);
-      (diff f)/(diff x_2);
+      (partial f)/(partial x_1);
+      (partial f)/(partial x_2);
       dots.v;
-      (diff f)/(diff x_n);
+      (partial f)/(partial x_n);
     )
   $
 ]
@@ -182,9 +182,9 @@ Agora vamos lembrar algumas coisas que vimos em cálculo (Alguns teoremas que s�
 #definition("Continuamente Diferenciável")[
   Uma função $f: RR^n -> RR$ é continuamente diferenciável se:
   $
-    forall x in RR^n, space exists (diff f)/(diff x_i)(x)
+    forall x in RR^n, space exists (partial f)/(partial x_i)(x)
   $
-  e $(diff f)/(diff x_i)$ são contínuas $forall i$
+  e $(partial f)/(partial x_i)$ são contínuas $forall i$
 ]
 
 #theorem("Aproximação de Primeira Ordem")[
@@ -209,20 +209,20 @@ Apenas para relembrar, esse teorema está nos dando uma forma de aproximar uma f
 Perceba que, próximo do ponto, a distância entre os pontos da curva e os do plano não são tão grandes, por isso que definimos a aproximação linear como mostrado anteriormente
 
 #definition("Funções duas vezes continuamente diferenciáveis")[
-  Podemos também expressar uma definição similar para uma função $f : C -> R$$$ definida num conjunto $C subset RR^n $. Dizemos que $f : C -> R$$$ é duas continuamente diferenciável em $C$ se existe $U supset C$ conjunto aberto tal que existem todas derivadas parciais de primeira e segunda ordem em todo ponto $x in U$ e, além disso, as funções $(diff^2 f)/(diff x_i diff x_j) : U -> RR$ são contínuas
+  Podemos também expressar uma definição similar para uma função $f : C -> R$$$ definida num conjunto $C subset RR^n $. Dizemos que $f : C -> R$$$ é duas continuamente diferenciável em $C$ se existe $U supset C$ conjunto aberto tal que existem todas derivadas parciais de primeira e segunda ordem em todo ponto $x in U$ e, além disso, as funções $(partial^2 f)/(partial x_i partial x_j) : U -> RR$ são contínuas
 ]
 
 #definition("Matriz Hessiana")[
   Seja $f: U -> RR$ com $U subset RR$ e duas vezes continuamente diferenciável, a matriz hessiana de $f$ no ponto $x in U$ é definida como:
   $
     nabla^2 f(x) := mat(
-      (diff^2 f)/(diff x_1^2), (diff^2 f)/(diff x_1 diff x_2), ..., (diff^2 f)/(diff x_1 diff x_n);
+      (partial^2 f)/(partial x_1^2), (partial^2 f)/(partial x_1 partial x_2), ..., (partial^2 f)/(partial x_1 partial x_n);
 
-      (diff^2 f)/(diff x_2 diff x_1), (diff^2 f)/(diff x_2^2), dots.down, dots.v;
+      (partial^2 f)/(partial x_2 partial x_1), (partial^2 f)/(partial x_2^2), dots.down, dots.v;
 
       dots.v;
 
-      (diff^2 f)/(diff x_n diff x_1), (diff^2 f)/(diff x_n diff x_2), ..., (diff^2 f)/(diff x_n^2)
+      (partial^2 f)/(partial x_n partial x_1), (partial^2 f)/(partial x_n partial x_2), ..., (partial^2 f)/(partial x_n^2)
     )
   $
 
@@ -261,7 +261,7 @@ Lembram que o vetor gradiente indica a direção que minha função tá crescend
   $
 ]
 #proof[
-  Seja $i in [n]$ e defina a função $g(t) = f (x^* + t e_i  $. Temos que $g$ é diferenciável em $0$ e $ g'(0) = (diff f)/(diff x_i) (x^*)$. Sendo $x^*$ um ponto ótimo local de $f$ , segue que $0$ é um ponto ótimo local de $g$; portanto $0 = g'(0) = (diff f)/(diff x_i)(x^*)$. O argumento vale para todo $i in [n]$, implicando que $nabla f (x^*) = 0$
+  Seja $i in [n]$ e defina a função $g(t) = f (x^* + t e_i  $. Temos que $g$ é diferenciável em $0$ e $ g'(0) = (partial f)/(partial x_i) (x^*)$. Sendo $x^*$ um ponto ótimo local de $f$ , segue que $0$ é um ponto ótimo local de $g$; portanto $0 = g'(0) = (partial f)/(partial x_i)(x^*)$. O argumento vale para todo $i in [n]$, implicando que $nabla f (x^*) = 0$
 ]
 
 Esse teorema não vale na volta, já que, como vimos antes em cálculo, pontos de máximo e de sela também possuem essa característica, isso nos leva a criar a definição:
@@ -524,20 +524,20 @@ Um conjunto interessante de funções com algumas propriedades convenientes são
   $
   Agora podemos tirar a derivada de $f(x)$ em $x_j$, mas antes, perceba que:
   $
-    (diff alpha_i) / (diff x_j) = a_(i j)
+    (partial alpha_i) / (partial x_j) = a_(i j)
   $
   Agora sim:
   $
-    (diff f)/(diff x_j) = x_1 (diff alpha_1)/(diff x_j) + ... + diff / (diff x_j) (alpha_j x_j) + ... + x_n (diff alpha_n)/(diff x_j) + 2b_j \
+    (partial f)/(partial x_j) = x_1 (partial alpha_1)/(partial x_j) + ... + partial / (partial x_j) (alpha_j x_j) + ... + x_n (partial alpha_n)/(partial x_j) + 2b_j \
 
-    (diff f)/(diff x_j) = x_1 a_(1 j) + ... + (diff alpha_j) / (diff x_j)x_j + alpha_j + ... + x_n a_(n j) + 2b_j  \
+    (partial f)/(partial x_j) = x_1 a_(1 j) + ... + (partial alpha_j) / (partial x_j)x_j + alpha_j + ... + x_n a_(n j) + 2b_j  \
 
-    (diff f)/(diff x_j) = sum_(k = 1)^n a_(j k)x_k + sum_(k = 1)^n a_(k j)x_k + 2b_j
+    (partial f)/(partial x_j) = sum_(k = 1)^n a_(j k)x_k + sum_(k = 1)^n a_(k j)x_k + 2b_j
   $
 
   Como $A$ é simétrica, podemos reescrever isso como:
   $
-    (diff f)/(diff x_j) = 2 (sum_(k = 1)^n a_(k j)x_k + b_j)
+    (partial f)/(partial x_j) = 2 (sum_(k = 1)^n a_(k j)x_k + b_j)
   $
 
   Ou seja, o gradiente da função é:
@@ -547,7 +547,7 @@ Um conjunto interessante de funções com algumas propriedades convenientes são
 
   E para a hessiana é bem mais fácil, dado o item anterior, basta que tiremos a derivada novamente para $x_i$:
   $
-    (diff^2 f)/(diff x_j diff x_i) = 2a_(i j)
+    (partial^2 f)/(partial x_j partial x_i) = 2a_(i j)
   $
   Ou seja:
   $
