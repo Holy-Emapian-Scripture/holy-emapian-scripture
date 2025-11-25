@@ -9,11 +9,16 @@
 
 #import "@preview/tablex:0.0.9": tablex, rowspanx, colspanx, cellx
 
-#set page(width: 21cm, height: 30cm, margin: 1.5cm)
+#set page(
+  width: 21cm,
+  height: 32cm,
+  margin: 1cm,
+)
 
 #set par(
   justify: true
 )
+
 
 #set figure(supplement: "Figura")
 
@@ -398,7 +403,7 @@ Vale ressaltar que funções subdiferenciáveis podem não ser suaves. E por que
         + Compute um subgradiente $g^((t))$ de $f$ em $x^((t))$
         + $x^((t+1)) = x^((t)) - alpha^((t)) g^((t))$
       +  }
-      + *return* $x^((T)) := 1/T sum^T_(t=1) alpha^((t))/(sum^T_(l=1) alpha^((l))) x^((t))$
+      + *return* $x^((T)) := sum^T_(t=1) alpha^((t))/(sum^T_(l=1) alpha^((l))) x^((t))$
     + }
   ],
   supplement: [Algoritmo],
@@ -484,4 +489,215 @@ $
   f(overline(x)^((T))) - f^* <= (2M ||x^((1)) - x^*||_2)/(sqrt(T))
 $
 
-Porém, na maioria esmagadora das vezes, não sabemos $M$ e $||x^((1))-x^*||$, então utilizamos o passo sequencial já definido anteriormente
+Porém, na maioria esmagadora das vezes, não sabemos $M$ e $||x^((1))-x^*||$, então utilizamos o passo sequencial já definido anteriormente.
+
+Como vimos antes, também conseguimos uma fórmula recursiva para o método do subgradiente, assim como para o do gradiente
+$
+  x^((t+1)) = "argmin"_(x in RR^n) { f(x^((t))) + <x-x^((t)), g^((t))>  +  1\/(2 alpha^((t))) dot ||x - x^((t))||_2^2 }
+$
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Gradiente Projetado
+]
+
+#pagebreak()
+
+Certo, perceba que, até o momento, nós utilizamos algoritmos aplicados apenas em funções em TODO o plano $RR^n$, mas e se, como em muitos casos, temos um conjunto limitado? Agora vamos considerar o seguinte problema de otimização
+$
+  min_(x in C) f(x)
+$
+para funções $f: RR^n -> RR$ e o conjunto viável $C subset RR^n$ *convexo* e vamos assumir também que $f$ tem gradientes ou pelo menos subgradientes em qualquer ponto. A gente viu a forma recursiva nos problemas anteriores, que tal a gente tentar aplicar aqui? Só que em vez de fazer no $RR^n$, nós fazemos em $C$?
+$
+  x^((t+1)) = "argmin"_(x in C) { f(x^((t))) + <x - x^((t)), g^((t))> + 1/(2 alpha^((t))) ||x - x^((t))||_2^2 }
+$
+
+Podemos mostrar que essa fórmula é equivalente a
+$
+  x^((t+1)) = "argmin"_(x in C) ||x - (x^((t)) - alpha^((t)) g^((t)))||_2^2
+$
+
+Só que perceba que isso é equivalente a *projetar ortogonalmente* $x^((t)) - alpha^((t)) g^((t))$ em $C$, então concluímos que:
+$
+  x^((t+1)) = Pi_(x in C) [x^((t)) - alpha^((t))g^((t))]
+$
+
+de forma que $Pi$ é o projetor ortogonal a $C$. Então temos o seguinte algoritmo:
+
+#figure(
+  pseudocode-list(
+    booktabs: true
+  )[
+    + *func* SubgradientMethod($f$) {
+      + $x^((1)) in RR^n$
+      + ${alpha^((t))} subset (0, infinity)$
+      + *for* $t in [T]$ *do* {
+        + Compute um subgradiente $g^((t))$ de $f$ em $x^((t))$
+        + $z^((t+1)) = x^((t)) - alpha^((t)) g^((t))$
+        + $x^((t+1)) = Pi_(x in C) [z^((t+1))]$
+      +  }
+      + *return* $x^((T)) := (sum^T_(t=1) alpha^((t)) x^((t))) / (sum^T_(l=1) alpha^((l)))$
+    + }
+  ],
+  supplement: [Algoritmo],
+  caption: [Método do Subgradiente Projetado]
+)<projected-gradient>
+
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Gradiente Proximal
+]
+
+#pagebreak()
+
+Esses métodos resolvem naturalmente algumas limitações do método projetado. Um dos principais problemas é que, para conjuntos não triviais, calcular as projeções pode ser *muito* custoso, então o que fazer? Algo muito comum, é adicionar uma função de custo, que *penaliza* conforme a resposta de *afasta* do conjunto viável $C$. Então vamos considerar o novo problema:
+$
+  min_(x in RR^n) f(x) + g(x)
+$
+para funções $f: RR^n->RR$, onde $f$ possui gradientes ou pelo menos subgradientes em todos os pontos e $g: RR^n -> RR$ convexa. Nós poderíamos tentar aplicar o método do subgradiente diretamente à $f+g$, só que essa função pode ser mais complexa e nem ser diferenciável, então utilizamos uma família de métodos onde mantemos $g$ preservada e usamos subgradientes apenas de $f$
+$
+  x^((t+1)) = "argmin"_(x in RR^n) {f(x^((t))) + <g^((t)), x - x^((t))> + g(x) + 1/(2 alpha^((t))) ||x - x^((t))||_2^2}
+$<recursive-proximal-formula>
+onde $g^((t))$ é o subgradiente de $f$ no ponto corrente $x^((t))$. Perceba que, ao adicionar $g(x)$ dentro do $"argmin"$, ele acaba por regularizar a função *dependendo* da escolha de $g(x)$
+
+#example("Restrição por Penalização")[
+  Uma penalização muito comum é transformar as condições de restrições de um conjunto viável em uma função, de forma que:
+  $
+    I_C (x) = cases(
+      0 wide &x in C,
+      +infinity wide &x in.not C
+    )
+  $
+  De forma que os problemas:
+  $
+    min_(x in C) f(x) wide min_(x in RR^n) f(x) + I_C (x)
+  $
+  são equivalentes
+]
+
+Podemos fazer uma definição útil para expressar modularmente o algoritmo descrito anteriormente
+
+#definition("Operador Proximal")[
+  O operador proximal de uma função *convexa* $g$ é o operador que, para cada $x in RR^n$, associa o vetor:
+  $
+    "prox"_g (x) := "argmin"_(y in RR^n) {g(y) 1/2||y-x||_2^2}
+  $
+]
+
+Com essa definição, é fácil ver que a equação @recursive-proximal-formula é equivalente a:
+$
+  x^((t+1)) = "prox"_g (x^((t)) - alpha^((t)) g^((t)))
+$
+
+#figure(
+  pseudocode-list(
+    booktabs: true
+  )[
+    + *func* ProximalGradientMethod($f = g + r$) {
+      + $x^{(1)} in RR^n$
+      + ${alpha^((t))} subset (0, infinity)$
+      + *for* $t in [T]$ *do* {
+        + Compute $nabla g(x^((t)))$
+        + $z^((t+1)) = x^((t)) - alpha^((t)) nabla g(x^((t)))$
+        + $x^((t+1)) = "prox"_(alpha^((t)) r)(z^((t+1)))$
+      + }
+      + *return* $ overline(x)^((T)) := (sum_(t=1)^T alpha^((t)) x^((t)))/(sum_(t=1)^T alpha^((t)))$
+    + }
+  ],
+  supplement: [Algoritmo],
+  caption: [Método do Gradiente Proximal]
+)<proximal-gradient>
+
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Método de Newton
+]
+
+#pagebreak()
+
+Até agora, vimos métodos que utilizam de aproximações de primeira ordem das funções, porém, e se tentarmos utilizar mais informações além dessas? E se a função que estamos trabalhando for diferenciável duas vezes? Será que não poderiamos usar sua *Hessiana* para auxiliar? Lembra no primeiro resumo que falamos, inutitivamente, como a Hessiana carrega informações sobre para quais lados a função cresce e decresce? Poderíamos tentar utilizar essas informações! Vamos tentar aplicar uma fórmula recursiva igual fizemos no último?
+$
+  x^((t+1)) = "argmin"_(x in RR^n){f(x^((t))) + (x - x^((t)))^T gradient f(x^((t))) + 1/2 (x - x^((t)))^T gradient^2 f(x^((t))) (x - x^((t)))}
+$
+
+onde aqui utilizamos o @second-order-approximation. Aqui, estamos assumindo algumas coisas:
+- $gradient^2 f(x) succ 0 space forall x$
+- $gradient^2 f(x)$ é $L$-Lipschitz, ou seja: $||gradient^2 f(x) - gradient^2 f(y)|| < L ||x-y|| space forall x,y$
+
+Como resultado dessa operação, obtemos:
+$
+  x^((t+1)) = x^((t)) - alpha^((t)) (gradient^2 f(x^((t))))^(-1) gradient f(x^((t)))
+$
+
+Assim, temos:
+#figure(
+  pseudocode-list(
+    booktabs: true
+  )[
+    + *func* NewtonMethod($f$) {
+      + $x^{(1)} in RR^n$
+      + $alpha^((t)) in RR$
+      + *for* $t in [T]$ *do* {
+        + $x^((t+1)) = x^((t)) - alpha^((t)) (gradient^2 f(x^((t))))^(-1) nabla f(x^((t)))$
+      + }
+      + *return* $x^((T))$
+    + }
+  ],
+  supplement: [Algoritmo],
+  caption: [Método de Newton]
+)<newton-method>
+
+Por conta da "adição" de informações ao método convencional, esse método costuma convergir *MUITO* mais rápido que os já vistos anteriormente. Porém, ele não tem uma garantia *global* de convergência. Como assim? Os métodos anteriores, independente de qual fosse o ponto inicial $x^((0))$, convergiam para uma solução local, porém, dependendo do ponto que iniciarmos o método de newton, ele pode *divergir*.
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Gradiente Conjugado
+]
+
+#pagebreak()
+
+Esse método é muito útil pois *garante a convergência globalmente em uma quantidade limitada de passos*. Porém, ele só pode ser aplicado no seguintes problemas:
+$
+  min_(x in RR^n) c + b^T x + x^T A x
+$
+
+Porém, antes de aplicarmos esse método, temos que fazer uma definição:
+
+#definition("Direção conjugada")[
+  Dizemos que os vetores ${d_1,...,d_n} subset.eq RR^n$ são direções conjugadas de $A$ se:
+  $
+    d_i^T (A d_j) = 0 wide forall i,j = 1,...,n
+  $
+]
+
+Então vamos tentar, ingenuamente, aplicar o método:
+$
+  x^((t+1)) = x^((t)) - alpha d^((t))
+$
+de forma que $d_t$ é uma direção conjugada de $A$. Que tal tentarmos encontrar o melhor passo $alpha$? Então temos que resolver:
+$
+  &min_(alpha in RR) f(x^((t)) - alpha d^((t)))    \
+
+  = &min_(alpha in RR) { c + b^T (x^((t)) - alpha d^((t))) + (x^((t)) - alpha d^((t)))^T A (x^((t)) - alpha d^((t))) }
+$
+
+Resolvendo esse problema, obtemos:
+$
+alpha^((t)) = - (gradient f(x^((t))) d^((t)))/(<d^((t)), A d^((t))>)
+$
+
+Também podemos mostrar que, tomando esse passo, o algoritmo irá convergir *exatamente* para o mínimo em apenas $n$ iterações
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Dualidade
+]
+
+#pagebreak()
