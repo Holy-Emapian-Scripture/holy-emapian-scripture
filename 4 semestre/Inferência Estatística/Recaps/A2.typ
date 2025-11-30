@@ -681,3 +681,372 @@ Porém é bem comum que o pivô não exista em casos discretos
 
   Isto é, eles querem ter *$90%$ de confiança* de que a proporção de sucesso seja *pelo menos $A$*. Os dados observáveis consistem no número $X$ de sucessos em uma amostra aleatória de *$n = 40$* pacientes. Nenhuma variável pivotal existe neste exemplo, e os intervalos de confiança são mais difíceis de construir
 ]
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Análise Bayesiana de Amostras Normais
+]
+
+#pagebreak()
+
+Nesse capítulo, vamos fazer uma análise bayesiana completa quando o problema trata de amostras de uma distribuição *Normal*. Para facilitar algumas contas, vamos trocar a definição usual com variância para a definição com *precisão*
+
+#definition("Precisão")[
+  A precisão de uma distribuição $N(mu, sigma^2)$ é
+  $
+    tau = 1/sigma^2
+  $
+]
+
+#theorem("Densidade da Normal")[
+  Seja $X ~ N(mu, tau)$, temos que a *função de densidade probabilística* de $X$ é:
+  $
+    f(x|mu,tau) = (tau / (2pi))^(1/2) exp(-tau/2 (x - mu)^2)
+  $
+]
+
+#corollary("Likelihood")[
+  Sejam $X_1,...,X_n|mu,tau ~ N(mu, tau)$, temos que a função de verossimilhança é dada por:
+  $
+    f(underline(x)|mu, tau) = (tau/(2pi))^(n/2) exp(-1/2 tau sum_(i=1)^n (x_i - mu)^2)
+  $
+]
+
+== Família de Conjugados
+#theorem("Família de Conjugados")[
+  Suponha que $X_1,...,X_n|mu, tau ~ N(mu, tau)$ e temos que $mu|tau ~ N(mu_0, lambda_0 tau_0)$ e $tau ~ Gamma(alpha_0, beta_0)$, então a posteriori de $mu$ e $tau$ [$p(mu, tau|underline(x))$] é:
+  $
+    mu, tau|underline(x) ~ N(mu_1, lambda_1 tau)  \
+
+    mu_1 = (lambda_0 mu_0 + n overline(x)_n)/(lambda_0 + n) wide lambda_1 = lambda_0 + n
+  $
+  $
+    tau ~ Gamma(alpha_1, beta_1)    \
+    alpha_1 = alpha_0 + n/2 wide beta_1 = beta_0 + 1/2 s^2_n + (n lambda_0 (overline(x)_n - mu_0)^2)/(2(lambda_0 + n))
+  $
+]
+
+Essa família de conjugados é chamada de NormalGamma com parâmetros $alpha_0$, $beta_0$, $mu_0$ e $lambda_0$, de forma que a posteriori de $mu,tau$ é a NormalGamma com parâmetros $alpha_1$, $beta_1$, $mu_1$ e $lambda_1$. Vale lembrar também que:
+$
+  p(mu,tau) prop p(mu|tau) p(tau)
+$
+
+Outro ponto é que $mu$ e $tau$ *não* são independentes, e mesmo que a gente escolha eles de forma que eles sejam independentes a priori, mesmo após uma única observação, eles já viram dependentes
+
+== Marginais
+Nós encontramos as distribuições de $mu,tau$, $mu|tau$ e $tau$, porém, qual seria a marginal de $mu$?
+
+#theorem([Marginal de $mu$])[
+  Suponha que $mu, tau ~ "NormalGamma"(mu_0, lambda_0, alpha_0, beta_0)$, então:
+  $
+    ((lambda_0 alpha_0)/(beta_0))^(1/2) (mu - mu_0) ~ t_(2 alpha_0)
+  $
+]
+#proof[
+  $mu|tau ~ N(mu_0, lambda_0 tau)$, então temos que:
+  $
+    VV[mu|tau] = 1/(lambda_0 tau) => (mu - mu_0) dot (lambda_0 tau)^(1/2) ~ N(0,1)
+  $
+  Então seja $p(tau)$ a marginal de $tau$ e $p(mu|tau)$ a pdf condicional de $mu$ em $tau$
+  $
+    p(z, tau) = underbrace((lambda_0 tau)^(-1/2) dot p(mu=(lambda_0 tau)^(-1/2) z + mu_0 | tau), Phi(z) -> "pdf da" N(0,1)) p(tau)
+  $
+  Como eu consigo exprimir $p(z,tau)$ como a multiplicação de suas marginais, isso significa que $z$ e $tau$ são *independentes*. Definimos então $Y = 2 beta_0 tau => Y ~ Gamma(alpha_0, 1/2) ~ Chi^2_(2 alpha_0)$. Ou seja, vamos ter que:
+  $
+    U = Z / (Y/(2 alpha_0))^(1/2) ~ t_(2 alpha_0)
+    
+    = ( (lambda_0 tau)^(1/2) (mu-mu_0) )/( (2 beta_0 tau)/(2 alpha_0) )^(1/2)
+    
+    = ((lambda_0 alpha_0)/(beta_0))^(1/2)(mu - mu_0)
+  $
+]
+
+Por conta disso, obtemos o seguinte
+
+#corollary([Propriedades da Marginal de $mu$])[
+  Se $alpha_0 > 1/2 => EE[mu] = mu_0$. Se $alpha_0 > 1 => VV[mu] = beta_0 / (lambda_0 (alpha_0 - 1))$
+]
+
+== Distribuições Impróprias
+Utilizamos esses parâmetros mais por conveniência do que por qualquer outro motivo (Como uma convicção). Para a posteriori, utilizamos os seguintes hiperparâmetros:
+$
+  alpha_0 = -1/2 wide beta_0 = 0 wide mu_0 = 0 wide lambda_0 = 0
+$
+assim, obtemos as seguintes pdf's *a priori*:
+$
+  p(mu)=1
+
+  wide
+
+  p(tau)=1/2 tau^(-1)
+
+  wide
+
+  p(mu, tau)=1/tau
+$
+Dessa forma, a posteriori fica:
+$
+  p(mu, tau) prop {tau^(1/2) exp[-(n pi)/2 (mu - overline(x)_n)^2]} tau^((n-1)/2 - 1) exp[-tau s_n^2 / 2]
+$
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Estimadores não-viezados
+]
+
+#pagebreak()
+
+Nosso principal objetivo quando estamos fazendo inferência é fazer um estimador $delta(underline(X))$ de $g(theta)$ que a distribuição se concentra bem próximo de $theta$, ou seja, na maior parte do tempo, os valores retornados pelo estimador são próximos do verdadeiro valor de $g(theta)$. É com esse objetivo que criamos estimadores *não-viezados*
+
+#definition("Estimador não-viezado")[
+  Um estimador $delta(underline(X))$ é não-viezado para $g(theta)$ se $EE_theta [delta(underline(X))] = g(theta) space forall theta$
+]
+
+#definition("Viés")[
+  O viés de um estimador $delta(underline(X))$ tem o seu *viés* definido como
+  $
+    "Bias"(g(theta)) = EE_theta [delta(underline(X))] - g(theta)
+  $
+]
+
+Porém, um estimador *não-viezado* não significa que ele é um *bom* estimador ou sequer um estimador viável para a situação. Por exemplo, um estimador que subestima $g(theta)$ em $1000$ unidades ou superestima vai ser não-viezado, mas sempre retornará valores ruins de aproximação frequentemente. Então para um estimador ser *bom*, ele necessita ter uma baixa variância
+
+#theorem[
+  Seja $delta$ um estimador de variância finita, então $EE_theta [(delta - g(theta))^2] = VV_theta [delta] + ("Bias"(delta, g(theta)))^2$
+]
+
+== Estimador não-viezado da Variância
+#theorem[
+  Seja $X_1,...,X_n$ uma amostra de uma distribuição indexada por $theta$ e $VV[X_i] = sigma^2$, então o seguinte estimador é não-viezado:
+  $
+    hat(sigma)^2 = 1/(n-1) sum_(i=1)^n (X_i - overline(X)_n)^2
+  $
+]
+#proof[
+  Vamos utilizar do fato que:
+  $
+    sum^(n)_(i=1) (X_i - mu)^2 = sum^(n)_(i=1) (X_i - overline(X)_n)^2 + n(overline(X)_n - mu)^2
+  $
+  Então vamos ter que (Tirando a esperança nos dois lados da equação mostrada anteriormente):
+  $
+    EE[hat(sigma)^2_0] &= sigma^2 - sigma^2/n    \
+
+    &= (n-1)/n sigma^2
+  $
+  logo, vamos ter que:
+  $
+    n/(n-1) EE[hat(sigma)^2_0] = EE[hat(sigma)^2] = sigma^2
+  $
+]
+
+Esse estimador citado agora é chamado de *variância amostral* em diversas literaturas (No livro do DeGroot, a variância amostral é o estimador com $1\/n$)
+
+== Limitações
+
+- Muitas vezes os estimadores não-viezados possuem uma variância maior que os estimadores viezados, um bom exemplo é que $VV[hat(sigma)^2]>=VV[hat(sigma)^2_0]$
+
+- Não há garantia que estimadores não-viezados existam em toda situação. Um exemplo é que, se $X_1,...,X_n ~ "Bern"(p)$, não existe estimador *não-viezado* de $sqrt(p)$
+
+- Estimadores inapropriados, mesmo sendo não-viezados. Por exemplo, se eu tenho uma sequência de bernoullis, e tentar estimar $p$ pela quantidade de erros até o primeiro sucesso $X$ (Geométrica). O estimador não viezado seria: $
+  delta(X) = cases(
+    1 "se" X = 0,
+    0 "se" X = 1
+  )
+$
+
+- Os estimadores podem ignorar informações. Se você for medir a votlagem de um sistema com um multímetro, e ele retornar $2.5$, então podemos pensar que $theta$ é $2.5$, mas e se o multímetro arredonda tudo que é maior que $3$ para $3$? Isso muda completamente a distribuição da informação
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Análise e Teste de Hipóteses
+]
+
+#pagebreak()
+
+== Hipóteses Nula e Alternativa
+Nós temos $theta in Omega$ e vamos particionar o espaço em dois conjuntos disjuntos $Omega_0$ e $Omega_1$ e queremos testar as duas hipóteses:
+$
+  H_0: theta in Omega_0 wide H_1: theta in Omega_1
+$
+
+#definition[
+  $H_0$ é chamada de *hipótese nula* e $H_1$ a *hipótese alternativa*. Se decidirmos que $theta in Omega_1$, então nós *REJEITAMOS* $H_0$, se $theta in Omega_0$, nós *NÃO REJEITAMOS* $H_0$
+]
+
+Ué, porque não falamos que *aceitamos* a hipótese $H_0$? Esse modo de visualizar o teste de hipóteses foi popularizado por Ronald Fisher, Jerzy Neyman e Egon Pearson. Essa visualização de assemelha muito ao sistema jurídico, onde seguimos o princípio da presunção de inocência:
+- *Hipótese Nula $H_0$*: Representa o status quo, a crença estabelecida, o "nenhum efeito" ou a "igualdade". É a hipótese que se presume verdadeira até que haja evidência estatística suficiente para o contrário. (Ex: "O réu é inocente")
+
+- *Hipótese Alternativa ($H_1$)*: É a afirmação que o pesquisador está tentando encontrar evidências para suportar. (Ex: "O réu é culpado.")
+
+Ou seja, o teste foca em coletar dados que são *inconsistentes* a $H_0$. Vamos tentar esclarecer com um exemplo. Você quer saber se uma nova dieta reduziu o peso médio dos participantes.
+- $H_0$: O peso médio não mudou (o efeito da dieta é zero).- $H_1$: O peso médio diminuiu.
+Se os dados mostrarem uma grande redução de peso, você rejeita a $H_0$ e conclui que a dieta funcionou. Se os dados mostrarem apenas uma pequena redução, ou um aumento, você não rejeita a $H_0$. Você conclui: "Os dados não fornecem evidência suficiente para dizer que a dieta reduziu o peso." Você não conclui: "A dieta definitivamente não teve efeito."
+
+#definition("Hipótese Simples e Composta")[
+  Se $Omega_i$ contém apenas $1$ valor de $theta$, então $H_i$ é simples. Se $Omega_i$ contém mais que um valor, então $H_i$ é composta
+]
+
+Quando a hipótese é simples, a distribuição das observações é bem especificada. Já sob hipóteses compostas, dizemos que eles pertencem a uma classe. Uma hipótese nula simples tem a forma:
+$
+  H_0: theta = theta_0
+$
+
+#definition("Hipótese unilateral e multilateral")[
+  Seja $theta in R$, hipóteses nulas unidimensionais são da forma $H_0: theta <= theta_0$ ou $H_0: theta >= theta_0$. Já hipóteses nulas simples ($H_0: theta = theta_0$) tem hipóteses multilaterais alternativas ($H_1: theta != theta_0$)
+]
+
+== Região Crítica e Testes Estatísticos
+Considere o problema de testar as hipóteses:
+$
+  H_0: theta in Omega_0 wide H_1: theta in Omega_1
+$
+Seja $underline(X) = [X_1,...,X_n]$ uma amostra indexada por $theta$ desconhecido e $S$ o conjunto de *todas as saídas possíveis de* $underline(X)$. Um estatístico pode especificar um procedimento de teste particionando $S$ em dois grupos, onde $S_1$ contém os valores de $underline(X)$ onde $H_0$ será rejeitada e $S_0$ os valores que $H_0$ não é rejeitada
+
+#definition("Região Crítica")[
+  O conjunto $S_1$ é chamado de *região crítica*
+]
+
+Na maioria dos problemas, $S_1$ é definido usando uma estatística $T=r(underline(X))$
+
+#definition("Estatística de Teste e Região de Rejeição")[
+  Seja $T = r(underline(X))$ uma estatística e $R subset RR$. Suponha que o procedimento de teste das hipóteses seja de forma "Rejeite $H_0$ se $T in R$", então $T$ é uma *estatística de teste* e $R$ é a *região de rejeição*
+]
+
+Se definirmos o teste em termos de $T$ e $R$ como na definição, então a região crítica é:
+$
+  S_1 := {underline(x)|r(underline(x)) in R}
+$
+
+== Função de Poder e Tipos de Erro
+Seja $delta$ um procedimento de teste como definimos antes
+
+#definition("Função de Poder")[
+  A função $pi(theta|delta)$ é chamada de *função de poder*. Se $S_1$ é a região crítica de $delta$, então:
+  $
+    pi(theta|delta) = PP(underline(X) in S_1|theta) "ou" PP(T in R|theta)
+  $
+]
+
+A função de poder especial é aquela que:
+$
+  pi(theta|delta)=0 wide forall theta in Omega_0    \
+  pi(theta|delta)=1 wide forall theta in Omega_1
+$
+
+Lembrando: Para cada valor $theta in Omega_0$, rejeitar $H_0$ é uma decisão *incorreta* e o mesmo para cada valor $theta in Omega_1$ e não rejeitar $H_0$
+
+#definition("Tipos de Erro")[
+  A decisão errônea de rejeitar uma hipótese nula *verdadeira* é de *Tipo I* (ou primeira ordem). Uma decisão errônea de *não rejeitar* uma hipótese nula *falsa* é chamada de *Tipo II* (ou segunda ordem)
+]
+
+Se $theta in Omega_0$, $pi(theta|delta)$ é a probabilidade de cometermos  um erro de Tipo I e, se $theta in Omega_1$, $1-pi(theta|delta)$ é a probabilidade de cometermos um erro de Tipo II. No geral, queremos achar $delta$ tal que $pi(theta|delta)$ seja baixo para $theta in Omega_0$ e alto para $theta in Omega_1$, já que isso representa diminuir a probabilidade de cometer cada um dos erros.
+
+Um método muito usado é escolher $alpha_0 in (0,1]$ tal que:
+$
+  pi(theta|delta) <= alpha_0 wide forall theta in Omega_0
+$<level>
+e depois procurar o teste que *maximiza* $pi(theta|delta)$ satisfazendo a condição (para $theta in Omega_1$)
+
+#definition("Tamanho de um Teste")[
+  Um teste que satisfaz a equação @level é chamado de teste de nível $alpha_0$ e que o teste tem nível de significância $alpha_0$. O tamanho $alpha(delta)$ de um teste $delta$ é definido por:
+  $
+    alpha(delta) = sup_(theta in Omega_0) pi(theta|delta)
+  $
+]
+
+#corollary[
+  Um teste $delta$ é de nível $alpha_0 <=> alpha(delta) <= alpha_0$
+]
+
+Se a hipótese nula é simples ($H_0: theta = theta_0$), então $alpha(delta) = pi(theta_0|delta)$
+
+== Induzindo um nível de significância
+Nós queremos testar:
+$
+  H_0: theta in Omega_0   \
+  H_1: theta in Omega_1
+$
+
+Seja $T$ uma estatística e suponha que vamos rejeitar $H_0$ se $T>=c$. Vamos supor que queremos que nosso teste tenha um nível específico de significância $alpha_0$. Temos:
+$
+  pi(theta|delta) = PP(T>=c|theta) underbrace(->, "Queremos") sup_(theta in Omega_0) PP(T>=c|theta) <= alpha_0
+$
+
+perceba que o lado direito é não-crescente em $c$, então a desigualdade é satisfeita para altos valores de $c$, então devemos fazer $c$ o menor possível sem que a desigualdade seja desfeita, e também queremos que $pi(theta|delta)$ seja o maior possível para $theta in Omega_1$. Quando $T$ tem distribuição contínua, costuma ser fácil achar um $c$ apropriado
+
+== p-valor
+#definition("p-valor")[
+  O p-valor é o menor nível $alpha_0$ ao qual rejeitaríamos a hipótese nula no nível $alpha_0$ *com os dados observados*. Também chamamos o p-valor de *nível de significância observado*
+]
+
+Mas por que essa definição é útil? Usamos isso 
+
+pois, se eu faço um teste em um nível $alpha_0$ e rejeito $H_0$, simplesmente dizer que rejeitei $H_0$ no nível $alpha_0$  parece vago. Isso não diz o quão perto estávamos de tomar a outra decisão.
+
+Um experimentador que rejeita a hipótese nula $<=>$ o p-valor é no máximo $alpha_0$, está usando um teste de significância $alpha_0$
+
+== Calculando p-valores
+Se nossos testes são da forma "Rejeite $H_0$ quando $T>=c$" para uma única estatística de teste, tem um jeito direto de calcular p-valores. Para cada $t$, deixe $delta_t$ o teste que rejeita $H_0$ quando $T>=t$. Então o p-valor $T=t$ é observado é o tamanho do teste $delta_t$, ou seja, o p-valor é:
+$
+  sup_(theta in Omega_0) pi(theta|delta_t) = sup_(theta in Omega_0) PP(T>=t|theta)
+$
+
+== Equivalência de testes e conjuntos de confiança
+#theorem[
+  Seja $underline(X) = [X_1,...,X_n]$ uma amostra de uma distribuição indexada por um parâmetro $theta$. Seja $g(theta)$ uma função e suponha que para todo possível valor $g_0$ de $g(theta)$, existe um teste $delta_(g_0)$ de nível $alpha_0$ da hipótese
+  $
+    H_(0,g_0): g(theta) = g_0   \
+    H_(1, g_0): g(theta) != g_0
+  $
+  Para cada possível valor de $underline(x)$ de $underline(X)$, defina:
+  $
+    omega(underline(x)) = {g_0|delta_(g_0) "não rejeita" H_(0,g_0) "se" underline(X)=underline(x) "é visto"}
+  $
+  e seja $gamma = 1-alpha_0$, então o conjunto aleatório $w(underline(X))$ satisfaz
+  $
+    PP(g(theta_0) in omega(underline(X))|theta=theta_0) >= gamma wide forall theta_0 in Omega
+  $
+]
+#proof[
+  Seja $theta_0 in Omega$ um elemento arbitrário e defina $g_0 = g(theta_0)$. Como $delta_(g_0)$ é um teste de nível $alpha_0$, sabemos que:
+  $
+    PP(delta_(g_0) "não rejeitar" H_(0, g_0)|theta=theta_0) >= 1-alpha_0 = gamma
+  $
+  Para cada $underline(x)$, $g(theta_0) in omega(underline(x)) <=>$ o teste $delta_(g_0)$ não rejeitar $H_(0, g_0)$ quando $underline(X)=underline(x)$ é visto
+  $
+    => PP(g(theta_0) in omega(underline(X))|theta=theta_0) = A
+  $
+]
+
+#definition("Conjunto de confiança")[
+  Se um conjunto aleatório $omega(underline(X))$ satisfaz
+  $
+    PP(g(theta_0) in omega(underline(X))|theta=theta_0) >= gamma wide forall theta_0 in Omega
+  $
+  então o chamamos de conjunto de confiança com coeficiente $gamma$ para $g(theta)$. Se a desigualdade for igualdade, o chamamos de exato
+]
+
+#theorem[
+  Seja $X_1,...,X_n$ uma amostra aleatória de uma distribuição indexada por $theta$ e $g: RR^n -> RR$ e seja $omega(underline(X))$ um conjunto de confiança $gamma$ para $g(theta)$. Para cada possível valor $g_0$ de $g(theta)$, construa o teste $delta_(g_0)$: $delta_(g_0)$ não rejeita $H_(0, g_0) <=> g_0 in omega(underline(X))$. Então $delta_(g_0)$ é um teste de nível $alpha_0 = 1-gamma$
+]
+
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Testes $t$
+]
+
+#pagebreak()
+
+
+
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Comparando as médias entre duas Distribuições Normais
+]

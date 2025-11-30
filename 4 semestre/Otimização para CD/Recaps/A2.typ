@@ -197,7 +197,7 @@ Essa definição de suavidade tem uma interpretação, imagine que, se eu estou 
 #theorem("Aproximação linear de funções suaves")[
   Seja $f: RR^n -> RR$ uma função diferenciável. Então $f$ é $L$-suave se, e somente se, $forall x, y in RR^n$:
   $
-    |f(y)-f(x)+gradient f(x) ^T (y - x)|<= L/2 ||y-x||^2_2
+    |f(y)-f(x)-gradient f(x) ^T (y - x)|<= L/2 ||y-x||^2_2
   $
 ]
 
