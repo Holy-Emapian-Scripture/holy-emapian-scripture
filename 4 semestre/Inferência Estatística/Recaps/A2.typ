@@ -366,7 +366,6 @@ e como $V ~ Chi^2_(n-1)$, basta consultar uma tabela ou um software para descobr
 
 #pagebreak()
 
-Outra família interessante de distribuições! Imagine a situação: Dado um experimento com amostras aleatórias $N(mu, sigma^2)$, sabemos que $overline(X)_n ~ N(mu, sigma^2 / n)$, logo:
 $
   (sqrt(n) (overline(X)_n - mu)) / sigma ~ N(0,1)
 $
