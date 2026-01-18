@@ -213,7 +213,7 @@ $
 
 #theorem[
   Se $X_1,...,X_k$ são iid e $X_i ~ Chi^2_m_i$, então $Y = sum^k_(j=1)X_j ~ Chi^2_(sum^k_(j=1)m_j)$
-]
+]<sum-of-independent-chi-squares>
 #proof[
   Sabemos que, dado a FGM de $X$ ($psi_X$) e de $Y$ ($psi_Y$) onde $X$ e $Y$ são iid, então a FGM de $X + Y$ é $psi_X psi_Y$. Sabendo disso, calculamos a FGM de $X_1 + ... + X_k$:
   $
@@ -864,6 +864,7 @@ $
 ]
 
 #pagebreak()
+De acordo com Natalia Pasternak, presidente do Instituto Questão de Ciência, a ciência pode ser definida como um processo de investigação que leva em conta experimento e observação da natureza, e a partir deles tirar *conclusões provisórias* de acordo com as evidências. Vamos supor que, ao fazermos um experimento, comprovamos a hipótese que estávamos analisando. Ao escrever o artigo científico, é correto afirmar que a nossa hipótese é verdadeira? *Não*! Pois ela foi comprovada em *nosso* estudo, sob as *nossas* condições, com as *nossas* amostras, mas dizer que nossa hipótese está confirmada/rejeitada apenas com o *nosso* estudo é muito subjetivo, então é aí que entra a estatística com a *Análise e Teste de Hipóteses*
 
 == Hipóteses Nula e Alternativa
 Nós temos $theta in Omega$ e vamos particionar o espaço em dois conjuntos disjuntos $Omega_0$ e $Omega_1$ e queremos testar as duas hipóteses:
@@ -883,6 +884,14 @@ Ué, porque não falamos que *aceitamos* a hipótese $H_0$? Esse modo de visuali
 Ou seja, o teste foca em coletar dados que são *inconsistentes* a $H_0$. Vamos tentar esclarecer com um exemplo. Você quer saber se uma nova dieta reduziu o peso médio dos participantes.
 - $H_0$: O peso médio não mudou (o efeito da dieta é zero).- $H_1$: O peso médio diminuiu.
 Se os dados mostrarem uma grande redução de peso, você rejeita a $H_0$ e conclui que a dieta funcionou. Se os dados mostrarem apenas uma pequena redução, ou um aumento, você não rejeita a $H_0$. Você conclui: "Os dados não fornecem evidência suficiente para dizer que a dieta reduziu o peso." Você não conclui: "A dieta definitivamente não teve efeito."
+
+#example("Exemplo simples")[
+  Temos uma hipótese principal que é "Correr é diminui/intensifica os sintomas da depressão", então vamos dividir essa hipótese geral nas duas hipóteses que mencionamos anteriormente
+  - $H_0$: Correr não afeta em nada os sintomas da depressão
+  - $H_1$: Correr diminui/intensifica os sintomas da depressão
+
+  Dividimos assim pois, até o momento, queremos comprovar que correr tem algum efeito nos sintomas da depressão, e enquanto não o comprovarmos, assumimos que a atividade física não faz efeito
+]
 
 #definition("Hipótese Simples e Composta")[
   Se $Omega_i$ contém apenas $1$ valor de $theta$, então $H_i$ é simples. Se $Omega_i$ contém mais que um valor, então $H_i$ é composta
@@ -919,6 +928,17 @@ $
   S_1 := {underline(x)|r(underline(x)) in R}
 $
 
+#example[
+  Ainda na linha de raciocínio do exemplo da atividade física pro combate na depressão, vamos supor que definimos o procedimento $delta$ como:
+
+  "Rejeite $H_0$ (Correr não afeta os sintomas da depressão) se o número de pessoas com os sintomas afetados for maior que um valor $c$"
+
+  Então podemos definir a estatística de teste como $overline(X)$ e a região de rejeição é $R subset RR$ com os valores reais maiores que $c$. Logo, a região crítica é dada por:
+  $
+    S_1 := {underline(x)|overline(X) in R}
+  $
+]
+
 == Função de Poder e Tipos de Erro
 Seja $delta$ um procedimento de teste como definimos antes
 
@@ -927,9 +947,9 @@ Seja $delta$ um procedimento de teste como definimos antes
   $
     pi(theta|delta) = PP(underline(X) in S_1|theta) "ou" PP(T in R|theta)
   $
-]
+]<power-function>
 
-A função de poder especial é aquela que:
+Ou seja, é a probabilidade de que a minha amostra esteja na região crítica dado os meus parâmetros, ou seja, a probabilidade de que vou rejeitar $H_0$. A função de poder especial é aquela que:
 $
   pi(theta|delta)=0 wide forall theta in Omega_0    \
   pi(theta|delta)=1 wide forall theta in Omega_1
@@ -941,7 +961,18 @@ Lembrando: Para cada valor $theta in Omega_0$, rejeitar $H_0$ é uma decisão *i
   A decisão errônea de rejeitar uma hipótese nula *verdadeira* é de *Tipo I* (ou primeira ordem). Uma decisão errônea de *não rejeitar* uma hipótese nula *falsa* é chamada de *Tipo II* (ou segunda ordem)
 ]
 
-Se $theta in Omega_0$, $pi(theta|delta)$ é a probabilidade de cometermos  um erro de Tipo I e, se $theta in Omega_1$, $1-pi(theta|delta)$ é a probabilidade de cometermos um erro de Tipo II. No geral, queremos achar $delta$ tal que $pi(theta|delta)$ seja baixo para $theta in Omega_0$ e alto para $theta in Omega_1$, já que isso representa diminuir a probabilidade de cometer cada um dos erros.
+#align(center)[
+  #table(
+    columns: 3,
+    table.header(
+      [], [*Aceitar a hipótese nula*], [*Rejeitar a hipótese nula*]
+    ),
+    [*Hipótese nula é verdadeira*], [\u{2705}], [Erro de Tipo I],
+    [*Hipótese nula é falsa*], [Erro de Tipo II], [\u{2705}],
+  )
+]
+
+Se $theta in Omega_0$, $pi(theta|delta)$ é a probabilidade de cometermos  um erro de Tipo I, já que ele representa a probabilidade de que a amostra esteja na região crítica (rejeitar $H_0$) e, se $theta in Omega_1$, $1-pi(theta|delta)$ é a probabilidade de cometermos um erro de Tipo II. No geral, queremos achar $delta$ tal que $pi(theta|delta)$ seja baixo para $theta in Omega_0$ e alto para $theta in Omega_1$, já que isso representa diminuir a probabilidade de cometer cada um dos erros.
 
 Um método muito usado é escolher $alpha_0 in (0,1]$ tal que:
 $
@@ -950,11 +981,13 @@ $<level>
 e depois procurar o teste que *maximiza* $pi(theta|delta)$ satisfazendo a condição (para $theta in Omega_1$)
 
 #definition("Tamanho de um Teste")[
-  Um teste que satisfaz a equação @level é chamado de teste de nível $alpha_0$ e que o teste tem nível de significância $alpha_0$. O tamanho $alpha(delta)$ de um teste $delta$ é definido por:
+  Um teste que satisfaz a equação @level é chamado de *teste de nível $alpha_0$* e que o teste tem nível de significância $alpha_0$. O tamanho $alpha(delta)$ de um teste $delta$ é definido por:
   $
     alpha(delta) = sup_(theta in Omega_0) pi(theta|delta)
   $
 ]
+
+Ou seja, o tamanho de um teste é a maior probabilidade de cometermos um erro de *Tipo I* possível (já que fazemos o supremo dentre todos os valores de $Omega_0$) e um teste ter nível de significância $alpha_0$ significa que, independente de qual parâmetro de $H_0$ seja o verdadeiro da distribuição, a chance de cometermos um erro de *Tipo I* sempre será menor que $alpha_0$
 
 #corollary[
   Um teste $delta$ é de nível $alpha_0 <=> alpha(delta) <= alpha_0$
@@ -981,9 +1014,17 @@ perceba que o lado direito é não-crescente em $c$, então a desigualdade é sa
   O p-valor é o menor nível $alpha_0$ ao qual rejeitaríamos a hipótese nula no nível $alpha_0$ *com os dados observados*. Também chamamos o p-valor de *nível de significância observado*
 ]
 
-Mas por que essa definição é útil? Usamos isso 
+É o que, macho? Essa definição está muito objetiva e densa, então simplificando um pouco: p-valor é a *probabilidade* de se obter o padrão de resultados que encontramos no nosso estudo ou resultados mais extremos, *considerando a hipótese nula como verdadeira*. Vamos supor que observamos uma amostra $underline(x)$ e não fixamos um valor $alpha$ para rejeitarmos $H_0$, então nos perguntamos "Qual é o menor nível para o qual esses dados ainda seriam considerados extremos o suficiente para rejeitar $H_0$?". Então o $p$-valor segue uma linha diferente do procedimento de teste estabelecido anteriormente. Original:
+- Escolhemos um nível $alpha$
+- Define-se a *região crítica* associada a esse $alpha$
+- Calcula-se a estatística de teste
+- Verificamos se ela cai na região crítica
+Agora nós invertemos a lógica
+- Em vez de fixar um $alpha$, vamos perguntar "rejeito ou não?"
+- Fixamos os dados
+- Para quais valores de $alpha$ eu rejeitaria? O menor desses será meu $p$-valor
 
-pois, se eu faço um teste em um nível $alpha_0$ e rejeito $H_0$, simplesmente dizer que rejeitei $H_0$ no nível $alpha_0$  parece vago. Isso não diz o quão perto estávamos de tomar a outra decisão.
+Mas por que essa definição é útil? Usamos isso pois, se eu faço um teste em um nível $alpha_0$ e rejeito $H_0$, simplesmente dizer que rejeitei $H_0$ no nível $alpha_0$  parece vago. Isso não diz o quão perto estávamos de tomar a outra decisão.
 
 Um experimentador que rejeita a hipótese nula $<=>$ o p-valor é no máximo $alpha_0$, está usando um teste de significância $alpha_0$
 
@@ -994,6 +1035,8 @@ $
 $
 
 == Equivalência de testes e conjuntos de confiança
+Os teoremas a seguir mostram a equivalência de intervalos e conjuntos de confiança (o nome é bem intuitivo). Intuitivamente, um intervalo de confiança é um tipo específico de conjunto de confiança (com um tipo específico de regra)
+
 #theorem[
   Seja $underline(X) = [X_1,...,X_n]$ uma amostra de uma distribuição indexada por um parâmetro $theta$. Seja $g(theta)$ uma função e suponha que para todo possível valor $g_0$ de $g(theta)$, existe um teste $delta_(g_0)$ de nível $alpha_0$ da hipótese
   $
@@ -1047,5 +1090,96 @@ $
 #pagebreak()
 
 #align(center+horizon)[
-  = Comparando as médias entre duas Distribuições Normais
+  = Comparando as médias de duas Distribuições Normais
 ]
+
+#pagebreak()
+
+No mundo da estatística, é bem comum ocorrer de querermos comparar duas distribuições, suas médias, propriedades, etc. Quando utilizamos duas distribuições normais, os testes e intervalos de confiança são bem similares com os que aparecem quando consideramos apenas uma distribuição
+
+== O $t$-teste biamostral
+Primeiramente, considere o problema em que temos duas amostras de variáveis normais (com mesma variância) e queremos saber qual distribuição tem maior média. Especificamente, assumimos que $underline(X)=(X_1,...,X_m)$ é uma amostra aleatória de $m$, onde $X ~ N(mu_X, sigma^2)$ (com $mu_X$ e $sigma^2$ desconhecidos) e $underline(Y) = (Y_1,...,Y_n)$ formam uma amostra independente da primeira de $n$ observações, onde $Y ~ N(mu_Y, sigma^2)$. Estamos interessados em testar as hipóteses:
+$
+  H_0: mu_X <= mu_Y wide H_1: mu_X > mu_Y
+$<two-sample-hypothesis-1>
+
+para cada procedimento $delta$, vamos deixar que $pi(mu_X,mu_Y,sigma^2|delta)$ seja a *power function* (@power-function) de $delta$. Vamos assumir que $sigma^2$ é igual para ambas as distribuições, se esse requisito não fosse apropriado para o cenário analisado (posteriormente citarei um exemplo que esse caso é plausível), os testes $t$ que vamos derivar nas próximas seções não seriam apropriados.
+
+Pensando em um $delta$ intuitivo, se a diferença entre as médias ($mu_Y - mu_X$) for alta, faz sentido rejeitarmos $H_0$, certo?
+
+#theorem([Estatística $t$ para amostras duplas])[
+  Assumindo a estrutura descrita nos parágrafos anteriores e definindo:
+  $
+    overline(X) = 1/m sum^(m)_(i=1) X_i wide overline(Y) = 1/n sum^(n)_(j=1) X_j
+  $
+  $
+    S^2_X = sum^(m)_(i=1)(X_i - overline(X))^2 wide S^2_Y = sum^(n)_(j=1)(Y_j - overline(Y))^2
+  $
+  defina então o teste estatístico:
+  $
+    U = ((m+n-2)^(1\/2) (overline(X) - overline(Y))) / ((1/m + 1/n)^(1\/2) (S^2_X + S^2_Y)^(1\/2))
+  $<two-sample-u-statistic>
+  Para todos os valores de $theta=(mu_X,mu_Y,sigma^2)$ tais que $mu_X=mu_Y$, temos então que:
+  $
+    U ~ t_(m+n-2)
+  $
+]
+#proof[
+  Assuma que $mu_X = mu_Y$. Defina as seguintes variáveis aleatórias:
+  $
+    Z = (overline(X)-overline(Y))/((1/m + 1/n)^(1\/2)sigma)   \
+
+    W = (S_X^2 + S_Y^2)/sigma^2
+  $
+  Agora podemos representar $U$ como:
+  $
+    U = Z/(W\/(m+n-2))^(1\/2)
+  $
+  perceba que se provarmos que $Z ~ N(0,1)$, $W ~ Chi^2_(m+n-2)$, e $Z$ e $W$ são independentes que o teorema está concluído. Desde o começo estamos assumindo que $X$ e $Y$ são independentes dado $theta$. Desse fato, segue que toda função de $X$ é independente de toda função de $Y$, em particular, $(overline(X), S^2_X)$ é independente de $(overline(Y), S^2_Y)$. Pelo @sample-mean-and-sample-variance-independence, sabemos que $overline(X)$ e $S^2_X$ são independentes, assim como $overline(Y)$ e $S^2_Y$, ou seja, todos $overline(X)$, $overline(Y)$, $S^2_X$ e $S^2_Y$ são independentes entre si, logo, $Z$ e $W$ também são independentes.
+
+  Segue também do @sample-mean-and-sample-variance-independence que:
+  $
+    S^2_X / sigma^2 ~ Chi^2_(m-1) wide S^2_Y / sigma^2 ~ Chi^2_(n-1)
+  $
+   e pelas propriedades da $Chi^2$ (@sum-of-independent-chi-squares), temos que $W ~ Chi^2_(m+n-2)$. Utilizando das propriedades que vimos no curso de Probabilidade, sabemos que $overline(X) - overline(Y)$ tem média $mu_X - mu_Y = 0$ e variância $sigma^2\/n + sigma^2\/m$, logo, segue que $Z ~ N(0,1)$
+]
+
+Um teste $t$ biamostral com nível de significância $alpha_0$ é o procedimento $delta$ que rejeita $H_0$ se $U>=T^(-1)_(m+n-2)(1-alpha_0)$. O próximo teorema estabelece algumas propriedades interessantes sobre a *função de poder* de testes $t$ biamostrais análogos aos do :
+
+#theorem([Nível e Viés de Testes $t$ biamostrais])[
+  Seja $delta$ um teste $t$ biamostral definido antes. A função de poder $pi(mu_X, mu_Y, sigma^2|delta)$ tem as seguintes propriedades:
+  - $pi(mu_X,mu_Y,sigma^2|delta) = alpha_0$ quando $mu_X=mu_Y$
+  - $pi(mu_X,mu_Y,sigma^2|delta) < alpha_0$ quando $mu_X<mu_Y$
+  - $pi(mu_X,mu_Y,sigma^2|delta) > alpha_0$ quando $mu_X>mu_Y$
+  - $pi(mu_X,mu_Y,sigma^2|delta) -> 0$ conforme $mu_X-mu_Y -> -infinity$
+  - $pi(mu_X,mu_Y,sigma^2|delta) -> 1$ conforme $mu_X-mu_Y -> infinity$
+  além disso, o teste $delta$ tem tamanho $alpha_0$ e é não-viezado
+]
+
+Vale ressaltar que, se as hipóteses forem:
+$
+  H_0: mu_X >= mu_Y wide H_1: mu_X < mu_Y
+$<two-sample-hypothesis-2>
+o teste $delta$ correspondente de tamanho $alpha_0$ é *rejeitar $H_0$ quando $U<=-T^(-1)_(m+n-2)(1-alpha_0)$*. $P$-valores são computados de forma muito parecida da forma como se eles fossem de testes $t$ uniamostral
+
+#theorem([$p$-valores de testes $t$ biamostrais])[
+  Suponha que estejamos testando as hipóteses da equação @two-sample-hypothesis-1 ou @two-sample-hypothesis-2. Seja $u$ o valor observado da estatística $U$ (equação @two-sample-u-statistic) e seja $T_(m+n-2)(dot)$ a cdf da distribuição $t$ com $m+n-2$ graus de liberdade. Então o $p$-valor das hipóteses em @two-sample-hypothesis-1 é $1-T_(m+n-2)(u)$ e o $p$-valor das hipóteses em @two-sample-hypothesis-2 é $T_(m+n-2)(u)$
+]
+
+== Poder do Teste
+Para cada parâmetro do vetor $theta=(mu_X, mu_Y, sigma^2)$, a função de poder do teste $t$ biamostral pode ser computada usando a distribuição $t$ não-central
+
+#theorem([Poder do teste $t$ biamostral])[
+  Seja a estatística $U$ ser definida como na equação @two-sample-u-statistic, então $U$ tem distribuição não-central $t$ com $m+n-2$ graus de liberdade e parâmetro de não-centralidade
+  $
+    psi = (mu_X - mu_Y) / (sigma (1/m + 1/n)^(1\/2))
+  $
+]
+
+== Alternativas Bilaterais
+Podemos adaptar os testes $t$ biamostrais para o caso de hipóteses bilaterais:
+$
+  H_0: mu_X = mu_Y wide  H_1: mu_X != mu_Y
+$
+
+O teste $t$ bilateral de tamanho $alpha_0$ rejeita $H_0$ se $|U| >= c$ onde $c = T^(-1)_(m+n-2)(1-alpha_0\/2)$ e a estatística $U$ é a mesma definida anteriormente. O $p$-valor quando $U=u$ é observado é igual a $2[1-T_(m+n-2)(|u|)]$
