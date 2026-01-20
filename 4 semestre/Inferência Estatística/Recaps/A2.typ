@@ -1029,7 +1029,7 @@ Mas por que essa definição é útil? Usamos isso pois, se eu faço um teste em
 Um experimentador que rejeita a hipótese nula $<=>$ o p-valor é no máximo $alpha_0$, está usando um teste de significância $alpha_0$
 
 == Calculando p-valores
-Se nossos testes são da forma "Rejeite $H_0$ quando $T>=c$" para uma única estatística de teste, tem um jeito direto de calcular p-valores. Para cada $t$, deixe $delta_t$ o teste que rejeita $H_0$ quando $T>=t$. Então o p-valor $T=t$ é observado é o tamanho do teste $delta_t$, ou seja, o p-valor é:
+Se nossos testes são da forma "Rejeite $H_0$ quando $T>=c$" para uma única estatística de teste, tem um jeito direto de calcular p-valores. Para cada $t$, deixe $delta_t$ o teste que rejeita $H_0$ quando $T>=t$. Então o p-valor quando $T=t$ é observado é o tamanho do teste $delta_t$, ou seja, o p-valor é:
 $
   sup_(theta in Omega_0) pi(theta|delta_t) = sup_(theta in Omega_0) PP(T>=t|theta)
 $
@@ -1084,8 +1084,83 @@ Os teoremas a seguir mostram a equivalência de intervalos e conjuntos de confia
 
 #pagebreak()
 
+Nesse capítulo, vamos abordar um caso específico de teste de hipóteses para distribuições normais com média e variância desconhecida
 
+== Testando Hipóteses sobre a Média de uma Normal quando a Variância é Desconhecida
+Consideremos $X_1,...,X_n$ uma amostra de uma distribuição normal com média $mu$ e variância $sigma^2$ desconhecidas, e também que trabalhamos com as hipóteses:
+$
+  H_0: mu <= mu_0   \
+  H_1: mu > mu_0
+$<t-test-mu-hypothesis-1>
 
+O espaço paramétrico $Omega$ suprime todo vetor bidimensiona $(mu, sigma^2)$ com $mu in (-infinity, infinity)$ e $sigma^2 > 0$. Aqui, definimos a estatística de teste $U$ como:
+$
+  U = sqrt(n) dot (overline(X)_n - mu_0) / sigma'
+$
+onde o teste rejeita $H_0$ se $U>=c$. Sabemos que a distribuição de $U$ é uma $t$ com $n-1$ graus de liberdade, por isso os testes que utilizam de $U$ são chamados de *testes $t$*. Quando invertemos as hipóteses:
+$
+  H_0: mu >= mu_0   \
+  H_1: mu < mu_0
+$<t-test-mu-hypothesis-2>
+o teste vira da forma "rejeite $H_0$ quando $U<=c$"
+
+== Propriedades dos testes $t$
+#theorem([Nível e Viés dos testes $t$])[
+  Seja $underline(X)=(X_1,...,X_n)$ uma amostra aleatória de uma distribuição normal $X ~ N(mu, sigma^2)$ e $U$ ser a estatística definida anteriormente. Seja também $c$ o $1-alpha_0$ quantil da distribuição $t$ com $n-1$ graus de liberdade. Seja $delta$ o procedimento que rejeita $H_0$ na equação @t-test-mu-hypothesis-1 se $U>=c$. A função de poder $pi(mu, sigma^2|delta)$ tem as seguintes propriedades:
+  
+  #enum(numbering: "i.")[$pi(mu, sigma^2|delta) = alpha_0$ quando $mu=mu_0$][$pi(mu, sigma^2|delta) < alpha_0$ quando $mu<mu_0$][$pi(mu, sigma^2|delta) > alpha_0$ quando $mu>mu_0$][$pi(mu, sigma^2|delta) -> 0$ conforme $mu-> -infinity$][$pi(mu, sigma^2|delta) -> 1$ conforme $mu -> infinity$]
+
+  Além disso, o teste $delta$ tem tamanho $alpha_0$ e é não-viezado
+]
+#proof[
+  Se $mu=mu_0$, então $U ~ t_(n-1)$, portanto:
+  $
+    pi(mu_0, sigma^2|delta) = PP(U>=c|mu_0, sigma^2) = alpha_0
+  $
+  lembrando que a função de poder, quando $theta in Omega_0$ é a probabilidade de rejeitarmos $H_0$ (Erro de *Tipo I*), então vai ser a probabilidade de $U>=c$. Isso prova (i)
+
+  Para provar (ii) e (iii), defina:
+  $
+    U^* = sqrt(n) dot (overline(X)_n - mu) / sigma' wide W = (sqrt(n)(mu_0 - mu))/sigma'
+  $
+  Logo, $U = U^* - W$. Primeiramente, assuma que $mu < mu_0$, então $W>0$, então segue que:
+  $
+    pi(mu, sigma^2|delta) &= PP(U>=c|mu,sigma^2) = PP(U^* - W|mu,sigma^2)   \
+    &= PP(U^* >= c+W|mu,sigma^2) < PP(U^* >= c|mu,sigma^2)
+  $
+  Como $U^*$ tem distribuição $t_(n-1)$, a última probabilidade da equação é igual a $alpha_0$. Isso prova (ii). Para provar (iii), basta assumir que $mu > mu_0$, logo $W < 0$, então o sinal de *menor que* no final da equação vira um *maior que*. A prova de (iv) e (v) são mais complicadas e não serão abordadas
+]
+
+#corollary[
+  Seja $underline(X)=(X_1,...,X_n)$ uma amostra aleatória de uma distribuição normal $X ~ N(mu, sigma^2)$ e $U$ ser a estatística definida anteriormente. Seja também $c$ o $1-alpha_0$ quantil da distribuição $t$ com $n-1$ graus de liberdade. Seja $delta$ o procedimento que rejeita $H_0$ na equação @t-test-mu-hypothesis-2 se $U<=c$. A função de poder $pi(mu, sigma^2|delta)$ tem as seguintes propriedades:
+  
+  #enum(numbering: "i.")[$pi(mu, sigma^2|delta) = alpha_0$ quando $mu=mu_0$][$pi(mu, sigma^2|delta) > alpha_0$ quando $mu<mu_0$][$pi(mu, sigma^2|delta) < alpha_0$ quando $mu>mu_0$][$pi(mu, sigma^2|delta) -> 1$ conforme $mu-> -infinity$][$pi(mu, sigma^2|delta) -> 0$ conforme $mu -> infinity$]
+
+  Além disso, o teste $delta$ tem tamanho $alpha_0$ e é não-viezado
+]
+
+Calcular $p$-valores para os testes $t$ é bem direto ao ponto!
+
+#theorem([$p$-valores para testes $t$])[
+  Suponha que estamos testando ou as hipóteses da equação @t-test-mu-hypothesis-1 ou da @t-test-mu-hypothesis-2. Seja $u$ o valor observado da estatística $U$ e $T_(n-1)(dot)$ a cdf da distribuição $t_(n-1)$. Então o $p$-valor para as hipóteses da equação @t-test-mu-hypothesis-1 é $1-T_(n-1)(u)$ e para as hipóteses da equação @t-test-mu-hypothesis-2 é $T_(n-1)(u)$
+]
+#proof[
+  Seja $T_(n-1)^(-1)(dot)$ a função quantil da $t_(n-1)$. Nós rejeitaríamos a hipótese na equação @t-test-mu-hypothesis-1 em um nível $alpha_0$ se, e somente se $u >= T_(n-1)^(-1)(1-alpha_0)$, que é equivalente a $alpha_0 >= 1-T_(n-1)(u)$. Similarmente, rejeitamos as hipóteses da equação @t-test-mu-hypothesis-2 se, e somente se $u <= T_(n-1)^(-1)(alpha_0)$, que é equivalente a $alpha_0 >= T_(n-1)(u)$
+]
+
+Legal, mas será que conseguimos dizer algo sobre a *função poder* de um teste $t$? Se conseguirmos determinar a distribuição de $U$, nós conseguimos sim!
+
+#definition([Distribuição $t$ não-central])[
+  Seja $Y$ e $W$ variáveis aleatórias independentes onde $W ~ N(psi, 1)$ e $Y ~ Chi^2_(m)$, então a distribuição de:
+  $
+    X = W / (Y/m)^(1\/2)
+  $
+  é chamada de *distribuição $t$ não-central com $m$ graus de liberdade e parâmetro de não-centralidade $psi$*. Chamaremos a sua cdf de $T_(m)(t|psi)$ ($T_(m)(t|psi) = PP*(X<=t)$)
+]
+
+#theorem[
+  Seja $X_1,...,X_n$ uma amostra aleatória de uma distribuição normal com média $mu$ e variância $sigma^2$. A distribuição da estatística $U$ é dada por uma distribuição $t$ não-central com $n-1$ graus de liberdade e parâmetro de não-centralidade $psi=sqrt(n)(mu-mu_0)\/sigma$. Seja $delta$ o teste que rejeita $H_0: mu <= mu_0$ quando $U>=c$. Então a função de poder de $delta$ é $pi(mu,sigma^2|delta) = 1-T_(n-1)(c|psi)$. Seja $delta'$ o teste que rejeita $H_0: mu >= mu_0$ quando $U <= c$, então a função de poder de $delta'$ é $pi(mu,sigma^2|delta') = T_(n-1)(c|psi)$
+]
 
 #pagebreak()
 
