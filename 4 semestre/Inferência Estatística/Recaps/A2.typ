@@ -1086,6 +1086,14 @@ Os teoremas a seguir mostram a equivalência de intervalos e conjuntos de confia
 
 Nesse capítulo, vamos abordar um caso específico de teste de hipóteses para distribuições normais com média e variância desconhecida
 
+#example[
+  Um instituto médico quer saber a distribuição de quantos dias um paciente internado em UTI's de hospitais permanece internado. Foram coletadas informações de $n=30$ hospitais por todo o estado. Vamos supor que modelamos a quantidade de dias que a pessoa se mantém internada como uma variável normal com média $mu$ e variância $sigma^2$. Vamos dizer também que queremos testar as hipóteses:
+  $
+    H_0: mu >= 200 wide H_1: mu < 200
+  $
+  que teste seria apropriado de se utilizar? Quais são suas propriedades?
+]<hospital-example-t-test>
+
 == Testando Hipóteses sobre a Média de uma Normal quando a Variância é Desconhecida
 Consideremos $X_1,...,X_n$ uma amostra de uma distribuição normal com média $mu$ e variância $sigma^2$ desconhecidas, e também que trabalhamos com as hipóteses:
 $
@@ -1103,6 +1111,10 @@ $
   H_1: mu < mu_0
 $<t-test-mu-hypothesis-2>
 o teste vira da forma "rejeite $H_0$ quando $U<=c$"
+
+#example[
+  No @hospital-example-t-test, se a gente quisesse um teste de tamanho $alpha_0$, a gente poderia usar o teste $t$ que rejeita $H_0$ se a estatística $U$ for menor ou igual a um $c$ (escolhemos $c$ de forma a fazer o teste ter tamanho $alpha_0$)
+]
 
 == Propriedades dos testes $t$
 #theorem([Nível e Viés dos testes $t$])[
@@ -1139,6 +1151,10 @@ o teste vira da forma "rejeite $H_0$ quando $U<=c$"
   Além disso, o teste $delta$ tem tamanho $alpha_0$ e é não-viezado
 ]
 
+#example[
+  Para o @hospital-example-t-test, se quiséssemos um teste de nível de significância $alpha_0=0.1$, então pelas propriedades, rejeitariamos $H_0$ se $U<=c$ onde $c = T^(-1)_(n-1)(0.1)$.
+]
+
 Calcular $p$-valores para os testes $t$ é bem direto ao ponto!
 
 #theorem([$p$-valores para testes $t$])[
@@ -1147,6 +1163,28 @@ Calcular $p$-valores para os testes $t$ é bem direto ao ponto!
 #proof[
   Seja $T_(n-1)^(-1)(dot)$ a função quantil da $t_(n-1)$. Nós rejeitaríamos a hipótese na equação @t-test-mu-hypothesis-1 em um nível $alpha_0$ se, e somente se $u >= T_(n-1)^(-1)(1-alpha_0)$, que é equivalente a $alpha_0 >= 1-T_(n-1)(u)$. Similarmente, rejeitamos as hipóteses da equação @t-test-mu-hypothesis-2 se, e somente se $u <= T_(n-1)^(-1)(alpha_0)$, que é equivalente a $alpha_0 >= T_(n-1)(u)$
 ]
+
+#example("Tamanho de Fibras")[
+  Suponha que os comprimentos, em milímetros, de fibras metálicas produzidas por um determinado processo tenham distribuição normal, com média desconhecida ( $mu$ ) e variância desconhecida ( $sigma^2$ ), e que as seguintes hipóteses devam ser testadas:
+  $
+    H_0: mu <= 5.2
+    wide
+    H_1: mu > 5.2
+  $
+
+  Suponha que os comprimentos de 15 fibras selecionadas aleatoriamente sejam medidos e que se observe que a média amostral ( $overline(X)_(15)$ ) é $5.4$ e que ( $sigma' = 0.4226$ ). Com base nessas medições, realizaremos um teste *$t$* ao nível de significância ( $alpha_0 = 0.05$ ).
+
+  Como ( $n = 15$ ) e ( $mu_0 = 5.2$ ), a estatística ( $U$ ) terá distribuição *$t$* com $14$ graus de liberdade quando ( $mu = 5.2$ ). Verifica-se na tabela da distribuição *$t$* que
+  $
+  T^(-1)_(14)(0.95) = 1.761.
+  $
+  Assim, a hipótese nula ( $H_0$ ) será rejeitada se ( $U > 1.761$ ). Como o valor numérico de ( $U$ ) é 1,833, a hipótese nula ( $H_0$ ) seria rejeitada ao nível de $0.05$.
+
+  Com o valor observado ( $u = 1.833$ ) para a estatística ( $U$ ) e ( $n = 15$ ), podemos calcular o *p-valor* para as hipóteses utilizando um software computacional que inclua a função de distribuição acumulada das várias distribuições *$t$*. Em particular, obtemos
+  $
+  1 - T_(14)(1.833) = 0.0441.
+  $
+]<length-fibers-example>
 
 Legal, mas será que conseguimos dizer algo sobre a *função poder* de um teste $t$? Se conseguirmos determinar a distribuição de $U$, nós conseguimos sim!
 
@@ -1160,6 +1198,59 @@ Legal, mas será que conseguimos dizer algo sobre a *função poder* de um teste
 
 #theorem[
   Seja $X_1,...,X_n$ uma amostra aleatória de uma distribuição normal com média $mu$ e variância $sigma^2$. A distribuição da estatística $U$ é dada por uma distribuição $t$ não-central com $n-1$ graus de liberdade e parâmetro de não-centralidade $psi=sqrt(n)(mu-mu_0)\/sigma$. Seja $delta$ o teste que rejeita $H_0: mu <= mu_0$ quando $U>=c$. Então a função de poder de $delta$ é $pi(mu,sigma^2|delta) = 1-T_(n-1)(c|psi)$. Seja $delta'$ o teste que rejeita $H_0: mu >= mu_0$ quando $U <= c$, então a função de poder de $delta'$ é $pi(mu,sigma^2|delta') = T_(n-1)(c|psi)$
+]
+
+== Teste $t$ pareado
+Em vários experimentos, podemos desejar comparar a mesma variável em condições distintas na mesma amostra, então estaríamos interessados em comparar qual condição possui maior média. Nesses casos é comum fazer a subtração entre os valores de cada condição e tratar como uma variável aleatória normal
+
+#example("")[
+  O *National Transportation Safety Board* coleta dados de testes de colisão referentes à quantidade e à localização dos danos em bonecos (*dummies*) colocados nos carros testados. Em uma série de testes, um boneco foi colocado no banco do motorista e outro no banco do passageiro dianteiro de cada carro. Uma das variáveis medidas foi o grau de lesão na cabeça de cada boneco. Entre outros aspectos, há interesse em saber se, e/ou em que medida, a quantidade de lesão na cabeça difere entre o banco do motorista e o banco do passageiro.
+
+  Sejam $( X_1, dots, X_n )$ as diferenças entre os logaritmos das medidas de lesão na cabeça do lado do motorista e do lado do passageiro. Podemos modelar $( X_1, dots, X_n )$ como uma amostra aleatória de uma distribuição normal com média ( $mu$ ) e variância ( $sigma^2$ ). Suponha que desejamos testar a hipótese nula ( $H_0: mu <= 0$ ) contra a alternativa ( $H_1: mu > 0$ ), ao nível de significância ( $alpha_0 = 0.01$ ).
+
+  Há $n = 164$ carros. O teste consiste em rejeitar ( $H_0$ ) se
+  $
+  U >= T^(-1)_(163)(0.99) = 2.35.
+  $
+
+  A média das diferenças é $overline(x)_n = 0.2199$. O valor de $sigma'$ é $0.5342$. A estatística $U$ é então igual a $5.271$. Esse valor é maior que $2.35$, e a hipótese nula seria rejeitada ao nível de $0.01$. De fato, o *p-valor* é menor que $1.0 dot 10^(-6)$.
+
+  Suponha também que estamos interessados na função poder sob $H_1$ do teste de nível $0.01$. Suponha que a diferença média entre os logaritmos das lesões na cabeça do lado do motorista e do lado do passageiro seja $sigma/4$. Então, o parâmetro de não centralidade é $(164)^(1/2)/4 = 3.20$
+]
+
+== Testando uma alternativa bilateral
+#example[
+  Vamos retomar o @length-fibers-example, mas agora vamos alterar as hipóteses para:
+  $
+  H_0: mu = 5.2,
+  wide
+  H_1: mu != 5.2
+  $
+
+  Assumiremos novamente que os comprimentos de 15 fibras são medidos, e que o valor de $U$, calculado a partir dos valores observados, é 1,833. Testaremos as hipóteses ao nível de significância $alpha_0 = 0.05$.
+
+  Como $alpha_0 = 0.05$, nosso valor crítico será o quantil $1 - 0.05/2 = 0.975$ da distribuição *$t$* com $14$graus de liberdade. Pela tabela das distribuições *$t$* deste livro, encontramos
+  $
+    T^(-1)_(14)(0.975) = 2.145.
+  $
+
+  Assim, o teste *t* especifica a rejeição de $H_0$ se $U <= -2.145$ ou se $U >= 2.145$. Como $U = 1.833$, a hipótese $H_0$ *não* seria rejeitada.
+
+  Os valores numéricos nos exemplos enfatizam a importância de decidir se a hipótese alternativa apropriada em um dado problema é unilateral (*one-sided*) ou bilateral (*two-sided*). Quando as hipóteses do @length-fibers-example foram testadas ao nível de significância $0.05$, a hipótese nula $H_0$, de que $mu <= 5.2$, foi rejeitada. Quando as hipóteses desse exemplo foram testadas ao mesmo nível de significância, utilizando os mesmos dados, a hipótese nula $H_0$, de que $mu = 5.2$, não foi rejeitada.
+]
+
+#theorem([Função de poder de testes $t$ bilaterais])[
+  A função de poder do teste $delta$ que rejeita $H_0: mu = mu_0$ quando $|U| >= c$, onde $c = T_(n-1)^(-1)(1-alpha_0\/2)$ pode ser encontrada utilizando a distribuição $t$ não-central. Se $mu!=mu_0$, então $U$ tem distribuição $t$ não-central com $n-1$ graus de liberdade e parâmetro de não-centralidade $psi = sqrt(n)(mu-mu_0)\/sigma$. A função de poder é:
+  $
+    pi(mu, sigma^2|delta) = T_(n-1)(-c|psi) + 1 - T_(n-1)(c|psi)
+  $
+]
+
+#theorem([$p$-valores de testes $t$ bilaterais])[
+  Suponha que estamos testando as hipóteses bilaterais $H_0: mu = mu_0$, $H_1: mu != mu_0$. Seja $u$ o valor observado da estatística $U$ e seja $T_(n-1)(dot)$ a cdf de uma $t_(n-1)$. Então o $p$-valor é $2[1-T_(n-1)(|u|)]$
+]
+#proof[
+  Deixe $T^(-1)_(n-1)(dot)$ denotar a função quantil da $t_(n-1)$. Nós rejeitariamos a hipótese nula no nível $alpha_0$ se, e somente se, $|u| >= T_(n-1)^(-1)(1-alpha_0\/2)$ que é equivalente a $T_(n-1)(|u|)>=1-alpha_0\/2$ que é equivalente a $alpha_0 >= 2[1-T_(n-1)(|u|)]$
 ]
 
 #pagebreak()
