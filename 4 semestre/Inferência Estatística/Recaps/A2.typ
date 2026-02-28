@@ -1075,6 +1075,90 @@ Os teoremas a seguir mostram a equivalência de intervalos e conjuntos de confia
   Seja $X_1,...,X_n$ uma amostra aleatória de uma distribuição indexada por $theta$ e $g: RR^n -> RR$ e seja $omega(underline(X))$ um conjunto de confiança $gamma$ para $g(theta)$. Para cada possível valor $g_0$ de $g(theta)$, construa o teste $delta_(g_0)$: $delta_(g_0)$ não rejeita $H_(0, g_0) <=> g_0 in omega(underline(X))$. Então $delta_(g_0)$ é um teste de nível $alpha_0 = 1-gamma$
 ]
 
+== Testes de razão de verossimilhança
+Não vou explicar formalmente todos os pontos da teoria, mas dar uma ideia intuitiva. Como vimos nos Estimadores de Máxima Verossimilhança, quanto mais próximo do verdadeiro valor de $theta$ a minha amostra estiver, maior será a verossimilhança. Então, intuitivamente, se a minha amostra tem uma verossimilhança muito maior para um valor de $theta$ que pertence a $H_1$ do que para um valor de $theta$ que pertence a $H_0$, isso é uma evidência contra $H_0$. O teste de razão de verossimilhança é justamente isso, ele rejeita $H_0$ quando a razão entre a máxima verossimilhança sob $H_1$ e a máxima verossimilhança sob $H_0$ é grande o suficiente. Como comentei antes, a gente tenta sempre achar evidências contra $H_0$
+$
+  H_0: theta in Omega_0   \
+  H_1: theta in Omega_1
+$
+
+#definition("Teste de razão de verossimilhança")[
+  A estatística
+  $
+    Lambda(underline(x)) = (sup_(theta in Omega_0) f_n (underline(x)|theta)) / (sup_(theta in Omega) f_n (underline(x)|theta))
+  $
+  é chamada de *estatística de teste de razão de verossimilhança* e o teste que rejeita $H_0$ quando $Lambda(underline(X)) <= k$ para alguma constante $k$ é chamado de *teste de razão de verossimilhança*
+]
+
+Botando em palavras simples, o teste de razão de verossimilhança rejeita $H_0$ quando a razão entre a máxima verossimilhança sob $Omega_0$ e a máxima verossimilhança sob $Omega$ é menor que um dado valor. Normalmente escolhemos $k$ de forma que o teste tenha nível de significância $alpha_0$, quando possível
+
+#example([Teste da Razão de Verossimilhança para Hipóteses Bilaterais sobre um Parâmetro de Bernoulli])[
+  Suponha que observemos $Y$, o número de sucessos em $n$ ensaios de Bernoulli independentes com parâmetro desconhecido $theta$. Considere as hipóteses
+  $
+    H_0: theta = theta_0
+    wide "versus" wide
+    H_1: theta in.not theta_0.
+  $
+
+  Após observar o valor $Y = y$, a função de verossimilhança é
+  $
+    f(y|theta) = binom(n, y) theta^y (1-theta)^(n-y).
+  $
+
+  Neste caso, o espaço paramétrico sob $H_0$ é $Theta_0 = {theta_0}$ e o espaço paramétrico completo é $Theta = [0,1]$. A estatística da razão de verossimilhança é
+
+  $
+    Lambda(y) =
+    (theta_0^y (1 - theta_0)^(n-y))/
+    (sup_(theta in [0,1]) theta^y (1 - theta)^(n-y)).
+  $
+
+  O máximo do denominador ocorre quando $theta$ é igual ao estimador de máxima verossimilhança (EMV), isto é,
+  $
+    hat(theta) = y/n.
+  $
+
+  Assim,
+  $
+    Lambda(y) =
+    (theta_0^y (1-theta_0)^(n-y))/
+    ((y/n)^y (1-y/n)^(n-y))
+
+    =
+    ((n theta_0) / y)^y ((n (1-theta_0)) / (n-y))^(n-y)
+  $
+
+  Não é difícil ver que $Lambda(y)$ é pequeno para valores de $y$ próximos de $0$ ou de $n$, e é maior quando $y$ está próximo de $n theta_0$.
+
+  Como exemplo específico, suponha que $n = 10$ e $theta_0 = 0.3$. A tabela abaixo apresenta os $11$ possíveis valores de $Lambda(y)$ para $y = 0, dots, 10$.
+
+  #table(
+    columns: 12,
+    [*y*],[0],[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],
+    [*$Lambda(y)$*],[$0.028$], [$0.312$], [$0.773$], [$1.000$], [$0.797$], [$0.418$], [$0.147$], [$0.034$], [$0.005$], [$3 times 10^(-4)$], [$6 times 10^(-5)$],
+    [*$PP(Y=y|theta=0.3)$*],[$0.028$], [$0.121$], [$0.233$], [$0.267$], [$0.200$], [$0.103$], [$0.037$], [$0.009$], [$0.001$], [$1 times 10^(-4)$], [$6 times 10^(-6)$]
+  )
+
+  Se desejarmos um teste com nível de significância $alpha_0$, ordenaríamos os valores de $y$ de acordo com os valores de $Lambda(y)$, do menor para o maior, e escolheríamos $k$ de modo que a soma das probabilidades
+  $
+    PP(Y = y|theta = 0.3)
+  $
+  correspondentes aos valores de $y$ tais que $Lambda(y) <= k$, fosse no máximo $alpha_0$.
+
+  Por exemplo, se $alpha_0 = 0.05$, vemos na Tabela 9.1 que podemos somar as probabilidades correspondentes a $y = 10, 9, 8, 7, 0$, obtendo $0.039$. Entretanto, se incluirmos $y = 6$, correspondente ao próximo menor valor de $Lambda(y)$, a soma salta para $0.076$, que é maior do que $0.05$.
+
+  O conjunto
+  $
+    {10, 9, 8, 7, 0}
+  $
+  corresponde a $Lambda(y) <= k$ para todo $k$ no intervalo semiaberto $[0.028, 0.147)$.
+
+  O tamanho do teste que rejeita $H_0$ quando
+  $
+  y in {10, 9, 8, 7, 0}
+  $
+  é $0.039$
+]
 
 #pagebreak()
 
@@ -1104,7 +1188,7 @@ $<t-test-mu-hypothesis-1>
 O espaço paramétrico $Omega$ suprime todo vetor bidimensiona $(mu, sigma^2)$ com $mu in (-infinity, infinity)$ e $sigma^2 > 0$. Aqui, definimos a estatística de teste $U$ como:
 $
   U = sqrt(n) dot (overline(X)_n - mu_0) / sigma'
-$
+$<u-statistic>
 onde o teste rejeita $H_0$ se $U>=c$. Sabemos que a distribuição de $U$ é uma $t$ com $n-1$ graus de liberdade, por isso os testes que utilizam de $U$ são chamados de *testes $t$*. Quando invertemos as hipóteses:
 $
   H_0: mu >= mu_0   \
@@ -1252,6 +1336,66 @@ Em vários experimentos, podemos desejar comparar a mesma variável em condiçõ
 #proof[
   Deixe $T^(-1)_(n-1)(dot)$ denotar a função quantil da $t_(n-1)$. Nós rejeitariamos a hipótese nula no nível $alpha_0$ se, e somente se, $|u| >= T_(n-1)^(-1)(1-alpha_0\/2)$ que é equivalente a $T_(n-1)(|u|)>=1-alpha_0\/2$ que é equivalente a $alpha_0 >= 2[1-T_(n-1)(|u|)]$
 ]
+
+== Testes $t$ como testes de razão de verossimilhança
+#example([Teste da Razão de Verossimilhança para Hipóteses Unilaterais sobre a Média de uma Distribuição Normal])[
+  Considere as hipóteses unilaterais sobre a média de uma distribuição normal:
+  $
+    H_0: mu <= mu_0 wide H_1: mu > mu_0
+  $
+  
+  Neste caso, $Omega_0 = {(mu, sigma^2) : mu <= mu_0}$ e $Omega_1 = {(mu, sigma^2) : mu > mu_0}$. A função de verossimilhança é:
+  $
+    f_n (underline(x)|mu, sigma^2) = 1/(2pi sigma^2)^(n/2) exp[-1/(2sigma^2) sum_(i=1)^n (x_i - mu)^2]
+  $
+  
+  Após observar os valores $x_1, ..., x_n$, a estatística de teste de razão de verossimilhança é:
+  $
+    Lambda(x) = (sup_{(mu,sigma^2) in Omega_0} f_n (underline(x)|mu,sigma^2))/(sup_{(mu,sigma^2) in Omega} f_n (underline(x)|mu,sigma^2))
+  $
+  
+  Chamemos $hat(mu)_0$ e $hat(sigma)^2_0$ os EMVs de $mu$ e $sigma^2$ sob $H_0$, e $hat(mu)$ e $hat(sigma)^2$ os EMVs de $mu$ e $sigma^2$ sob o espaço paramétrico completo.
+  
+  Suponha primeiro que os valores amostrais observados são tais que $overline(x)_n <= mu_0$. Então temos que $(hat(mu), hat(sigma)^2) in Omega_0$, se isso acontecer, então temos que $hat(mu)_0 = hat(mu)$ e $hat(sigma)^2_0 = hat(sigma)^2$, por tanto, nesse cenário, $Lambda(underline(x))$ é igual a $1$.
+
+  Agora, suponha que os valores amostrais observados são tais que $overline(x)_n > mu_0$, logo, $(hat(mu), hat(sigma)^2) in.not Omega_0$. Nesse cenário, é possível demonstrar que $f_n (underline(x)|mu, sigma^2)$ atinge seu valor máximo entre os pontos $(mu, sigma^2) in Omega_0$ se escolhermos $mu$ o mais próximo possível de $overline(x)_n$. O valor de $mu$ mais próximo de $overline(x)_n$ é $mu_0$, pois $mu_0$ é o valor máximo possível de $mu$ sob $H_0$, por isso $hat(mu)_0 = mu_0$. Logo, podemos mostrar que:
+  $
+    hat(sigma)^2_0 = 1/n sum_(i=1)^n (x_i - mu_0)^2
+  $
+  nesse cenário, o valor do numerador de $Lambda(underline(x))$ é:
+  $
+    sup_({(mu, sigma^2)|mu>mu_0}) f_n (underline(x)|mu, sigma^2) = 1/(2pi hat(sigma)^2)^(n\/2) exp(-n/2)
+  $
+
+  Tirando a razão em ambos os casos mencionados anteriormente, temos que:
+  $
+    Lambda(underline(x)) = cases(
+      (hat(sigma)^2/hat(sigma)^2_0)^(n\/2) -> overline(x)_n > mu_0,
+      1 -> "do contrário"
+    )
+  $
+
+  Agora, usamos seguinte relação:
+  $
+    sum_(i=1)^n (x_i - mu_0)^2 = sum_(i=1)^n (x_i - overline(x)_n)^2 + n(overline(x)_n - mu_0)^2
+  $
+  para reescrever a parte de cima da estatística $Lambda(underline(x))$ como:
+  $
+    [1+ n(overline(x)_n - mu_0)^2 / (sum_(i=1)^n (x_i - overline(x)_n)^2)]^(-n\/2)
+  $
+
+  Se $u$ é o valor observado da estatística $U$ (Equação @u-statistic), então podemos checar que:
+  $
+    n(overline(x)_n - mu_0)^2 / (sum_(i=1)^n (x_i - overline(x)_n)^2) = u^2 / (n-1)
+  $
+
+  Ou seja, segue que $Lambda(underline(x))$ é uma função *não-crescente* de $u$. Por isso, para $k<1$, $Lambda(underline(x)) <= k <=> u >= c$ onde:
+  $
+    c = sqrt((n-1) dot ((1/k)^(2\/n) - 1))
+  $
+  Segue então que o teste de razão de verossimilhança é um teste $t$
+]
+
 
 #pagebreak()
 
