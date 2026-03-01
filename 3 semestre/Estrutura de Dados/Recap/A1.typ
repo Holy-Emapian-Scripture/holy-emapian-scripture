@@ -47,6 +47,33 @@
   }
 }
 
+#align(center + top)[
+  FGV EMAp
+
+  Thalis Ambrosim Falqueto
+]
+
+#align(horizon + center)[
+  #text(17pt)[
+    Estrutura de Dados
+  ]
+  
+  #text(14pt)[
+    Resumo
+  ]
+]
+
+#align(bottom + center)[
+  Rio de Janeiro
+
+  2025
+]
+
+#pagebreak()
+
+#outline(title: "Sumário")
+
+#pagebreak()
 
 = Introdução
 
@@ -100,10 +127,25 @@ $T(n) = 1 + 2n + 1 =  2n + 2$
 
 Agora, qual seria o pior caso? Aconteceria se n fosse muito grande, certo? Se n fosse muito grande(tendendo a infinito), as contantes 2 que somam e multiplicam a n não importariam o suficiente e, portanto, dizemos que esse algoritmo tem complexidade de execução $O(n).$
 
-Existem outras análises, que calculam o melhor caso, caso médio, etc. Não vamos entrar nesse assunto no momento, e sim na próxima matéria,PAA.
-
 Por fim, a definição formal da notação big O para encontrar o pior caso é: Dizemos que a função $f(n) = O(g(n))$ se existir uma constante $c$ e um valor $n_0$ tal que $f(n) ≤ c g(n).$
 
+== 1.2 Notação $Omega$
+
+Ok, entendemos que $O(.)$ significa a análise do tempo geral de execução no pior caso, mas como seria para analisar o melhor caso? Para isso, usamos a notação $Omega(.)$.
+
+Exemplo:
+
+```cpp
+int linearSearch(int arr[], int n, int x) {
+    for (int i = 0; i < n; i++) {
+        if (arr[i] == x) {
+            return i; 
+        }
+    }
+    return -1; 
+}```
+
+Note que, nesse caso se o elemento estiver no início da fila, teremos a nossa busca satisfeita imediatamente, no caso, $Omega(1)$. E fica fácil analisar que o pior caso é $O(n)$. Logo, o melhor caso é denotado $Omega(1)$ e o pior caso é $O(n)$.
 
 = 2. Tipos Abstratos de Dados
 
@@ -115,7 +157,7 @@ A importância de estudarmos essas Estrutura de Dados é que, basicamente, cada 
 
 Basicamente, temos 3 operações principais: inserir, remover e buscar. Vamos ver alguns TADs e seus desempenhos em cada uma dessas.  
 
-== 1 Pilhas
+== 2.1 Pilhas
 
 Uma pilha é uma Estrutura de Dados que segue a política LIFO(Last in, First Out), ou seja, o último elemento adicionado da pilha é o primeiro a ser removido. 
 
@@ -355,13 +397,37 @@ void destroyCircularQueue(CircularQueue *cq) {
     delete cq;
 }```
 
-=== Obs.1:
-Até agora, todas as estruturas de dados que aprendemos têm em geral, um problema: Todas elas são baseadas num array de tamanho fixo, passado na inicialização do TAD. Isso é um problema por dois dois motivos:
+
+== 2.4 Comparação entre TADs
+
+Para cada propósito ao qual cada TAD é designado, quase todas as principais operações são $O(1)$. Veja: 
+
+#set table(
+  stroke: none,
+  gutter: 0.2em,
+  fill: (x, y) =>
+    if x == 0 or y == 0 { gray },
+  inset: (right: 1.5em),
+)
+
+#align(
+    center,
+    table(
+  columns: 4,
+  [Operação], [Pilha], [Fila com array], [Fila com array circular],
+
+  [inserir], [$O(1)$], [$O(1)$], [$O(1)$],
+  [Remover], [$O(1)$], [$O(n)$], [$O(1)$],
+  [Buscar],  [$O(1)$], [$O(1)$], [$O(1)$],
+)
+)
+
+Mas, até agora, todas as estruturas de dados que aprendemos têm em geral, um problema: Todas elas são baseadas num array de tamanho fixo, passado na inicialização do TAD. Isso é um problema por dois dois motivos:
 + Excesso de espaço dependendo do caso;
 + Falta de espaço dependendo do caso.
 Como solucionar esse problema?
 
-== 2.4 Lista encadeada
+== 2.5 Lista (simplesmente) encadeada
 
 Uma lista encadeada é uma lista que usa ponteiros que indicam o próximo elemento da lista, sem depender uma estrutura de dados pronta que define o tamanho da lista na inicialização.
 
@@ -442,7 +508,7 @@ void popFrontSLList(SingleLinkedList* list) {
     list->size--;
 }
 
-void popMiddleSLList(SingleLinkedList* list, int value) {
+void popEndSLList(SingleLinkedList* list, int value) {
     if (list->head == nullptr) {
         return;
     }
@@ -460,6 +526,8 @@ void popMiddleSLList(SingleLinkedList* list, int value) {
 }
 ```
 
+Note que aqui temos o popEnd seria análago ao popMiddle, já que, de qualquer forma, teríamos que percorrer a lista inteira para encontrar o elemento, dado que provavelmente não sabemos onde ele está.
+
 - Busca de um elemento - Percorre toda a lista usando um ponteiro auxiliar até achar o valor, retornando true. Caso não achar, retorna false.
 ```cpp
 bool searchSLList(SingleLinkedList* list, int value) {
@@ -474,7 +542,7 @@ bool searchSLList(SingleLinkedList* list, int value) {
 }
 ```
 
-- Destruição da lista - Em geral isso não é muito útil, já que precisamos passar elemento a elemento para deletar, já que essa lista não usa uma estrutura pronta como array.
+- Destruição da lista - Em geral isso não é muito útil, já que precisamos passar elemento a elemento para deletar, e que essa lista não usa uma estrutura pronta como array.
 
 ```cpp
 void deleteSLList(SingleLinkedList* list) {
@@ -488,14 +556,15 @@ void deleteSLList(SingleLinkedList* list) {
 }
 ```
 
-== 2.5 Lista encadeada circular
+== 2.6 Lista encadeada circular
 
 Nesse caso, basta colocar um ponteiro tail na struct SingleLinkedList apontando para a cauda (tail), e atualizar nas funções mostradas anteriormente. Como a lista não tem um tamanho pré-fixado, também não é necessário tratar casos com o módulo da lista, etc. Fica a cargo do leitor.
 
-=== Obs.2:
+- *Obs.1:*
+
 Uma limitação da lista encadeada simples é que ela só vê o próximo elemento, o que é problemático em situações como remoção de um nó ou verificação do elemento anterior numa lista. Para solucionar esse problema, basta adicionarmos um ponteiro tail em cada um dos nós da lista! 
 
-== 2.6 Lista duplamente encadeada
+== 2.7 Lista duplamente encadeada
 
 Sabendo que você provavelmente já entendeu o conceito, vamos às aplicações:
 
@@ -568,12 +637,13 @@ void pushEndDLList(DoubleLinkedList* list, int value) {
     list->size++;
 }```
 
-Note que a 
 - Remoção de um elemento:
- - 
+ - Front - Após verificarmos se a lista não esta vazia, criamos um ponteiro temporário que salvará o ponteiro a ser deletado, logo após atualizamos o head da lista, e com ela atualizada, verificamos se o head atual não é nulo, pois caso ele não seja, devemos atualizar também o prev da nova head. Caso ele seja nulo, então o tail também deve ser atualizado como nulo. Deletamos o ponteiro antigo e decrementamos o size.
+ - End - Fazemos literalmente a mesma coisa, só que olhando para o tail. Note como a estrutura é parecida
+
 
 ```cpp
-void removeFront(DoubleLinkedList* list) {
+void popFrontDLList(DoubleLinkedList* list) {
     if (list->head == nullptr) {
         return;
     }
@@ -588,34 +658,10 @@ void removeFront(DoubleLinkedList* list) {
     list->size--;
 }
 
-void removeMiddle(DoubleLinkedList* list, int value) {
-    if (list->head == nullptr) {
-        return;
-    }
-
-    Node* current = list->head;
-    while (current != nullptr && current->value != value) {
-        current = current->next;
-    }
-
-    if (current == nullptr) {
-        return;
-    }
-
-    current->prev->next = current->next;
-    if (current->next != nullptr) {
-        current->next->prev = current->prev;
-    }
-
-    delete current;
-    list->size--;
-}
-
-void removeEnd(DoubleLinkedList* list) {
+void popEndDLList(DoubleLinkedList* list) {
     if (list->tail == nullptr) {
         return;
     }
-
     Node* temp = list->tail;
     list->tail = list->tail->prev;
     if (list->tail != nullptr) {
@@ -627,3 +673,228 @@ void removeEnd(DoubleLinkedList* list) {
     list->size--;
 }
 ```
+
+Note que não colocamos as funções de push e pop no meio da lista, já que isso quebraria a ideia dessas operações serem $O(1)$, pois teríamos que percorrer toda a lista até encontrar o elemento do meio, se fosse o caso.
+Além disso, um push no meio não faz sentido, seria algo como furar fila, enquanto o pop no meio de uma fila pode realmente acontecer, como uma desistência. Aqui vai o código do pop no meio da lista:
+
+```cpp
+void popMiddleDLList(DoubleLinkedList* list, int value) {
+    if (list->head == nullptr) {
+        return;
+    }
+    Node* current = list->head;
+    while (current != nullptr && current->value != value) {
+        current = current->next;
+    }
+    if (current == nullptr) {
+        return;
+    }
+    current->prev->next = current->next;
+    if (current->next != nullptr) {
+        current->next->prev = current->prev;
+    }
+    delete current;
+    list->size--;
+}
+```
+- Busca de um elemento - Análogo a lista simplesmente encadeada.
+```cpp
+bool searchDLList(DoubleLinkedList* list, int value) {
+    Node* current = list->head;
+    while (current != nullptr) {
+        if (current->value == value) {
+            return true;
+        }
+        current = current->next;
+    }
+    return false;
+}
+```
+
+- Destruição da lista - Análogo a lista simplesmente encadeada.
+
+```cpp
+void deleteDLList(DoubleLinkedList* list) {
+    Node* current = list->head;
+    while (current != nullptr) {
+        Node* temp = current;
+        current = current->next;
+        delete temp;
+    }
+    delete list;
+}
+```
+
+== 2.8 Comparação entre arrays e listas encadeadas
+
+Após todo esse código, podemos fazer uma breve comparação entre listas encadeadas e arrays:
+
+ - Arrays são uma boa escolha quando há uma estimativa da quantidade de elementos a serem inseridos e permitem acesso rápido a qualquer elemento via índice, mas inserções e remoções no meio são custosas, pois exigem deslocamento de elementos .
+- Listas encadeadas são boa escolha quando a quantidade de elementos pode variar significativamente e inserções e remoções são eficientes, pois não exigem deslocamento de elementos, porém, acesso a elementos individuais é mais lento, pois requerem percorrer a lista.
+
+Além disso, embora listas encadeadas sejam flexíveis e eficientes para inserção e remoção, elas possuem algumas desvantagens:
+
++ Maior uso de memória por elemento (devido aos ponteiros adicionais);
++ Não é possivel acessar uma posição aleatória da lista de forma eficiente;
+
+Uma ideia que possibilita o acesso a uma posição aleatória de forma eficiente e melhora a busca linear é ordenar a lista. Mas como fazer isso?
+
+#pagebreak()
+
+= 3. Ordenação
+
+Como introduzido, por vezes gostaríamos que nossa Estrutura de Dados estivesse ordenada,
+pois a ordem dos elementos pode ser mais importante que a inserção ou remoção. Por exemplo, num
+sistema de e-commerce, onde os produtos são identificados por preço, ou até num hospital, onde gostaríamos de ordenar por prioridade.
+
+Ordenar os dados é essencial, pois:
+
++ permite buscas mais eficientes;
++ define uma ordem de prioridade;
++ facilita a análise estatística(Ex: mediana);
+
+== 3.1 - Características relevantes:
+
+A utilidade dos algoritmos de ordenação que vamos ver podem ser medidos através de:
+
+- Complexidade de tempo de execução;
+- Complexidade de espaço utilizado:  quantidade de espaço adicional de memória necessária (além do array de entrada);
+- Estabilidade: se mantém a ordem relativa dos elementos iguais na entrada;
+    - Exemplo: No caso do exemplo do hospital, se cada elemento(pessoa) tem uma prioridade, é esperado que pessoas de mesma prioridade continuem na mesma ordem que chegaram. Portanto, ao ordenar pela prioridade, o algoritmo é estável se cada elemento de mesma prioridade se mantém na mesma ordem antes de ordenar.
+- In-place vs Out-of-place:
+    - In-place: Não requer memória extra significativa.
+    - Out-of-place: Requer uma estrutura auxiliar para armazenar os elementos ordenados;
+- Performance em diferentes tamanhos de entrada: Alguns algoritmos podem ser melhores que outros para quantidades pequenas ou grandes de dados.
+
+Existem outros tipos de características relevantes, como adaptabilidade e paralelização, mas não serão abordados aqui. Legal, vamos para os algoritmos!
+
+== 3.2 Selection Sort
+
+- *Ideia*
+ - Percorre a lista até encontrar o menor elemento;
+ - Troca esse elemento com o primeiro da lista;
+ - Repete a ideia para os próximos elementos.
+
+== img
+
+```cpp
+void selectionSort(int arr[], int n) {      // Custo  | Vezes
+    int minIndex, temp;                     // 2      | 1
+    for (int i = 0; i < n - 1; i++) {       // 2      | n-1
+        minIndex = i;                       // 1      | n-1
+        for (int j = i + 1; j < n; j++) {   // 2      | n-i+1 -> n-1, 
+            if (arr[j] < arr[minIndex]) {   // 1      | n-i+1 -> n-1,
+                minIndex = j;               // 1      | n-i+1 -> n-1, 
+            }
+        }
+        temp = arr[minIdx];                 // 1      | n-1
+        arr[minIdx] = arr[i];               // 1      | n-1
+        arr[i] = temp;                      // 1      | n-1
+    }
+} 
+```
+
+Note que precisamos de dois inteiros, um para salvar o índice do menor elemento, e outro para fazer a troca de elementos. O primeiro for passará por toda a lista, e o segundo for comparará os elementos subjacentes ao indíce i, pois antes desse índice os elementos já foram ordenados. Fazemos a comparação do valor do índice i com todos os posteriores, e atualizamos o índice j. Após cada comparação, salvamos o valor do menor elemento, atualizamos o valor do índice do menor elemento como o elemento do índice i, e por fim atualizamos o valor do índice i como o menor elemento.  
+
+- *Características:*
+    - Complexidade de tempo de execução: $O(n^2)$ para o pior caso, dado dois fors que iteram praticamente até $n$;
+    - Complexidade de espaço: $O(1)$, pois não precisamos criar nada; 
+    - Estabilidade: não é estável, trocas alteram a ordem de elementos iguais.
+
+== 3.3 Insertion Sort
+
+- *ideia*
+    - Considera o primeiro elemento como ordenado;
+    - Insere o próximo elemento na posição correta na parte ordenada;
+    - Repete o processo para o restante dos elementos.
+
+=== img
+
+```cpp
+void insertionSort(int arr[], int n) {          // Custo  | Vezes
+    int current;                                // 3      | 1
+    for (int i = 1; i < n; i++) {               // 2      | n 
+        current = arr[i];                       // 1      | n-1
+        int j = i - 1;                          // 1      | n-1
+        while (j >= 0 && arr[j] > current) {    // 3      | i-1 -> n-2
+            arr[j+1] = arr[j];                  // 1      | i-1 -> n-2
+            j = j - 1;                          // 1      | i-1 -> n-2
+        }
+        arr[j+1] = current;                     // 1      | n-1
+    }
+}
+```
+Pense em uma separação da mesma lista em duas, uma ordenada e a outra não. Olhando para o código
+começamos com a declaração do valor elemento que salvaremos, após isso abrimos um for para passar por toda a lista, salvamos o 
+current como o elemento i e iniciamos o j como o índice do elemento antes de i. Então,
+se antes do elemento i está ordenado, basta achar o lugar certo para o elemento i. 
+
+É isso que fazemos com o while, olhamos enquanto não chegamos no índice j = 0(início da lista) e enquanto o eleme   nto do array
+no índice j é maior que o item a direita dele. 
+Quando ele não for, significa que é a posição ordenada, e atualizamos a posição fora do while.
+
+Note que quando entramos no while mas não saímos, significa que ainda não encontramos o local exato do elemento, e para manter a
+ estrutura da lista, atualizamos o array no indice j+1 como sendo o valor do elemento anterior.
+
+- *Características:*
+    - Complexidade de tempo de execução: $O(n^2)$ para o pior caso, dado o for e o while que iteram em função de n;
+    - Complexidade de espaço: $O(1)$, pois usamos a mesma lista; 
+    - Estabilidade: é estável, trocas não alteram a ordem de elementos iguais já que fazemos a troca apenas quando o elemento é maior(>), e não maior igual(>=).
+
+== 3.4 Bubble Sort
+
+- *ideia*
+    - Percorre a lista e compara elementos adjacentes, trocando se estiverem fora de ordem;
+    - Repete o processo até que esteja ordenado(pense que se tivessemos o maior elemento como primeiro da fila, teríamos n trocas).
+
+=== img
+
+```cpp
+void bubbleSort(int arr[], int n) {
+    int temp;                                     // Custo | Vezes
+    for (int i = 0; i < n - 1; i++) {             // 2     | n-1
+        for (int j = 0; j < n - i - 1; j++) {     // 2     | n-i-1 ->  1
+            if (arr[j] > arr[j + 1]) {            // 1     | n-i-1 ->  1
+                temp = arr[j];                    // 1     | n-i-1 ->  1
+                arr[j] = arr[j + 1];              // 1     | n-i-1 ->  1
+                arr[j + 1] = temp;                // 1     | n-i-1 ->  1
+            }
+        }
+    }
+}
+```
+
+Como explicado, a ideia é simples, o que faz com que o algoritmo também seja. Salvamos um int para fazer a troca entre elementos subjacentes. O primeiro for fará com que a verificação seja feita n - 1  vezes, e o segundo for fará a comparação entre todos os elementos subjacentes escolhendo o maior e levando-o ao final da fila, por isso j vai até $n - i - 1$, o $-1$ serve para não sair da lista(fazemos j + 1 no if), e o $-i$ está ali pois o if carrega o maior elemento da lista até o fim dela a cada iteração, portanto não precisamos mais ordenar ele.
+
+- *Características:*
+    - Complexidade de tempo de execução: $O(n^2)$ no pior caso;
+    - Complexidade de espaço: $O(1)$ (in-place);
+    - Estabilidade: estável, pois só trocamos se for maior que o próximo elemento.
+
+== 3.5 Comparação entre algoritmos de ordenação
+
+Esses algoritmos, embora didáticos, são ineficientes para grandes conjuntos de dados. Nas próximas seções, abordaremos algoritmos mais avançados, como Merge Sort e Quick Sort, que possuem melhor desempenho. Vamos comparar os algoritmos que vemos até agora:
+
+#set table(
+  stroke: none,
+  gutter: 0.2em,
+  fill: (x, y) =>
+    if x == 0 or y == 0 { gray },
+  inset: (right: 1.5em),
+)
+
+#align(
+    center,
+    table(
+  columns: 5,
+  [Algoritmo], [Melhor caso], [Pior caso], [Estável?],[In-place?],
+
+  [Selection Sort], [$Omega(n^2)$], [$O(n^2)$], [Não],[Sim],
+  [Insertion Sort], [$Omega(n)$], [$O(n^2)$], [Sim],[Sim],
+  [Bubble Sort],  [$Omega(n)$], [$O(n^2)$], [Sim],[Sim],
+)
+)
+
+Fazendo uma rápida análise, vemos que não temos diferenças aparentes nas características entre Insertion Sort e Bubble Sort, enquanto o Selection Sort é pior que os dois.
+
+= 4.0 Ordeanção avançada
