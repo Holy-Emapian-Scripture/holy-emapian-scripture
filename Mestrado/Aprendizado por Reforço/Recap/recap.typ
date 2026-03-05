@@ -461,7 +461,6 @@ Nesse novo capítulo introduziremos Processos de Decisão de Markov Finitos, ou 
 MDPs são uma formulação direta do problema de aprender de interações para alcançar um objetivo. O tomador de decisão é chamado de agente. A coisa que interage com ele, compreendendo tudo de fora do agente, é chamado de ambiente. Eles
 interagem continuamente, com o agente selecionando ações e o ambiente reagindo a essas ações e retornando outras situações e retornando recompensas.
 
-#show figure.caption: set align(left)
 #figure(
     image("../Img/mdpenvironment.png", width:90%),
     caption: [O agente e o ambiente interagindo em um Processo de Decisão de Markov.]
@@ -474,7 +473,7 @@ $ S_0, A_0, R_1, S_1, A_1, R_2, S_2, A_2, R_3, dots $
 Em um MDP finito, o conjunto de ações e recompensas têm um número finito de elementos. Nesse caso, conseguimos definir variáveis aleatórias discretas $R_t$ e $S_t$ dependendo apenas do estado e ação anterior. Ou seja, para $s' in cal(S) "and " r in cal(R)$, existe uma probabilidade desses valores ocorrerem no tempo $t$, dado valores do estado e ação:
 
 $
-  p(s', r | s, a) dot(eq) Pr{S_t = s', R_t = r | S_(t-1) = s, A_(t-1) = a}
+  p(s', r|s, a) dot(eq) Pr{S_t = s', R_t = r|S_(t-1) = s, A_(t-1) = a}
 $
 
 para todo $s', s in cal(S), r in cal(R)$ e $a in cal(A)(s)$. Essa probabilidade significa basicamente: depois de estar no estado $s$ e tomar a ação $a$, o ambiente responda com a recompensa $r$ e transite para o estado $s'$. 
@@ -653,7 +652,7 @@ Assim, as funções de valor são definidas com respeito a modos particulares de
 A função de valor de um estado $s$ em uma política $pi$, denotado $v_pi (s)$ é o valor esperado quando começamos em $s$ e seguindo $pi$ depois disso. Para MDPs, conseguimos definir $v_pi$ formalmente como:
 
 $
-v_pi (s) dot(eq) EE_pi [G_t | S_t = s] = EE_pi [sum_(k=0)^infinity gamma^k R_(t + k + 1) mid(|) S_t = s], " para todo" s in cal(S)
+v_pi (s) dot(eq) EE_pi [G_t|S_t = s] = EE_pi [sum_(k=0)^infinity gamma^k R_(t + k + 1) mid(|) S_t = s], " para todo" s in cal(S)
 $ 
 
 onde $EE_pi [.]$ denota a esperança de uma variável aleatória dado que o agente segue uma política $pi$, e $t$ é qualquer passo. Nós chamamos a função $v_pi$ de função de valor de estado para a política $pi$.
@@ -661,7 +660,7 @@ onde $EE_pi [.]$ denota a esperança de uma variável aleatória dado que o agen
 Similarmente, podemos definir o valor de tomar a ação $a$ no estado $s$ sobre a política $pi$, denotada $q_pi (s,a)$, como a esperança partindo de $s$, tomando a ação $a$, e depois disso seguir a política $pi$ como: 
 
 $
-q_pi (s,a) dot(eq) EE_pi [G_t | S_t = s, A_t = a] = EE_pi [sum_(k=0)^infinity gamma^k R_(t + k + 1) mid(|) S_t = s, A_t = a]
+q_pi (s,a) dot(eq) EE_pi [G_t|S_t = s, A_t = a] = EE_pi [sum_(k=0)^infinity gamma^k R_(t + k + 1) mid(|) S_t = s, A_t = a]
 $
 
 e chamamos $q_pi$ de função de valor da ação para a política $pi$.
@@ -673,13 +672,11 @@ O único problema é que, se houverem muitos estados, pode não ser muito práti
 Uma propriedade legal das funções de valor são que elas mantém relações recursivas, o que sempre traz benefícios computacionalmente. Especificamente, para qualquer política $pi$ e qualquer estado $s$, vale que:
 
 $
-v_pi (s) & dot(eq) EE_pi [G_t | S_t = s] \
-& = EE_pi [R_(t+1) + gamma G_(t+1) | S_t = s]\
-& = sum_a pi(a|s) sum_s' sum_r p(s',r | s,a)[r + gamma EE[G_(t+1) | S_(t+1) = s']]\
-& = sum_a pi(a|s)sum_(r,s') p(s',r | s,a) [r + gamma v_pi (s')], " para todo "s in cal(S)
+v_pi (s) & dot(eq) EE_pi [G_t|S_t = s] \
+& = EE_pi  [R_(t+1) + gamma G_(t+1)|S_t = s]\
+& = sum_a pi(a|s) sum_s' sum_r p(s',r | s,a)[r + gamma EE[G_(t+1)|S_(t+1) = s']]\
+& = sum_a pi(a|s)sum_(r,s') p(s',r|s,a) [r + gamma v_pi (s')], " para todo "s in cal(S)
 $<belman>
-
-=== de onde vem isso kkkk
 
 Note que na última equação não juntamos duas somas, de todos os valores de $s'$ e de todos os valores $r$. Note ainda que a expressão final pode ser facilmente lida como um valor esperado. Ela é, na verdade, uma soma sobre todos os valores das três variáveis, $a, s' " e " r$.
 
@@ -807,9 +804,6 @@ Suponha que resolvemos a equação de Bellman para $v_*$ para o grid simples int
 )
 ]
 
-
-=== faltou o exemplo 3.9
-
 == Otimização e aproximação
 
 Um agente que aprende uma política ótima teve um excelente desempenho. Mas, na prática, isso só acontece com alto custo computacional. Mesmo que tenhamos um modelo completo e preciso das dinâmicas do ambiente, geralmente não é possível simplesmente calcular uma política ótima resolvendo a equação de otimalidade de Bellman.
@@ -820,3 +814,21 @@ Em casos tabulares(pequenos e finitos), é possível resolver e armazenas em arr
 Nesses casos, as funções precisam ser aproximadas, usando alguma forma de representação funcional mais compacta e parametrizada.
 
 A natureza online(significa com atualização constante dos dados) do aprendizado por reforço torna possível aproximar políticas ótimas de forma que se dedique mais esforço a aprender boas decisões para estados frequentemente encontrados, à custa de menos esforço para estados raramente encontrados.
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Programação Dinâmica
+]
+
+#pagebreak()
+
+Podemos utilizar de algoritmos de programação dinâmica para resolver MDPs, mas eles exigem um modelo completo do ambiente, ou seja, a função de transição $p(s',r|s,a)$ deve ser conhecida. Além do fato que $cal(S), cal(R)$ e $cal(A)$ devem ser finitos, o que não é o caso em muitos problemas práticos, mas vale a pena conhecer os algoritmos de programação dinâmica, pois eles formam a base para muitos outros algoritmos de aprendizado por reforço.
+
+A base deses algorimtos é pegar as equações de Bellman e usá-las como atualizações iterativas para aproximar as funções de valor. Por exemplo, a equação de Bellman para $v_pi$ pode ser reescrita como:
+
+$
+v_pi (s) = sum_a pi(a|s) sum_(r,s') p(s',r|s,a) [r + gamma v_pi (s')]
+$
+
+
