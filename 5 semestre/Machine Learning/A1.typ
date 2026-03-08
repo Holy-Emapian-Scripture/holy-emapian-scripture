@@ -521,3 +521,270 @@ onde $epsilon > 0$ é uma constante.
     image("images/rbf-regression.png")
   )
 ]
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Regressão Logística
+]
+
+#pagebreak()
+
+Uma das maneiras mais naturais de criar um modelo de regressão consiste em escolher um modelo observacional para a variável de resposta $y$ cujos parâmetros dependam diretamente do seu respectivo vetor de entradas $x$. Por exemplo, na capítulo anterior, vimos que minimizar o MSE é equivalente a admitir uma verossimilhança da forma $y|x ~ N (theta^T x, sigma^2)$, na qual o parâmetro de média é uma função linear de $x$. Note também que esse escolha implica que $y$ pode tomar valores arbitrários em $RR$, já que esse é o suporte da distribuição normal (i.e., região
+com densidade maior que zero).
+
+Se $y$ é uma variável binária (0/1), a escolha mais comum é utilizar uma distribuição Bernoulli com parâmetro $r = g(x)$. Em outras palavras, falamos que $y$ assume valor 1 com probabilidade $r$ e $0$ com probabilidade $1 - r$. Adotando esse modelo observacional para $y|x$, resta-nos definir a função $g$ para completar nosso modelo de regressão. Para tal, iremos calcular uma função linear de $x$, como anteriormente, mas aplicaremos uma função que mapeie o valor resultante (comumente conhecido como logit) para $[0, 1]$, gerando valores válidos para a probabilidade $r$. Mais especificamente, usamos a função sigmoide $sigma(t) = (1 + e^(-t))^(-1)$ para definir a probabilidade de $y|x$ como
+$
+  p(y|x) = "Bern"(y|sigma(theta^T x)) = sigma(theta^T x)^y (1 - sigma(theta^T x))^(1-y)
+$
+
+#block(
+  width: 100%,
+  fill: rgb("#c5f7fd"),
+  inset: 1em,
+  stroke: 1.5pt + rgb("#066875"),
+  radius: 5pt
+)[
+  *Propriedades da função sigmoide*
+  $
+    -> t < t' => sigma(t) < sigma(t')
+  $
+  $
+    lim_(t -> infinity) sigma(t) = 1 wide lim_(t -> -infinity) sigma(t) = 0
+  $
+  $
+    sigma(-t) = 1 - sigma(t)
+  $
+  $
+    dif / (dif t) sigma(t) = sigma(t) (1 - sigma(t)) = sigma(t) sigma(-t)
+  $
+  $
+    sigma(t) = 1/2 + 1/2 tanh(t/2)
+  $
+  $
+    integral sigma(t) dif t = log(sigma(-t)) + C
+  $
+]
+
+Dado um conjunto de treinamento $D$ com $N$ exemplos de treinamento $(x_n, y_n)$, podemos então definir a função de verossimilhança $cal(L)$ como
+$
+  cal(L)(theta) = product_(i=1)^N p(y_i|x_i) = product_(i=1)^N sigma(theta^T x_i)^(y_i) (1 - sigma(theta^T x_i))^(1-y_i)
+$
+e agora podemos encontrar o estimador de máxima verossimilhança $hat(theta)$ para $theta$:
+$
+  hat(theta) &= "argmax"_(theta in RR^(D+1)) cal(L)(theta) = "argmin"_(theta in RR^(D+1)) -log cal(L)(theta)    \
+
+  &= "argmin"_(theta in RR^(D+1)) - sum_(i=1)^N [y_i log sigma(theta^T x_i) + (1-y_i) log (1 - sigma(theta^T x_i))]   \
+
+  &= "argmin"_(theta in RR^(D+1)) -{ underparen(sum_(i=1)^N, y_i = 1) log sigma(theta^T x_i) - underparen(sum_(i=1)^N, y_i = 0) log sigma(-theta^T x_i) }
+$
+
+Similar ao MSE, que minimizamos no capítulo passado, a função objetivo $-log(cal(L))$ é uma convexa. No entanto, não possuímos uma solução analítica para $hat(theta)$ e, portanto, precisamos utilizar algum método de otimização númerica, como o SGD que já conhecemos. Para fins de
+implementação, podemos definir a variável $y'_i = 2y_i - 1$. Com isso, conseguimos escrever o
+gradiente $gradient theta cal(l)_i (theta)$ da log verossimilhança para o $i$-ésimo exemplo de treinamento $cal(l)_i$ como:
+$
+  gradient_theta cal(l)_i (theta) &= gradient_theta log sigma(y'_i theta^T x_i)   \
+  
+  &= (partial log sigma(y'_i theta^T x_i)) / (partial sigma(y'_i theta^T x_i)) dot (partial sigma(y'_i theta^T x_i)) / (partial (y'_i theta^T x_i)) dot (partial y'_i theta^T x_i) / (partial theta)   \
+
+  &= sigma(-y'_i theta^T x_i) y'_i x_i
+$
+
+Aplicando o algoritmo gradiente descendente à função custo da regressão logística, obtemos o seguinte algoritmo:
+
+#figure(
+  kind: "algorithm",
+  supplement: [Algoritmo],
+  caption: [Regressão Logística],
+
+  pseudocode-list(
+    title: [Regressão Logística],
+    booktabs: true,
+  )[
+    + $theta_0 <- 0$
+    + $y' <- 2y - bold(1)$
+    + *for* $t=0,1,2,...$ *do*
+      + $g <- sum_(i=1)^N sigma(-y'_i theta_t^T x_i) y'_i x_i$
+      + $theta^((t+1)) <- theta^((t)) - eta g$
+      + Verifica condição de parada
+    + *end for*
+    + *return* $theta$
+  ]
+)
+
+#block(
+  width: 100%,
+  fill: rgb("#c5f7fd"),
+  inset: 1em,
+  stroke: 1.5pt + rgb("#066875"),
+  radius: 5pt
+)[
+  *Interpretação geométrica*: Uma vez que obtivemos $hat(theta)$, podemos estimar a probabilide de uma nova amostra $x^*$ pertencer à classe 1 como $sigma(hat(theta)^T x^*)$ e a de pertencer à classe 0 como $1 - sigma(hat(theta)^T x^*)$. Com isso em mente, se precisamos prever a classe de $x^*$, é razoável escolher aquela que achamos mais provável. Lembre que $sigma(0) = 0.5$. Portanto, o plano $hat(theta)^T x = 0$ caracteriza os pontos $x in cal(X)$ que cremos ter probabilidade idêntica de pertencer a ambas as classes. Isso implica que todos os vetores de entrada cujo ângulo $gamma$ com o vetor normal $hat(theta)$ é menor que noventa graus são classificados como positivos (classe 1) — lembre que $theta^T x = ||hat(theta)||_2 ||x||_2 cos(gamma)$. Os demais pontos são classificados como negativos (classe 0).
+]
+
+#block(
+  width: 100%,
+  fill: rgb("#c5f7fd"),
+  inset: 1em,
+  stroke: 1.5pt + rgb("#066875"),
+  radius: 5pt
+)[
+  *Convexidade do problema de aprendizado*: Como a soma de funções convexas é também convexa, basta verificar que as $cal(l)_1, ... , cal(l)_N$ são convexas para provarmos que $-log cal(L)$ também o é. Para esse fim, podemos usar o fato de que a função composta $h = g compose f$ é convexa se $f$ é côncava e $g$ é convexa não-crescente. Note que $y'_i theta^T x_i$ é tanto côncava como convexa, como é o caso de funções lineares. Em contrapartida, $-log sigma(t)$ é convexa não-crescente já que ela descresce com $t$ e sua derivada $-sigma(-t)$ é estritamente crescente
+]
+
+#block(
+  width: 100%,
+  fill: rgb("#c5f7fd"),
+  inset: 1em,
+  stroke: 1.5pt + rgb("#066875"),
+  radius: 5pt
+)[
+  *Entropia Cruzada Binária*: Na comunidade de ML, é comum se referir ao logaritmo negativo da verossimilhança Bernoulli como entropia cruzada binária (binary cross entropy, BCE). De forma geral, a entropia cruzada entre duas funções de massa/densidade $p$ e $q$ sobre a mesma variável aleatória $z$ e com suportes idênticos é definida como:
+  $
+    H(p, q) := - EE_(z ~ p) log q(z)
+  $
+  e dá-se o nome BCE para o caso especial em que p e q são distribuições Bernoulli.
+  
+  Em teoria da informação, é comum interpretar $log 1/q(z)$ como uma medida de surpresa, i.e., do quanto observar um valor específico $z$ contrasta com seu conhecimento prévio, representado por $q$. Nesse contexto, $H(p, q)$ é o valor dessa medida se os valores de $z$ são amostrados de $p$ (ao invés de q). Vale ressaltar que, para um $p$ fixo, $q = p$ minimiza $H(p, q)$. Nesse caso, a quantia $H(p) := H(p, p)$ é chamada de entropia. Por sua vez, a entropia também pode ser vista como uma medida de concentração de $p$, atingindo seu valor máximo quando $p$ é uma distribuição uniforme.
+  
+  Para concluir que a BCE generaliza $-log"Ber"(y|r)$, basta definir $p(z) = "Ber"(z|y)$ e tomar $q(z) = "Ber"(z|r)$. Com essas escolhas, obtemos:
+  $
+    H(p, q) &= -y log q(1) - (1 - y) log q(0)   \
+    &= - (y log r + (1 - y) log (1 - r))
+  $
+  o que implica que:
+  $
+    e^(-H(p,q)) = r^y (1 - r)^(1-y) (1-y) = "Ber"(y|r)
+  $
+]
+
+== Regressão Logística Bayesiana
+Na seção anterior, discutimos como obter uma estimativa pontual $hat(theta)$ para $θ$ via máxima verossimilhança (MLE). Um problema com estimativas pontuais, no entanto, é que elas não refletem nossa incerteza sobre o valor estimado. Intuitivamente, por exemplo, esperamos que estimativas feitas com grandes quantidades de dados sejam mais confiáveis que as feitas com poucos dados. Para observar que MLE não captura esse aspecto, basta notar que repetir o conjunto de dados qualquer número arbitrário de vezes não causa impacto algum em $hat(theta)$.
+
+A estatística Bayesiana propõe uma saída intuitiva para esse empasse. A ideia é modelar os parâmetros $theta$ do modelo como uma variável aleatória, usando uma distribuição a priori $p(theta)$ e aplicar a regra de Bayes para computar a distribuição de $theta$ condicionada nas observações $D$, que chamamos de posteriori:
+$
+  p(theta|D) = (p(D|theta) p(theta)) / p(D) = (cal(L)(theta) p(theta)) / (integral cal(L)(theta') p(theta') dif theta')
+$
+Informalmente, a posteriori representa a incerteza que temos sobre o valor da variável $theta$. Além disso, vale ressaltar que a priori nos permite encapsular conhecimento prévio, potencialmente subjetivo, sobre $theta$ (i.e., antes de ver os dados) e sua escolha é uma questão de modelagem estatística. Quando não possuímos informação significante sobre os dados, é comum escolher uma distribuição de alta entropia como priori. No caso em que $theta$ assume valores reais, e.g., poderíamos usar uma priori Gaussiana com alta variância.
+
+No caso da regressão logística, é comum adotar uma priori Gaussiana sobre $theta$ e a verossimilhança que usamos na seção anterior, resultando no modelo
+$
+  theta ~ N(mu, Sigma)  \
+  y_n|x_n, theta ~ "Bern"(sigma(theta^T x_n)) space forall n = 1, ... , N
+$
+
+cuja posteriori é dada por
+$
+  p(theta|D) = (product_(n=1)^N "Bern"(y_n|sigma(theta^T x_n)) N(theta|mu, Sigma)) / (integral_(x in RR^(D+1)) product_(n=1)^N "Bern"(y_n|sigma(theta'^T x_n)) N(theta'|mu, Sigma))
+$
+
+Notavelmente, computar a posteriori acima depende da resolução de uma integral que não possui forma fechada. Consequentemente, também não há uma forma analítica para $p(theta|D)$. Essa dificuldade técnica não é uma raridade em modelos Bayesianos. Apesar de algumas escolhas pareadas de verossimilhança e priori resultarem em posteriores com forma analítica, esse não é o caso geral. Para driblar esse problema, usaremos métodos numéricos para aproximar a posteriori com distribuição mais simples, de forma conhecida
+
+#block(
+  width: 100%,
+  fill: rgb("#c5f7fd"),
+  inset: 1em,
+  stroke: 1.5pt + rgb("#066875"),
+  radius: 5pt
+)[
+  *Prevendo a label $y^*$ para um novo input $x^*$*: Suponha que conseguimos computar a posteriori $p(theta|D)$, como podemos obter uma distribuição para $p(y^*|x^*)$? Quando estavamos usando uma estimativa pontual $hat(theta)$ (MLE), obtivemos uma distribuição sobre $y^*$ simplesmente encaixando $hat(theta)$ na nossa verossimilhança, i.e., tomamos $p(y^*|x^*) approx" Ber"(sigma(hat(theta)^T x^*))$. No paradigma Bayesiano, levamos em consideração a incerteza sobre $theta$ (codificada em nossa posteriori), ponderando cada valoração de $theta$ pela sua densidade posteriori. O resultado, é o que chamamos de posteriori preditiva
+  $
+    p(y^*|x^*) = integral p(y^*|x^*, theta) p(theta|D) dif theta
+  $
+]
+
+#block(
+  width: 100%,
+  fill: rgb("#c5f7fd"),
+  inset: 1em,
+  stroke: 1.5pt + rgb("#066875"),
+  radius: 5pt
+)[
+  *Máxima verossimilhança e máximo _a posteriori_*: Uma das maiores virtudes do paradigma Bayesiano é oferecer uma maneira de quantificar incerteza. No entanto, há situações nas quais computar a posteriori, mesmo que de maneira aproximada, pode se tornar computacionalmente indesejável. Nesses casos, é comum procurar o ponto que máximiza a posteriori e tomá-lo como estimativa pontual. Chama-se esse precedimento de máximo a posteriori (MAP). Mais concretamente, a estimativa $hat(theta)_"MAP"$ pode ser obtida como:
+  $
+    hat(theta)_"MAP" &= "argmax"_(theta) log p(theta|D)   \
+    
+    &= "argmax"_(theta) {log p(D|theta) + log p(theta) - log integral_theta p(D|theta) p(theta)}   \
+
+    &= "argmax"_(theta) {log cal(L)(theta) + log p(theta)}
+  $
+
+  e, portanto, pode ser interpretada como uma versão regularizada do MLE, na qual $log p(theta)$ penaliza regiões pouco prováveis a priori
+]
+
+#example([Priori conjugada])[
+  Para escolhas específicas de priori e verossimilhança, a distribuição posteriori possui forma analítica. Uma instância dessas ocorre quando $p(theta)$ é uma distribuição Beta e a verossimilhança $p(D|theta)$ é Bernoulli. Mais concretamente, suponha que escolhemos uma priori $"Beta"(alpha, beta)$ para $theta$, dada por:
+  $
+    Beta(theta|alpha, beta) = (Gamma(alpha + beta) / (Gamma(alpha) Gamma(beta))) theta^(alpha - 1) (1 - theta)^(beta - 1)
+  $
+  Podemos inferir, então, o seguinte sobre a posteriori do nosso modelo:
+  $
+    p(theta|D) &prop product_(n=1)^N "Bern"(y_n|theta) "Beta"(theta|alpha, beta)   \
+
+    &prop product_(n=1)^N theta^(y_n) (1 - theta)^(1-y_n) theta^(alpha - 1) (1 - theta)^(beta - 1)   \
+
+    &prop theta^(alpha + sum_(n=1)^N y_n - 1) (1 - theta)^(beta + N - sum_(n=1)^N y_n - 1)   \
+
+    &prop theta^(alpha' - 1) (1 - theta)^(beta' - 1) = "Beta"(theta|alpha', beta')   \
+  $
+
+  onde $alpha' = alpha + sum_(n=1)^N y_n$ e $beta' = beta + N - sum_(n=1)^N y_n$.
+
+  Portanto, concluimos que nossa posteriori é uma $"Beta"(alpha', beta')$. Para ilustrar o uso da regra de Bayes, a figura abaixo mostra atualizações da posteriori derivada acima para diferentes números de amostras $N$. Para tal, assumimos que a distribuição geradora dos dados é $"Bern"(0.25)$ e usamos uma priori $"Beta"(10, 10)$. Veja que, à medida que vemos mais amostras, a posteriori se afunila ao redor de $0.25$.
+
+  #figure(
+    image("images/beta-posterior.png")
+  )
+]
+
+=== Aproximação de Laplace
+A aproximação de Laplace é, possivelmente, a mais simples técnica de inferência Bayesiana aproximada. A ideia é construir uma aproximação simples $q(theta)$ para a posteriori $p(theta|D)$ usando uma expansão de Taylor de segunda ordem em $log p(theta|D)$ ao redor da moda $m$ da posteriori (i.e., o ponto de máxima densidade)
+$
+  log p(theta|D) approx log p(m|D) + (theta - m)^T gradient_theta log p(m|D) + 1/2 (theta - m)^T gradient^2_theta log p(m|D) (theta - m)
+$
+
+Note que $log p(m|D)$ é uma constante com respeito a $theta$ e lembre que o gradiente de uma função em sua moda, caso ela exista, é zero. Então, concluímos que:
+$
+  log p(theta|D) approx 1/2 (theta - m)^T bold(H) (theta - m) + C
+$
+
+onde $bold(H) = gradient^2_theta -log p(m|D)$. Por design, construímos $q$ tal que $log q$ difira da expansão acima apenas por uma constante aditiva, então:
+$
+  log q(theta) = 1/2 (theta - m)^T bold(H) (theta - m) + C' => q(theta) prop exp(1/2 (theta - m)^T bold(H) (theta - m))
+$
+e como $q(theta)$ é proporcional á uma densidade normal multivariada com média $m$ e matriz de
+covariância igual á inversa de $H$, temos:
+$
+  q(theta) = N(theta|mu=m, Sigma=H^(-1)), "onde" m = "argmax"_(theta) p(theta|D) "e" H = gradient^2_theta -log p(m|D)
+$
+
+Note que o procedimento acima envolve inverter $H$. Como $m$ é um mínimo local para a função $-log p(dot|D)$, segue diretamente das condições de optimalidade de segunda ordem que $H$ é PSD. Caso $H$ não seja PD ou haja instabilidade numérica na inversão de $H$, uma prática comum é adicionar um pequeno valor $c > 0$ à sua diagonal.
+
+Para aplicar o método de Laplace ao nosso modelo de regressão logística Bayesiano, podemos usar alguma variação de gradiente descendente para achar $m$ e, assumindo $mu = 0$ e $Sigma = c I$ para $c > 0$, as entradas $H_(i j)$ da Hessiana $H$ são dadas por
+$
+  H_(i j) = cases(
+    sum_(n=1)^N sigma(theta^T x_n) sigma(-theta^T x_n) x_(n i) x_(n j) "se" i != j,
+    sum_(n=1)^N sigma(theta^T x_n) sigma(-theta^T x_n) x_(n i)^2 + c^(-1) "se" i = j
+  )
+$
+
+== Problemas multiclasse, classificador _softmax_
+Nesse capítulo, nos focamos em problemas de classificação binária, em que $|cal(Y)| = 2$. No entanto, é fácil generalizar as técnicas que discutimos para problemas multi-classe (i.e., $|cal(Y)| > 2$). Para tal, basta substituir o nosso modelo observacional Bernoulli por uma distribuição categórica. Lembre que a Bernoulli é parametrizada por um parâmetro escalar que dita a probabilidade de cada classe. No caso da categórica, precisamos de um vetor de probabilidades, i.e., um vetor $r$ de tamanho $L = |cal(Y)|$, em que cada entrada $r_l$ denota a probabilidade da classe $l$. Naturalmente, todas as entradas de $r$ devem ser não-negativas e $sum_(l=1)^L r_l = 1$. Resta-nos, então, expressar $r$
+como uma função de $x$. Para tal, podemos generalizar nosso o procedimento que usamos para
+regressão logística.
+
+Primeiro, calculamos um vetor de logits $z$, desta vez usando uma transformação linear para
+cada uma das $L$ classes
+$
+  z = mat(
+    x^T theta^((1));
+    x^T theta^((2));
+    dots.v;
+    x^T theta^((L))
+  )
+$
+
+Finalmente, aplicamos a função Softmax para transformar $z$ em um vetor de probabilidades e obter $r$, que é dado por:
+$
+  r_l = "Softmax"(z) = e^(z_l) / (sum_(l'=1)^L e^(z_(l')))
+$
