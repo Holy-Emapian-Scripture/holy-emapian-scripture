@@ -298,3 +298,226 @@ $<hat-theta-ls>
 
   Vale a pena ressaltar que em geral a dinâmica de contágios em uma epidemia possui um ponto de inflexão no qual número de novos casos começa a diminuir. Portanto, um modelo linear como esse não descreve todo o processo epidemiológico e seu uso deve ser validado por um especialista.
 ]
+
+#example([Antiruido])[
+  O método de mínimos quadrados pode ser utilizado para remoção de ruído (denoising). Suponha que você recebe um sinal digital ruidoso $s_r (t)$ em que $t$ denota um instante de tempo discreto e $t = 1, ... , T$. Estamos interessados em encontrar a versão não ruidosa $s (t)$ de $s_r (t)$.
+
+  Um sinal ruidoso $s_r (t)$ pode ser decrito como um sinal suave $s(t)$ adicionado de
+  um ruído de alta frequência $r(t)$:
+
+  #figure(
+    image("images/ruido.png")
+  )
+
+  Queremos encontrar um sinal $s$ que seja:
+  - Similar ao sinal ruidoso
+  - Suave (a diferença entre os valores do sinal em instantes sucessivos seja pequena)
+
+  Com essas propriedades em mente, podemos propor uma função custo a se minimizar da forma:
+  $
+    min_(s in RR^T) underbrace(||s - s_r||^2, "similar ao sinal ruidoso") + underbrace( mu sum_(t=1)^(T-1) (s(t+1) - s(t))^2, "suavidade")
+  $
+  onde $s$ é a representação vetorial do sinal $s(t)$. O termo $mu$ controla o peso que queremos dar a propriedade da suavidade. Essa função custo pode ser colocada na forma $min_s ||y - X s||^2$ escolhendo:
+  $
+    X = mat(
+      I_(T times T);
+      sqrt(mu) D_(T-1 times T)
+    ),
+
+    D = mat(
+      -1, 1, 0, ..., 0;
+      0, -1, 1, ..., 0;
+      dots.v, 0, -1, 1, 0;
+      0, 0, ..., -1, 1
+    ),
+
+    y = mat(
+      s_r;
+      0;
+      0;
+      dots.v;
+      0
+    ) in RR^(2T-1)
+  $
+]
+
+Nesse formato, o valor ótimo $s^*$ para o sinal $s$ é obtido com a solução de mínimos quadrados $s^* = (X^T X)^(-1) X^T y$. As figuras abaixo mostram a solução ótima para valores de $mu in {0, 100, 20000}$. Para $mu = 0$, a solução ótima é o próprio sinal ruidoso. Com $mu = 20000$, o sinal fica muito suave, tendendo a um sinal constante. Finalmente, para $mu = 100$, temos um sinal filtrado com eliminação da componente de ruído.
+
+#figure(
+  image("images/denoising.png")
+)
+
+== Perspectiva Probabilística
+Podemos obter o mesmo estimador de mínimos quadrados se assumirmos o seguinte modelo observacional para cada resposta dado sua respectiva entrada:
+$
+  y_n|x_n ~ N(theta^T x_n, sigma^2) forall n = 1, ... , N
+$<modelo-observacional>
+podemos então procurar o estimador de máxima verossimilhança $hat(theta)_"ML"$ para $theta$:
+$
+  => f_n (y|x, theta) &= product_(n=1)^N f (y_n|x_n, theta) = (1/(sqrt(2 pi sigma^2))^N) exp(- sum_(n=1)^N (y_n - theta^T x_n)^2 / (2 sigma^2))   \
+$
+$
+  => log f_n (y|x, theta) = -N/2 log(2 pi sigma^2) - 1/(2 sigma^2) sum_(n=1)^N (y_n - theta^T x_n)^2
+$
+$
+  => hat(theta)_"ML" = "argmax"_(theta in RR^(D+1)) log f_n (y|x, theta) = "argmin"_(theta in RR^(D+1)) underbrace(sum_(n=1)^N (y_n - theta^T x_n)^2, N dot cal(l)(theta))
+$
+
+ou seja, a estimativa que máximiza a verossimilhança do modelo descrito pela equação @modelo-observacional é equivalente à estimativa obtida minimizando a média dos erros quadrados. Mais importante, note que, quando fazemos regressão linear, estamos parametrizando um parâmetro (a média) do nosso modelo observacional como uma transformação linear do vetor de entrada.
+
+== Modelo com expansão de base
+O método de mínimos quadrados aplicado a modelos lineares é atraente por sua simplicidade e pelo fato de admitir uma solução ótima analítica. No entanto, a consideração que a relação entre as variáveis de entrada e de saída é linear pode não ser válida em diversos problemas. Um das formas de combinar a vantagem de termos uma solução ótima analítica com um modelo mais geral e flexível do que o linear é utilizar uma transformação não-linear das variáveis de entrada.
+
+Nessa abordagem, de forma geral, o primeiro passo consiste em transformar as variáveis de entrada $x$ através de uma função $Phi : RR^D → RR^M$ , em que normalmente $M$ é maior que $D$. Em seguida, aplicamos um transformação linear sobre as variáveis transformadas para obtermos
+as predições $hat(y)$ para as variáveis de saída $y$. Ou seja, considere as variáveis transformadas $z := Phi(x)$, o modelo preditivo é dado por:
+$
+  hat(y) = theta^T z = theta^T Phi(x)
+$
+onde o vetor $theta in RR^M$ denota os parâmetros do modelo
+
+Note que o modelo é não linear com relação às entradas originais $x$, mas é linear no espaço das variáveis $z$. Quando a transformação $Phi$ é fixa, sem parâmetros a serem aprendidos, o modelo é dito ser linear nos parâmetros. Nesses casos, a solução de mínimos quadrados é obtida simplesmente substituindo a matriz original de regressores $X$ por uma matriz $Z = [z_1, ... , z_N ]^T$ de entradas transformadas na equação @hat-theta-ls:
+$
+  hat(theta)_"LS" = (Z^T Z)^(-1) Z^T y
+$
+A transformação $Phi$ atua como um pré-processamento das entradas $x_1, ... , x_N$ . A seguir, estudaremos algumas das escolhas mais comuns para $Phi$
+
+#block(
+  width: 100%,
+  fill: rgb("#c5f7fd"),
+  inset: 1em,
+  stroke: 1.5pt + rgb("#066875"),
+  radius: 5pt
+)[
+  *Por que $M > D$?*: As variáveis de entrada $x$ representam atributos de um objeto sob o qual queremos realizar predições. Em geral quando aplicamos a transformação não-linear $Phi$ queremos encontrar novos atributos $z$ que permitam ao modelo linear ser preciso. Dessa forma, é natural trabalharmos em espaços com dimensões maiores, aumentando a chance de encontrarmos atributos relevantes. Vale ressaltar que isso não constitui uma regra. Conforme veremos adiante, o aumento do valor M pode gerar problemas, especialmente quando temos poucas amostras proporcionalmente a $M$
+]
+
+=== Polinômios
+Funções de expansão de base podem ser utilizadas para construir modelos polinômiais. Para entradas e saídas escalares, podemos descrever um modelo de regressão polinomial de grau dois como:
+$
+  hat(y) = theta_3 + theta_2 x + theta_1 x^2 = theta^T Phi(x) = theta^T z
+$
+onde $z = Phi(x)$ é dado por:
+$
+  z = Phi(x) = mat(
+    x^2;
+    x;
+    1
+  )
+$
+O mesmo pode ser feito para entradas multivariadas (A função $Phi$ fica um pouco mais complexa) e qualquer expansão de grau polinomial finito. Por exemplo, para entradas bidimensionais, obtemos um modelo de grau 2 se:
+$
+  Phi(x) = mat(
+    x_1^2;
+    x_2^2;
+    x_1 x_2;
+    x_1;
+    x_2;
+    1
+  )
+$
+
+#example([Regressão Polinomial em funções não-lineares])[
+  Considere o problema de regressão univariada $(D = 1)$ em que as entradas pertencem ao intervalo $[-10, 10]$ e a função alvo é dada por $f(x) = sin(x)\/x$, também conhecida como função _sinc_. Além disso, utilizamos um conjunto de dados com $200$ pares de entrada-saída $(x_i, y_i)$, em que as saídas estão corrompidas por um ruído aditivo gaussiano, ou seja, $y = f(x) + epsilon$ com $epsilon ~ N(0, 0.05)$. Nesse exemplo, empregamos modelos polinomiais com grau $d in {1, 2, 5, 10}$.
+
+  A Figura abaixxo mostra as predições obtidas com
+  os diferentes modelos. Observe que, para $d = 1$,
+  temos o modelo de regressão linear básico que estudamos anteriormente, e a aproximação consiste em
+  uma reta. Note que, à medida que aumentamos o
+  grau do polinômio, o modelo se torna mais flexível,
+  conseguindo aproximar melhor os dados (represen-
+  tados por pequenos círculos pretos), e portanto o
+  melhor modelo possui $d = 10$ (curva em vermelho)
+
+  #figure(
+    image("images/polynomial-regression.png")
+  )
+]
+
+=== Funções de base radiais
+Vamos agora estudar um novo formato para a transformação $Phi$. De forma simples, ele consiste em escolher $M$ pontos $c_1, c_2, ... , c_M$ do $RR^D$, também chamado de centros ou protótipos, e então criar o vetor de regressores $z = Phi(x)$ combinando funções radiais em torno de cada um dos centros.
+
+#definition([Função radial no RR^D])[
+  Dada uma métrica $||dot||$ no $RR^D$ e $c in RR^(D)$, dizemos que $f_c: RR^D -> RR$ é radial se existe uma função $f: [0, infinity) -> RR$ tal que $f_c (x) = f(||x - c||)$
+]
+
+Podemos então construir uma transformação $Phi$ que utiliza $M$ funções radiais da forma:
+$
+  Phi(x) = mat(
+    f_(c_1) (x);
+    f_(c_2) (x);
+    dots.v;
+    f_(c_M) (x)
+  ) = mat(
+    f(||x - c_1||);
+    f(||x - c_2||);
+    dots.v;
+    f(||x - c_M||)
+  )
+$
+
+Quando as funções $f_(c_1) (x), . . . f_(c_M) (x)$ são linearmente independentes, e a matriz
+$
+  mat(
+    f_(c_1) (c_1), f_(c_2) (c_1), ..., f_(c_M) (c_1);
+    f_(c_1) (c_2), f_(c_2) (c_2), ..., f_(c_M) (c_2);
+    dots.v;
+    f_(c_1) (c_M), f_(c_2) (c_M), ..., f_(c_M) (c_M)
+  )
+$
+é não-singular, essas funções são chamadas de funções de base radiais (radial basis functions, RBFs).  modelo de regressão linear com transformações através de funções de base radiais constitui uma classe de rede neurais chamada redes RBF #link("https://sci2s.ugr.es/keel/pdf/algorithm/articulo/1988-Broomhead-CS.pdf", "(Broomhead & Lowe, 1988)")
+
+A completa definição da transformação $Phi$ envolve duas escolhas: a localização dos centros
+$c_1, ... , c_M$ e a função de base radial.
+
+*Escolhendo os centros*. Um das formas mais simples de escolher $M$ protótipos consiste
+em selecionar aleatoriamente entradas $x_i$ do próprio conjunto de dados. Nessa abordagem, o
+conjunto de centros é um subconjunto ${c_1, . . . , c_M } subset.eq {x_1, . . . , x_N }$ qualquer de tamanho $M$.
+
+No entanto, a estratégia mais comum e que se tornou padrão consiste em selecionar centros de forma a capturar a densidade dos vetores de entrada. Para isso, normalmente empregamos métodos de análise de agrupamentos (clustering), tais como o k-médias (Lloyd, 1982). A discussão sobre o impacto da escolha dos centros está fora do escopo deste material
+
+*Escolhendo a função de base radial*. Existem diversas escolhas possíveis para $f_(c_i)$ , algumas das mais notórias são:
+1. Gaussiana:
+$
+  f_(c_i) (x) = e^(-gamma||x-c_i||^2_2)
+$
+onde $gamma > 0$ é uma constante;
+
+2. Multi-quadrática:
+$
+  f_(c_i) (x) = sqrt(1 + epsilon||x - c_i||^2_2)
+$
+onde $epsilon > 0$ é uma constante.
+
+#block(
+  width: 100%,
+  fill: rgb("#c5f7fd"),
+  inset: 1em,
+  stroke: 1.5pt + rgb("#066875"),
+  radius: 5pt
+)[
+  *Redes RBF e interpolação*: As redes RBF foram originalmente propostas para resolver problemas de interpolação: Dado um conjunto de $N$ pares entrada saída $(x_i, y_i)$, queremos encontrar uma função $g$ tal que
+  $
+    g(x_i) = y_i, wide i = 1, . . . , N
+  $
+  
+  Escolhendo $g$ tal que $g(x) = theta^T Phi(x) = theta^T z$ com $N$ funções de base radiais e $c_i = x_i$ para todo $i = 1, ..., N$ , a matriz de regressores $Z : Z_(i j) = f_(c_j)(x_i)$ é quadrada e a condição de interpolação equivale ao sistema linear:
+  $
+    Z theta = y "com" Z = mat(
+      f_(c_1) (x_1), f_(c_2) (x_1), ..., f_(c_N) (x_1);
+      f_(c_1) (x_2), f_(c_2) (x_2), ..., f_(c_N) (x_2);
+      dots.v;
+      f_(c_1) (x_N), f_(c_2) (x_N), ..., f_(c_N) (x_N)
+    )
+  $
+  Dessa forma, obtemos um interpolador com a rede RBF desde que a matriz $Z$ seja não-singular. Micchelli (1986) mostrou que matrizes $Z$ formadas usando tanto funções radiais gaussianas quanto multi-quadráticas são não-singulares (possuem inversa), e a única condição para isso é que os centros (ou equivalentemente as entradas) sejam distintos. Como consequência, no caso em que $M < N$ e os centros são um subconjunto das entradas, a matriz $Z^T Z$ utilizada na solução dos mínimos quadrados possui inversa.
+]
+
+#example([Redes RBF])[
+  Este exemplo ilustra o impacto do número de funções de base na aproximação realizada por redes RBF com função radial Gaussiana. Para isso, vamos utilizar novamente o problema de regressão com função alvo _sinc_, com exatamente a mesma configuração descrita no último exemplo. Os centros das RBFs foram selecionados de forma igualmente espaçados no intervalo $[-10, 10]$.
+
+  A Figura abaixo (lado esquerdo) mostra a aproximação obtida usando uma rede RBF com $M in {5, 20}$ e $gamma = 1$. Note que o modelo com $k = 20$ aproxima melhor os dados. O aumento no número de funções de base aumenta a flexibilidade do modelo em se ajustar aos dados. Na Figura à direita, percebemos que o aumento no valor de $gamma$ produz funções radiais com variância (ou largura de banda) pequena, resultando em um aspecto oscilatório da curva de aproximação
+
+  #figure(
+    image("images/rbf-regression.png")
+  )
+]
