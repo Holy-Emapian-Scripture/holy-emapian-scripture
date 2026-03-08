@@ -133,7 +133,7 @@ $
 (De forma simplificada, o rótulo mais comum dentro do conjunto de vizinhos é o rótulo atribuído ao ponto $x$)
 
 #figure(
-  image("images/knn-classification.png"),
+  image("images/knn-classification.png", width: 60%),
   caption: [Exemplo de classificação usando o método k-NN. O ponto $x$ é o ponto a ser classificado, os pontos azuis e vermelhos são os pontos do conjunto de treinamento, e as linhas tracejadas indicam as fronteiras de decisão do modelo. Aqui, se $k=5$, ele vai classificar como *Classe 1* (vermelho)]
 )
 
@@ -216,3 +216,85 @@ Ou seja, quanto maior é a dimensão, maior é o raio de $S'_D$, o que mostra qu
 
 === Manifolds de baixa dimensão.
 Na prática, não é incomum ver k-NN sendo utilizado em espaços de alta dimensão, como de imagens, e atingindo boas taxas de acurácia. Uma explicação para esse fenômeno é que os dados não estão uniformemente distribuídos e, na verdade, residem em um subespaço de baixa dimensão. Por exemplo, suponha que $cal(X) subset RR^(256 times 256 times 3)$ é o espaço de imagens de tamanho $256 times 256$ com três canais de cores — red, green, and blue (RGB) — que contém um gato. Nós esperamos que $PP_x$ aloque massa zero para fotos de paisagens, obras de arte, etc
+
+#pagebreak()
+
+#align(center + horizon)[
+  = Regressão Linear
+]
+
+#pagebreak()
+
+Neste capítulo, vamos estudar o uso de modelos lineares para resolução de problemas deregressão. Enquanto modelos lineares são simples, eles são amplamente empregados em várias áreas de conhecimento e fornecem uma base para a construção de modelos mais expressivos, como modelos polinomiais, métodos de kernel e redes neurais de uma única camada oculta.
+
+== O Problema
+Suponha que você recebe um conjunto de dados $D$ com $N$ pares ordenados $(x_n, y_n)$, no qual $x_n in RR^D$ são as entradas (ou variáveis independentes), e $y_n in RR$ são amostras de uma variável de saída (ou variável dependente). Suponha ainda que cada variável de saída pode ser descrita aproximadamente como uma combinação afim do seu respectivo vetor de entradas, isto é:
+$
+  y_n = sum_(j=1)^D theta_j x_(n j) + theta_0 + epsilon_n = theta^T x_n + epsilon_n
+$
+onde $epsilon_n in RR$ é uma variável que reflete o grau de incerteza na observação de $y_n$
+
+*Nota*: A partir daqui, insermos um $1$ no vetor $x$ para representar o _bias_, então vamos redefinir $x_n := (1, x_(n 1), ..., x_(n D))^T$ e $theta := (theta_0, theta_1, ..., theta_D)^T$, de modo que a expressão acima possa ser escrita de forma mais compacta como $y_n = theta^T x_n + epsilon_n$.
+
+Uma das maneiras mais comuns de obter uma estimativa $hat(theta)$ para $theta$ é obter o aquele que minimiza a média (ou a soma) dos erros quadráticos entre as predições $hat(y)_n := hat(theta)^T x_n$ e as saídas observadas $y_n$:
+$
+  hat(theta)_"LS" := "argmin"_(theta in RR^(D+1)){cal(l)(theta) := 1/N sum_(n=1)^N (y_n - theta^T x_n)^2}
+$
+Esse método de otimização é chamado de *mínimos quadrados ordinários*
+Podemos escrever a função de custo $cal(l)$ de forma matricial como:
+$
+  cal(l)(theta) &= 1/N ||y - X theta||_2^2    \
+  &= 1/N (y - X theta)^T (y - X theta)    \
+  &= 1/N (y^T y - 2 theta^T X^T y + theta^T X^T X theta)
+$
+
+Note que, quando $X^T X$ é positiva definida, a função de custo $cal(l)$ é estritamente convexa, o que garante a existência de um único mínimo global. Podemos encontrar uma solução analítica para $hat(theta)_"LS"$ derivando $cal(l)$ e igualando a zero:
+$
+  nabla_theta cal(l)(theta) &= 1/N (-2 X^T y + 2 X^T X theta) = 0    \
+
+  &=> hat(theta)_"LS" = (X^T X)^(-1) X^T y
+$<hat-theta-ls>
+
+#block(
+  width: 100%,
+  fill: rgb("#c5f7fd"),
+  inset: 1em,
+  stroke: 1.5pt + rgb("#066875"),
+  radius: 5pt
+)[
+  *E se $X^T X$ não for positiva definida?*: Considere o caso em que $N > D$. Para que a inversa exista, precisamos que todas as colunas de $X$, nossas variáveis preditoras, sejam linarmente independentes. Caso contrário, não podemos calcular a inversa na Equação @hat-theta-ls. No entanto, essas variáveis não agregam nenhuma informação ao nosso modelo de regressão, e podemos pré-processar os dados de maneira a remover atributos redundantes. Uma outra alternativa, é substituir a inversa de $X^T X$ pela inversa de $X^T X + alpha I$, para algum pequeno escalar $alpha$ positivo. É possível provar que $X^T X + alpha I$ sempre possui inversa (verifique!)
+]
+
+#block(
+  width: 100%,
+  fill: rgb("#c5f7fd"),
+  inset: 1em,
+  stroke: 1.5pt + rgb("#066875"),
+  radius: 5pt
+)[
+  *Casos $N = D$ e $N < D$*: No caso em que o número de dados é igual ao número atributos ($N = D$), existe uma solução ótima única, com $cal(l)=0$, se a matriz $X$ possuir inversa. Nesses casos, a função linear resultante, com $hat(theta)_"LS" = X^(-1)y$, intersecta todos as observações $D$.
+  
+  Quando $N < D$, no caso mais geral, o problema admite infinitas soluções com $cal(l) = 0$. Quando as linhas de $X$ são linearmente independentes — $"posto"(X) = N$ — uma opção comum é achar a solução que possui a menor norma L2, dada por $hat(theta)_"MN" = X^T (X X^T)^(-1) y$
+]
+
+#block(
+  width: 100%,
+  fill: rgb("#c5f7fd"),
+  inset: 1em,
+  stroke: 1.5pt + rgb("#066875"),
+  radius: 5pt
+)[
+  *Em bancos de dados massivos*: Quando $N$ é um grande número, armazenar a matriz $X$ nas camadas de memória mais velozes de um computador se torna impraticável e, portanto, calcular $hat(theta)_"LS"$ usando a Equação @hat-theta-ls não é computacionalmente viável. Nesse caso, podemos utilizar SGD para minimizar $cal(l)$. Para tal, note que pode-se escrever $cal(l)(theta) = sum cal(l)_n (theta)$, no qual definimos $cal(l)_n (theta) := 1/N (y_n - theta^T x_n)^2$
+]
+
+#example([Regressão Linear Simples])[
+  No ano 2020, o mundo foi tomado por uma pandemia do vírus Sars-Cov-2, causando milhões de infeções e centenas de milhares de mortos. No dia 29 de abril, a infeção ainda não havia atingido seu estado crítico no Ceará.
+
+  Neste exemplo, utilizamos um modelo linear para descrever o logaritmo do número de novas infeções diárias no Ceará como uma função do número de dias que se passaram desde a data na qual o primeiro caso de infecção foi reportado. Uma das utilidades de um modelo como esse é produzir estimativas para o número de novos infectados nos próximos dias, o que pode auxiliar epidemiologistas e gestores públicos em seus processos de tomada de decisão.
+
+  #figure(
+    image("images/regression-ceara.png", width: 60%)
+  )
+
+  Vale a pena ressaltar que em geral a dinâmica de contágios em uma epidemia possui um ponto de inflexão no qual número de novos casos começa a diminuir. Portanto, um modelo linear como esse não descreve todo o processo epidemiológico e seu uso deve ser validado por um especialista.
+]
