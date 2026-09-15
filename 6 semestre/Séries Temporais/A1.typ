@@ -354,6 +354,131 @@ Comentamos anteriormente sobre, para fazer modelos preditivos das séries tempor
 
 #pagebreak()
 
+== Introdução
+Visualizamos anteriormente como utilizar de métodos *visuais* para identificar séries temporais, agora nosso foco vai ser formalizar esse conceito. Para tal, no entanto, precisamos definir alguns conceitos muito importantes, como média, covariância e a noção de *estacionariedade*
+
+== Exemplos de Série
+Esses serão os exemplos que vamos utilizar de forma recorrente
+
+#example("Ruído Branco")[
+  $
+    Y_t = epsilon_t
+  $
+  Não existe memória, cada instante contém um ruído que não conseguimos traçar a partir dos anteriores
+
+  #image("images/A1/whitenoise.png")
+]
+
+#example("AR")[
+  $
+    Y_t = phi Y_(t-1) + epsilon_t, wide |phi| < 1
+  $
+  Depende diretamente do valor anterior, mas não de valores mais antigos. A memória é curta, mas existe
+
+  #image("images/A1/AR.png")
+]
+
+#example("Passeio Aleatório")[
+  $
+    Y_t = Y_(t-1) + epsilon_t
+  $
+  Acumula os ruídos passados, de forma que a memória é longa e o valor atual depende de todos os valores anteriores
+
+  #image("images/A1/randomwalk.png")
+]
+
+#example("Tendência Linear")[
+  $
+    Y_t = beta_0 + beta_1 t + epsilon_t
+  $
+  A tendência linear é um caso especial de passeio aleatório, onde o valor atual depende do tempo e de todos os valores anteriores
+
+  #image("images/A1/lineartrend.png")
+]
+
+== Conceitos
+
+#definition("Função Média")[
+  Seja ${Y_t}$ uma série temporal onde $EE[Y_t^2] < infinity$, então a média em cada instante, denotada como
+  $
+    mu_Y (t) = EE[Y_t]
+  $
+
+  É a tendência central do processo ao longo de $t$. Em geral pode depender do tempo: nada obriga $EE[Y_i] = EE[Y_j]$ para $i != j$
+]
+
+Nos quatro exemplos que comentamos, temos que $EE[epsilon_t] = 0$, então temos que:
+- *Ruído Branco*: $mu_Y (t) = 0$
+- *Tendência Linear*: $mu_Y (t) = beta_0 + beta_1 t$
+- *AR*: $mu_Y (t) = phi dot mu_Y (t-1)$
+- *Passeio Aleatório*: $mu_Y (t) = mu_Y (t-1)$, se considerarmos $Y_0 = 0$, então $mu_Y (t) = 0$, perceba que se mantém constante, isso mostra que uma realização não altera a *média*, mas sim a *covariância* do processo, que cresce com o tempo
+
+#definition("Covariância")[
+  Dados dois instantes $r,s$, definimos a covariância entre $Y_r$ e $Y_s$ como
+  $
+    gamma_Y (r,s) = EE[(Y_r - mu_Y (r))(Y_s - mu_Y (s))]
+  $
+]
+
+Para vermos como a correlação nos exemplos vistos se comportam, tenha em mente que $VV[epsilon_t] = sigma^2$ e $gamma_epsilon (r, s) = 0$ para $r != s$
+
+- *Ruído Branco*: $gamma_Y (r,s) = 0$ para $r != s$, ou seja, não existe correlação entre os valores da série temporal e $gamma_Y (r,s) = sigma^2$ se $r = s$, ou seja, a variância é constante ao longo do tempo
+- *Tendência Linear*: 
+  $
+    gamma_Y(r,s)
+    &= "Cov"(Y_r,Y_s) \
+    &= "Cov"(beta_0 + beta_1 r + epsilon_r, beta_0 + beta_1 s + epsilon_s) \
+    &= "Cov"(epsilon_r,epsilon_s) \
+    &=
+    cases(
+      sigma^2 wide r=s,
+      0 wide r != s.
+    )
+  $
+- *AR*: Dado que $Y_t = phi Y_(t-1) + epsilon_t$, então temos:
+  $
+    VV[Y_t] = VV[phi Y_(t-1) + epsilon_t] = phi^2 VV[Y_(t-1)] + sigma^2
+  $
+  e se assumirmos que $Y_t = Y_(t-1)$:
+  $
+    VV[Y_t] = phi^2 VV[Y_t] + sigma^2 => VV[Y_t] = sigma^2 / (1 - phi^2)
+  $
+- *Passeio Aleatório*: Assumindo o caso onde $Y_t = epsilon_1 + epsilon_2 + ... + epsilon_t$, temos que:
+  $
+    VV[Y_t] = VV[epsilon_1 + epsilon_2 + ... + epsilon_t] = t sigma^2
+  $
+  Ou seja, a variância do passeio aleatório cresce linearmente com o tempo. Além disso, a covariância entre dois instantes $r$ e $s$ é dada por
+  $
+    gamma_Y (r,s) = EE[Y_r Y_s] = EE[(epsilon_1 + ... + epsilon_r)(epsilon_1 + ... + epsilon_s)] = min(r,s) sigma^2
+  $
+
+#definition("Estacionariedade Fraca")[
+  Dizemos que uma série temporal ${Y_t}$ é *estacionária fraca* se:
+  - Média $mu_Y (t)$ é constante no tempo
+  - Covariância $gamma_Y (r,s)$ depende apenas da diferença $|r-s|$ e não dos instantes absolutos $r$ e $s$
+]
+
+Como vemos pelos exemplos, as únicas séries que são estacionárias fracas são o *ruído branco* e o *AR*. A tendência linear e o passeio aleatório não são estacionários fracos, pois a média e a covariância dependem do tempo
+
+== ACF e ACVF
+Como falamos, a covariância de uma série temporal estacionária fraca depende apenas da diferença entre os instantes, então podemos definir a função de covariância como uma função do lag $h = |r-s|$, assim:
+
+#definition("ACVF")[
+  Dada a série temporal ${Y_t}$ estacionária fraca, definimos a função de autocovariância como
+  $
+    gamma_Y (h) = EE[(Y_r - mu_Y)(Y_(r+h) - mu_Y)]
+  $
+]
+
+#definition("ACF")[
+  Dada a série temporal ${Y_t}$ estacionária fraca, definimos a função de autocorrelação como
+  $
+    rho_Y (h) = frac(gamma_Y (h), gamma_Y (0))
+  $
+]
+
+== IID v.s Ruído Branco
+
 
 
 #pagebreak()
