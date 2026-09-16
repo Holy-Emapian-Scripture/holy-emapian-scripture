@@ -253,7 +253,7 @@ Esse conceito é bem simples, vimos anteriormente sobre as Atrous Convolution, c
   caption: "Exemplo de atrous spatial pyramid pooling"
 )
 
-==== Convolução Normal V.S Separable Convolution
+==== Convolução Normal V.S Separable Convolution & Atrous Separable Convolution
 Em uma convolução normal, cada filtro é aplicado a todos os canais da imagem, o que resulta em um grande número de operações. Veja a imagem a seguir, por exemplo
 
 #figure(
@@ -293,6 +293,7 @@ Agora temos que nosso número de parâmetros, além dos $75$ do filtro anterior,
 
 Agora vamos ter que a quantidade de filtros é o filtro inicial mais os $256$ outros filtros, logo: $75 + (1 times 1 times 3) times 256 = 75 + 768 = 843$ parâmetros. E como aumentamos apenas os filtros $1 times 1$ para obter os nossos $256$ feature maps, o número de multiplicações passa a ser $4800 + (1 times 1 times 3) times (8 times 8) times 256 = 4800 + 49152 = 53952$.
 
+Esse conceito pode ser expandido para as convoluções Atrous, de forma que as mudanças necessárias são mínimas, mantendo tracking do rate $r$ conseguimos aplicar o mesmo conceito de *depthwise* e *pointwise* para as convoluções Atrous, resultando em uma redução significativa no número de parâmetros e operações, mantendo a capacidade da rede de capturar informações de diferentes escalas.
 
 === Blocos Residuais
 Normalmente, redes neurais são straight-to-the-point, nós temos a entrada $x$ e a partir disso a rede modela uma função complexa $F$ tal que
@@ -393,3 +394,83 @@ O *DeepLabv3+* foi projetado para resolver uma limitação fundamental do DeepLa
 )
 
 Em vez do upsampling bilinear direto que o V3 fazia, o V3+ agora tem um módulo decoder dedicado, onde ele faz upsampling das características e vai utilizando das features do encoder para refinar a segmentação, especialmente nas bordas dos objetos. Isso permite que o modelo mantenha a precisão espacial enquanto ainda aproveita o contexto global capturado pelo ASPP.
+
+== Percas
+Agora vamos visualizar as losses que utilizamos para informar o modelo como aprender! Mas antes, vamos recaptular alguns pontos e definições.
+
+Primeiramente, dado uma imagem $H times W$, a saída dos nossos modelos deve ser uma matriz $H times W$ onde cada elemento da matriz representa a classe do pixel correspondente na imagem (também pode ser um vetor com $N = H dot W$ elementos). Vamos considerar a abordagem de um único vetor de $N$ elementos com a classe de cada pixel. Definiremos também $t_i$ sendo a *classe verdadeira* do pixel $i$ (ground truth). Definimos também $p_i$ sendo a probabilidade que o modelo atribui para que $i$ seja da sua *classe verdadeira* ($PP("classe"(i) = t_i)$). A partir disso, podemos definir as losses que utilizamos para treinar nossos modelos.
+
+=== Cross Entropy Loss
+A primeira que vamos ver é a mais padrão para problemas de classificação, a *cross entropy loss*. Ela é definida como
+$
+  "CE" = -1/N sum_(i=1)^(N) log(p_i)
+$
+
+se o modelo prevê alta probabilidade para a classe correta do pixel, o $log(p_i)$ será próximo de $0$, e a loss será pequena. Se o modelo prevê baixa probabilidade para a classe correta do pixel, o $log(p_i)$ será negativo e a loss será grande. O objetivo do treinamento é minimizar essa loss, ajustando os pesos da rede para que ela preveja corretamente as classes dos pixels.
+
+No entanto, essa loss carrega um problema. Quando existe um desbalanceamento de classes dentro do meu dataset, pode acontecer de a rede aprender a prever apenas a classe majoritária, ignorando as classes minoritárias.
+
+=== Balanced Cross Entropy Loss
+Para resolver o problema citado, podemos utilizar a *balanced cross entropy loss*, que atribui pesos diferentes para cada classe, penalizando mais os erros nas classes minoritárias.
+$
+  "BCE" = -1/N sum_(i=1)^(N) omega_(t_i) log(p_i)
+$
+
+o peso $omega_(t_i)$ é pré-calculado de forma inversamente proporcional à frequência da classe $t_i$ no dataset, de forma que classes minoritárias tenham pesos maiores e classes majoritárias tenham pesos menores. Isso força a rede a prestar mais atenção às classes minoritárias durante o treinamento. Podemos ter uma formulação binária também
+$
+  "BCE" = -1/N ( sum_(i in "positivos") omega_"pos" log(p_i) + sum_(i in "negativos") omega_"neg" log(p_i) )
+$
+
+=== Focal Loss
+Essa loss serve para resolver um problema sutíl. A loss anterior resolve o problema de desbalanceamento de classes, mas não resolve o problema de *hard examples*, ou seja, exemplos que são difíceis de classificar e quais são esses pixeis? São justamente os que estão cada vez mais próximos das bordas do elemento. No entanto, os pixeis fáceis costumam ser os mais presentes, e a soma do gradiente de sua contribuição pode atrapalhar no aprendizado dos pixeis mais difíceis. A *focal loss* resolve esse problema, diminuindo a contribuição dos pixeis fáceis para o gradiente, permitindo que a rede foque nos pixeis mais difíceis.
+$
+  "FL" = -1/N sum_(i=1)^(N) (1 - p_i)^gamma log(p_i)
+$
+
+- *Comportamento do pixel fácil*: Consideremos $p_i = 0.95$ e $gamma = 2$, então o fator de peso fica $0.0025$, a perda desse pixel é reduzida em $99.75%$, fazendo com que ele quase não afete o treinamento
+- *Comportamento do pixel difícil*: Consideremos $p_i = 0.2$ e $gamma = 2$, então o fator de peso fica $0.64$, a perda desse pixel é mantida relevante
+
+$gamma$ é o parâmetro focal, quanto maior ele é, mais severa é a penalidade aplicada aos pixels fáceis, e quanto menor ele é, mais leve é a penalidade aplicada aos pixels fáceis. O valor padrão de $gamma$ é $2$, mas ele pode ser ajustado dependendo do problema e do dataset.
+
+=== Balanced Focal Loss
+Combina as duas soluções, ponderando cada pixel de acordo com sua classe e aplicando penalidade em pixels fáceis, de forma que a rede foque nos pixels mais difíceis e nas classes minoritárias.
+$
+  "FL"_"bal" = -1/N sum_(i=1)^(N) omega_(t_i) (1 - p_i)^gamma log(p_i)
+$
+
+=== Loss Function for Regression
+A saída por pixel pode não necessariamente ser um label de classe, mas um valor numérico. Por exemplo, se a rede estiver tentando estimar a profundidade aplicada àquela foto, então utilizamos as losses $L_1$ e $L_2$
+$
+  L_1 &= 1/N sum_(i=1)^(N) |y_i - t_i|   \
+
+  L_2 &= 1/N sum_(i=1)^(N) (y_i - t_i)^2
+$
+
+onde $y_i$ é o valor predito pelo modelo e $t_i$ é o valor verdadeiro.
+
+== Pontos Práticos
+=== A necessidade de Patches (Tiles)
+Em aplicações reais, as imagens originais frequentemente possuem resoluções massivas (ex: $(4000 times 4000$) pixels ou mais). Tentar passar uma imagem desse tamanho inteira por uma rede neural de uma só vez estoura o limite de memória VRAM da GPU.
+
+Por isso, na prática, a imagem é fatiada em blocos menores (*patches* ou *tiles*) para serem processados individualmente durante o treinamento e a inferência, montando-se um *mosaico* com os resultados finais de cada bloco.
+
+#figure(
+  image("images/A1/patches.png", width: 100%),
+  caption: "Exemplo de fatiamento de uma imagem em blocos menores"
+)
+
+=== O Problema do Contexto nas Bordas (Border Context Loss)
+Dividir a imagem em blocos cria um desafio geométrico nas extremidades de cada bloco:
+
+- *Perda de Contexto Espacial*: Os pixels situados nas bordas de um *patch* perdem a vizinhança e o contexto espacial da região vizinha que ficou no *patch* ao lado.
+- *Artefatos no Mosaico*: Ao colar os *patches* de volta para reconstruir a imagem final, essa falta de contexto nas margens gera artefatos de corte visíveis, descontinuidades e erros de classificação ao longo das linhas de junção dos blocos.
+
+Para mitigar a perda de contexto nas bordas dos blocos, podemos destacar a estratégia de _mosaico com sobreposição (*Overlapping Patches*)_:
+
++ *Sobreposição de Blocos*: Os *patches* são recortados com uma porcentagem de sobreposição em relação aos vizinhos, em vez de serem colados estritamente lado a lado.
++ *Considerar Apenas a Região Central (_Inner Part_)*: Descarta-se a borda externa do *patch* (onde o contexto foi prejudicado) e utiliza-se apenas a previsão da região central válida.
++ *Média das Predições (_Averaging Results_)*: Nas áreas onde os blocos se sobrepõem, calcula-se a média das probabilidades previstas por cada bloco para definir a classe final do pixel.
+
+=== CNN Patch-wise Clássica vs. FCN Modela
+- *CNN Clássica Por Patch (Sliding Window)*: Classificava isoladamente o pixel central de um *patch* deslocado. Isso gerava alta redundância de cálculos e resultava em um efeito de *suavização excessiva nas bordas dos objetos (_oversmoothing_)*.
+- *FCN Moderna*: Classifica todos os pixels do *patch* simultaneamente em uma única passada (*dense prediction*), aprendendo estruturas e geometrias específicas diretamente contidas dentro de cada bloco.
