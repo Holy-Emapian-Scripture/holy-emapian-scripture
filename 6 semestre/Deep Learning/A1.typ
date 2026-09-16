@@ -127,20 +127,20 @@ Podemos utilizar algumas métricas para avaliar a performance de um modelo de se
   $
     "IoU" = "TP" / ("TP" + "FP" + "FN")
   $
-]
+]<iou>
 
 #definition("Precision")[
   $
     "Precision" = "TP" / ("TP" + "FP")
   $
-]
+]<precision>
 
 #definition("Average Precision")[
   Dado que na minha imagem eu tenho mapeado $K$ classes, a métrica de Average Precision (AP) é definida como a média das precisões de cada classe:
   $
     "AP" = (1/K) * sum_(k=1)^(K) "Precision"_k
   $
-]
+]<avg-precision>
 
 === Evolução das Abordagens
 Vamos relembrar como é estruturada uma rede convolucional padrão para classificação de uma imagem.
@@ -393,3 +393,66 @@ O *DeepLabv3+* foi projetado para resolver uma limitação fundamental do DeepLa
 )
 
 Em vez do upsampling bilinear direto que o V3 fazia, o V3+ agora tem um módulo decoder dedicado, onde ele faz upsampling das características e vai utilizando das features do encoder para refinar a segmentação, especialmente nas bordas dos objetos. Isso permite que o modelo mantenha a precisão espacial enquanto ainda aproveita o contexto global capturado pelo ASPP.
+
+
+#pagebreak()
+
+#align(center + horizon)[
+  = Object Detection
+]
+
+#pagebreak()
+
+== Introdução
+Dentro da área de visão computacional, podemos fazer algumas distinções de tarefas, veja o gráfico abaixo
+
+#figure(
+  image("images/A1/comp-vision-tasks.png"),
+  caption: "Áreas de visão computacional"
+)
+
+Já vimos segmentação semântica, que é a tarefa de classificar cada pixel da imagem em uma categoria específica. A detecção de objetos, por outro lado, é a tarefa de identificar e localizar objetos específicos dentro de uma imagem, geralmente representados por *bounding boxes*. A detecção de objetos é muito baseada em *regiões* enquanto a segmentação semântica é baseada em *pixels*. A detecção de objetos é fundamental para diversas aplicações, como vigilância, direção autônoma e análise de imagens médicas.
+
+== Métricas de Avaliação
+Podemos utilizar métricas já vistas como @iou, @precision e @avg-precision, porém podemos também utilizar métricas como *Recall*
+
+#definition("Recall")[
+  $
+    "Recall" = "TP" / ("TP" + "FN")
+  $
+]<recall>
+
+A maioria das competições utiliza a *mean Average Precision (mAP)* como métrica principal, que é a média das precisões de cada classe, considerando diferentes limiares de confiança para as detecções. O mAP é derivado de valores _precision v.s recall_, fazendo uma variação do limiar de confiança para cada classe. O *limiar de confiança* é a probabilidade de que uma *caixa de âncora* contenha um objeto. Dado a @avg-precision de Average Precision, podemos definir melhor o mAP
+
+#definition("mAP")[
+  Dado que na minha imagem eu tenho mapeado $K$ classes, a métrica de mean Average Precision (mAP) é definida como a média das precisões de cada classe:
+  $
+    "mAP" = 1/K sum_(k=1)^(K) "AP"_k
+  $
+]
+
+== Redes de Estágio Único (Single-Shot): A Família YOLO
+A abordagem mais simples que podemos imaginar é aplicar uma rede convolucional para classificar a imagem inteira, mas isso não nos dá informações sobre a localização dos objetos
+
+=== Fundamentos do YOLO
+
+
+== Redes de Dois Estágios e Segmentação de Instâncias: Mask R-CNN
+
+
+#pagebreak()
+
+#align(center + horizon)[
+  = Recurrent Neural Networks (RNNs)
+]
+
+#pagebreak()
+
+
+#pagebreak()
+
+#align(center + horizon)[
+  = Generative Adversarial Networks (GANs)
+]
+
+#pagebreak()
