@@ -512,10 +512,96 @@ A maioria das competições utiliza a *mean Average Precision (mAP)* como métri
 ]
 
 == Redes de Estágio Único (Single-Shot): A Família YOLO
-A abordagem mais simples que podemos imaginar é aplicar uma rede convolucional para classificar a imagem inteira, mas isso não nos dá informações sobre a localização dos objetos
+Baseada em redes neurais convolucionais que redefiniu o problema de detecção como uma única tarefa de regressão e classificação em uma só passada (*single-shot*).
+
+Ao contrário das abordagens tradicionais baseadas em *sliding window* (janela deslizante), que executavam classificadores repetidamente sobre centenas de retalhos da imagem gerando um custo computacional altíssimo, o YOLO avalia a imagem inteira de uma só vez
 
 === Fundamentos do YOLO
+Um modelo YOLO (You Only Look Once) divide a imagem em uma grade de células, ele também recebe obrigatoriamente uma imagem quadrada, de lados $n times n$. Cada célula da grade fica resposável por prever objetos cujo *ponto central* (mid point) caia dentro dos limites dessa célula. Como uma única passada na CNN processa todas as células simultaneamente, o YOLO é extremamente rápido e eficiente, tornando-o adequado para aplicações em tempo real.
 
+=== Parametrização do vetor de saída
+Para cada célula da grade, o YOLO prevê um vetor de saída que contém informações sobre os objetos detectados. Esse vetor inclui:
+$
+  y = [p_"obj", b_x, b_y, b_h, b_w, c_1, c_2, ..., c_C]
+$
+
+- *$p_"obj"$*: Probabilidade de que a célula contenha um objeto
+- *$(b_x,b_y,b_h,b_w)$*: Coordenadas da caixa delimitadora (x, y, largura, altura). $b_x,b_y in [0,1]$, representando a posição relativa do centro da caixa em relação à célula. Por exemplo, se $b_x=0.5$ e $b_y=0.5$, então a caixa de âncora está exatamente no centro da célular.$b_h$ e $b_w$ representam a altura e largura relativas à caixa, mas podem ser maiores que $1$ (a caixa pode ser maior que a célula).
+  #figure(
+    image("images/A1/yolo-box.png", width: 100%),
+    caption: "Exemplo de caixa delimitadora prevista pelo YOLO"
+  )
+- *$(c_1,c_2,...,c_C)$*: Probabilidades de cada classe
+
+=== Caixas de Ancoragem (Anchor Boxes)
+Para resolver o problema de múltiplos objetos cujos centros caiam na mesma célula ou objetos de proporções muito distintas (como uma pessoa alta e um carro largo), o YOLO utiliza *Anchor Boxes*. Cada célula da grade prevê múltiplos *bounding boxes* associados a modelos geométricos _pré-definidos_ (*anchors*). Em vez de prever o formato absoluto da caixa do zero, a rede aprende deslocamentos (*offsets*) para ajustar a posição e a dimensão das *anchor boxes pré-definidas*
+
+#figure(
+  image("images/A1/yolo-anchor-boxes.png", width: 100%),
+  caption: "Exemplo de caixas de ancoragem previstas pelo YOLO"
+)
+
+Então nessa nova formulação, o vetor de saída para cada célula da grade se torna:
+$
+  y = mat(
+    [p_"obj", b_x, b_y, b_h, b_w, c_1, c_2, ..., c_C]_("anchor 1");
+    [p_"obj", b_x, b_y, b_h, b_w, c_1, c_2, ..., c_C]_("anchor 2");
+    dots.v;
+    [p_"obj", b_x, b_y, b_h, b_w, c_1, c_2, ..., c_C]_("anchor A")
+  )
+$
+
+Vale ressaltar que eu escrevi em forma de matriz, no entanto o mais comum é um vetor contínuo e separamos as anchor boxes pelo padrão da saída, que seria a cada $5+C$ valores, onde $C$ é o número de classes. Por exemplo, se temos $3$ anchor boxes e $20$ classes, o vetor de saída para cada célula da grade terá tamanho $3 times (5 + 20) = 75$.
+
+=== Supressão Não-Máxima (Non-Maximum Suppression - NMS)
+Na prática, é bem fácil perceber que vai acontecer de várias caixas serem selecionadas para o mesmo objeto, e isso é um problema. Para resolver isso, utilizamos a técnica para escolher a caixa que melhor representa o objeto, descartando as demais. A técnica é chamada de *Non-Maximum Suppression (NMS)*, e funciona da seguinte forma:
++ *Filtragem por confiança*: Descartamos todas as caixas cuja probabilidade de conter um objeto seja menor que um limiar pré-definido (ex: 0.5)
++ *Seleção da melhor caixa*: Entre as caixas restantes, selecionamos a caixa com a maior probabilidade de conter um objeto (maior pontuação de confiança $p_"obj"$)
++ *Eliminação de duplicatas*: Elimina as outras caixas da mesma classe que possuem uma sobreposição $"IoU">=0.5$ com a caixa selecionada
++ Repete o processo iterativamente para as caixas restantes de cada classe
+
+#figure(
+  image("images/A1/nms.png", width: 100%),
+  caption: "Exemplo de supressão não-máxima"
+)
+
+Vale ressaltar que esse *pós-processamento* é feito com *todas* as caixas de ancoragem previstas, tanto as que foram atribuidas dentro de uma mesma célula (uma única célula atribui diferentes anchor boxes pro mesmo objeto) quanto as geradas por células vizinhas (várias células podem prever o mesmo objeto). O objetivo é garantir que cada objeto seja representado por uma única caixa delimitadora final.
+
+=== Evolução Arquitetural
+==== YOLOv1 & YOLO9000
+Arquiteturas iniciais, foi na YOLO9000 onde as anchor boxes foram introduzidas e, em vez de prever diretamente prosição e tamanho das caixas, a rede aprende a prever *offsets* para ajustar as *anchor boxes* pré-definidas.
+
+==== YOLOv3
+Aumento da profundidade da rede, de $53$ camadas para $106$ camadas. Adição de skip connections para melhorar a propagação do gradiente e permitir que a rede aprenda representações mais complexas. Introdução de *multi-scale predictions*, onde a rede prevê caixas em três escalas diferentes, permitindo detectar objetos de tamanhos variados.
+
+#figure(
+  image("images/A1/yolov3.png", width: 100%),
+  caption: "Arquitetura da YOLOv3"
+)
+
+=== Loss Function
+Não podemos falar de um modelo de rede sem discutir a loss por ela utilizada. A loss do YOLO é composta por três partes principais: a *loss de localização*, a *loss de confiança* e a *loss de classificação*. A *loss de localização* mede o quão bem a rede prevê as coordenadas da caixa delimitadora em relação à caixa real. A *loss de confiança* avalia a precisão da rede em prever se uma caixa contém um objeto ou não. A *loss de classificação* mede a precisão da rede em classificar corretamente o objeto dentro da caixa.
+
+Vamos rapidamente definir que a *predição do modelo* é dada, para a célula $i in {1,...,S^2}$ e anchor box $j in {1,...,B}$:
+$
+  y_(i j) = [p^((i j))_"obj", b^((i j))_x, b^((i j))_y, b^((i j))_h, b^((i j))_w, c^((i j))_1, c^((i j))_2, ..., c^((i j))_C]
+$
+e vamos considerar o vetor *ground truth* como
+$
+  t_(i j) = [t^((i j))_0, t^((i j))_x, t^((i j))_y, t^((i j))_h, t^((i j))_w, s^((i j))_1, s^((i j))_2, ..., s^((i j))_C]
+$
+então a loss da YOLO é dada por
+$
+  cal(L)_"YOLO" &= lambda_"coord" underbrace(sum_(i=0)^S^2 sum_(j=0)^B t_0^((i j)) ((t^((i j))_x - b^((i j))_x)^2 + (t^((i j))_y - b^((i j))_y)^2 + (t^((i j))_h - b^((i j))_h)^2 + (t^((i j))_w - b^((i j))_w)^2), "Loss de localização")   \ \
+  
+  &+lambda_"noobj" underbrace(sum_(i=0)^S^2 sum_(j=0)^B (1 - t_0^((i j)))(-log(1-p^((i j))_"obj")), "Loss de confiança") \
+
+  &+ underbrace(sum_(i=0)^S^2 sum_(j=0)^B t_0^((i j)) [-log(p^((i j))_"obj") + sum_(k=1)^C "BCE"(c^((i j))_k, s^((i j))_k)], "Loss de classificação")
+$
+
+Onde $S$ é a proporção que dividimos os grids da imagem, $B$ é o número de *anchor boxes* por célula, $C$ é o número de classes, $lambda_"nobj"$ e $lambda_"coord"$ são hiperparâmetros que controlam a importância relativa das diferentes partes da loss.
+
+Vejamos como a loss se comporta. Se uma anchor box *não possui objeto*, então apenas a parte da *loss de confiança* é computada. Quando a probabilidade de que a caixa contenha um objeto é $0$, então a $log(1 - 0) = 0$, não penalizando a rede, no entanto, se a rede classificou como existindo um objeto, então a loss será alta e irá penalizar a rede. Se uma anchor box *possui objeto*, então apenas as partes da *Loss de Localização* e *Loss de Classificação* são computadas. A *Loss de Localização* mede o quão bem a rede prevê as coordenadas da caixa delimitadora em relação à caixa real, e a *Loss de Classificação* mede a precisão da rede em classificar corretamente o objeto dentro da caixa.
 
 == Redes de Dois Estágios e Segmentação de Instâncias: Mask R-CNN
 
