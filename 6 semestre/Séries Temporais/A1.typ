@@ -477,8 +477,192 @@ Como falamos, a covariância de uma série temporal estacionária fraca depende 
   $
 ]
 
-== IID v.s Ruído Branco
+A ACF é uma função que mede a correlação entre os valores da série temporal em diferentes lags. Ela nos ajuda a identificar padrões de dependência temporal e a determinar a ordem de modelos AR e MA, é como se ela fosse a função que mede a *memória* da série temporal. Vale ressaltar que não é porque uma série tem estacionaridade fraca que ela não possui memória, como vimos no caso do AR, que é estacionário fraco, mas possui memória curta. O mesmo não ocorre com o passeio aleatório, que não é estacionário fraco e possui memória longa
 
+== IID v.s Ruído Branco
+A distinção entre um processo *I.I.D.* (independente e identicamente distribuído) e um *Ruído Branco* (White Noise - WN) baseia-se na intensidade da independência estocástica exigida entre os instantes de tempo
+
+#definition("Ruído IID")[
+  ${Y_t} ~ "I.I.D"(0, sigma^2)$ com $sigma^2 < infinity$ se
+  $
+    EE[Y_t] &= 0   \
+
+    gamma_Y (h) &= cases(
+      sigma^2 wide h=0,
+      0 wide h != 0
+    )
+  $ 
+
+  Exige independência estocástica completa entre todas as variáveis aleatórias $Y_t$ e $Y_s$ ($t != s$). Não há qualquer dependência (linear ou não-linear) ou variação nas distribuições marginais
+]
+
+#definition("Ruído Branco")[
+  ${Y_t} ~ "WN"(0, sigma^2)$ com $sigma^2 < infinity$ se
+  $
+    EE[Y_t] &= 0   \
+
+    gamma_Y (h) &= cases(
+      sigma^2 wide h=0,
+      0 wide h != 0
+    )
+  $ 
+
+  Exige apenas ausência de correlação linear ($"Cov"(Y_(t+h), Y_t) = 0$ para $h != 0$) e estacionariedade de 2ª ordem
+]
+
+#theorem("Relação entre IID e White Noise")[
+  $
+    "I.I.D" (0, sigma^2) => "WN"(0, sigma^2)
+  $
+]
+
+== Estimação Amostral
+No dia a dia, não conseguimos dizer com precisão os parâmetros de uma série temporal, como a média e a covariância. Para contornar essa limitação, utilizamos estimadores amostrais, que são funções das observações da série temporal que nos permitem inferir sobre os parâmetros populacionais
+
+#definition("Estimador de média amostral de processo estocástico fracamente estacionário")[
+  Dada uma realização ${y_1, y_2, ..., y_T}$ de um processo estocástico fracamente estacionário $\{Y_t\}$ com média populacional $EE[Y_t] = mu$ e função de autocovariância $gamma(h) = "Cov"(Y_t, Y_(t+h))$, o estimador da média amostral é definido por
+  $
+    overline(Y)_t = 1/T sum_(t=1)^T Y_t
+  $
+]
+
+#theorem("Não-viesamento e Variância da Média Amostral")[
+  Se ${Y_t}$ for um processo fracamente estacionário com $EE[Y_t] = mu$ e autocovariância $gamma(h)$ então
+  - $overline(Y)_t$ é um estimador não-viezado de $mu$
+  - A variância de $overline(Y)_t$ é dada por
+    $
+      VV[overline(Y)_t] = 1/T sum_(h=-(T-1))^(T-1) (1 - (|h|)/T) gamma(h)
+    $
+]
+#proof[
+  *Parte do não-viesamento*: Aplicamos a esperança no estimador
+  $
+    EE[overline(Y)_t] = EE[1/T sum_(t=1)^T Y_t] = 1/T sum_(t=1)^T EE[Y_t] = 1/T sum_(t=1)^T mu = mu
+  $
+
+  *Parte da variância*: Pela definição da variância da soma de variáveis aleatórias, temos
+  $
+    VV[overline(Y)_t] = VV[1/T sum_(t=1)^T Y_t] = 1/T^2 VV[sum_(t=1)^T Y_t] = 1/T^2 sum_(r=1)^T sum_(s=1)^T "Cov"(Y_r, Y_s)
+  $
+  como o processo é fracamente estacionário, podemos reescrever a covariância como uma função do lag $h = |r-s|$, assim
+  $
+    VV[overline(Y)_t] = 1/T^2 sum_(r=1)^T sum_(s=1)^T gamma(|r-s|)
+  $
+
+  se agruparmos os pares $(r,s)$ cuja a diferença $r-s$ seja igual a um determinado lag $h$ (${-(T-1),...,T-1}$), nota-se que existem exatamente $T-|h|$ pares com aquele lag $h$. Logo, podemos reescrever a soma como
+  $
+    VV[overline(Y)_t] = 1/T^2 sum_(h=-(T-1))^(T-1) (T - |h|) gamma(h) = 1/T sum_(h=-(T-1))^(T-1) (1 - (|h|)/T) gamma(h)
+  $
+]
+
+#definition("Autocovariância Amostral")[
+  A autocovariância amostral usual para um lag $h>=0$ é definida com o divisor $T$
+  $
+    hat(gamma)(h) = 1/T sum_(t=1)^(T-h) (Y_t - overline(Y)_t)(Y_(t+h) - overline(Y)_t) wide 0<=h<T
+  $
+]
+
+#theorem("Propriedades do estimador de Autocovariância Amostral")[
+  + O estimador de autocovariância amostral é viesado em amostra finita, mas é *assintoticamente não-viesado* (isto é, $lim_(T->infinity) EE[hat(gamma)(h)] = gamma(h)$)
+  + O uso do divisor $T$ em vez de $T-h$ garante que a matriz de autocovariância amostral seja *semi-definida positiva*, o que é importante para a consistência de estimadores de modelos de séries temporais e minimiza o MSE para lags elevados  
+]
+#proof[
+  Para simplificar a demonstração sem perder generalidade, considere inicialmente o estimador simplificado com $mu$ conhecido
+  $
+    tilde(gamma)(h) = 1/T sum_(t=1)^(T-h) (Y_t - mu)(Y_(t+h) - mu)
+  $
+  tomando a esperança desse estimador
+  $
+    EE[tilde(gamma)(h)] &= 1/T sum_(t=1)^(T-h) EE[(Y_t - mu)(Y_(t+h) - mu)]   \
+    &= 1/T sum_(t=1)^(T-h) gamma(h)   \
+    &= (T-h)/T gamma(h)
+  $
+  logo
+  $
+    EE[tilde(gamma)(h)] - gamma(h) = -h/T gamma(h)
+  $
+
+  Quando substituímos $mu$ por $overline(Y)_t$, o estimador se torna viesado, mas a diferença entre os dois estimadores é de ordem $O(1/T)$, logo, o estimador com média amostral também é assintoticamente não-viesado
+  $
+    lim_(T->infinity) EE[hat(gamma)(h)] = lim_(T->infinity) (1 - h/T) gamma(h) = gamma(h)
+  $
+
+  Com relação à matriz semi-definida positiva, considere o vetor de observações centradas $Y = (Y_1 - overline(Y)_T,...,Y_T - overline(Y)_T)^T$. A matriz de autocovariância amostral de ordem $k times k$ definida como
+  $
+    hat(Gamma)_k = [hat(gamma)(i - j)]^k_(i,j=1)
+  $
+  pode ser escrita da seguinte forma matricial
+  $
+    hat(Gamma)_k = 1/T X^T X
+  $
+  onde $X_(r j) = Y_(r - j + 1) - overline(Y)_T$ para $r in {1,...,T+k-1}$ e $j in {1,...,k}$. Para qualquer vetor não-nulo $a = (a_1, ..., a_k)^T in RR^k$:
+  $
+    a^T hat(Gamma)_k a = a^T (1/T X^T X) a = 1/T (X a)^T (X a) = 1/T ||X a|| >= 0
+  $
+  Se dividíssemos por $T-h$ em vez de $T$, esse cancelamento matricial exato falharia, podendo gerar matrizes de autocovariância amostrais não-definidas positivas (com variâncias teóricas negativas para combinações lineares da série) e maior variabilidade estatística em $h$ elevad
+]
+
+#definition("Autocorrelação Amostral")[
+  A autocorrelação amostral é a razão normalizada
+  $
+    hat(rho)(h) = (hat(gamma)(h)) / (hat(gamma)(0))
+  $
+]
+
+#theorem("Distribuição Limite sob Hipótese IID - Bartlett")[
+  Se ${Y_t} ~ "IID"(0, sigma^2)$ com $EE[Y_t^4]<infinity$, então para qualquer $h>0$ fixo, quando $T->infinity$:
+  $
+    sqrt(T) hat(rho)_h ->^d cal(N)(0,1)
+  $
+  e isso implica que $hat(rho)_h approx cal(N)(0,1/T)$ para $T$ grande
+]<acf-amostral-dist>
+#proof[
+  Sob a hipótese de ruído IID, temos que $mu=0$, $gamma(0) = sigma^2$ e $gamma(k) = 0 space forall k!=0$.
+
+  *Passo 1 - Comportamento do Numerador*: Considere o estimador $tilde(gamma)(h) = 1/T sum_(t=1)^(T-h) Y_t Y_(t+h)$. Defina a sequência de variáveis $W_t = Y_t Y_(t+h)$. Como ${Y_t}$ é IID, de média $0$
+
+  + $EE[W_t] = EE[Y_t Y_(t+h)] = EE[Y_t] EE[Y_(t+h)] = 0$
+  + Para $t!=s$, as variáveis $W_t$ e $W_s$ são não-correlacionadas (Formam uma sequência de diferenças de martingale)
+  + $VV[W_t] = EE[W_t^2] = EE[Y_t^2 Y_(t+h)^2] = EE[Y_t^2] EE[Y_(t+h)^2] = sigma^4$
+
+  Pelo Teorema Central do Limite, para Sequências de Diferenças de Martingale, temos que
+  $
+    sqrt(T) tilde(gamma)(h) = 1/sqrt(T) sum_(t=1)^(T-h) W_t ->^d cal(N)(0, sigma^4)
+  $
+
+  *Passo 2 - Comportamento do Denominador*: O denominador $hat(gamma)(0)$, pela lei forte dos grandes números:
+  $
+    hat(gamma)(0) = 1/T sum_(t=1)^T (Y_t - overline(Y)_T)^2 ->^p VV[Y_t] = sigma^2
+  $
+
+  *Passo 3 - Aplicação do Teorema de Slutsky*: A autocorrelação pode escrita como
+  $
+    sqrt(T) hat(rho)(h) = sqrt(T) (tilde(gamma)(h)) / (hat(gamma)(0))
+  $
+
+  Como a substituição de $overline(Y)_T$ por $mu = 0$ introduz apenas termos de ordem $o_p (1)$ (que somem assintoticamente), aplicamos o Teorema de Slutsky combinando a convergência em distribuição do numerador com a convergência em probabilidade do denominador:
+  $
+    sqrt(T) hat(rho)(h) = (sqrt(T) hat(gamma)(h)) / (hat(gamma)(0)) ->^d (cal(N)(0, sigma^4)) / (sigma^2) = cal(N) (0, sigma^4 / (sigma^2)^2 ) = cal(N)(0, 1)
+  $
+]
+
+
+
+#corollary("Construção formal do intervalo de confiança da ACF")[
+  Do @acf-amostral-dist, decorre que quando temos um ruído IID e amostras grandes, podemos construir um intervalo de confiança para a autocorrelação amostral. Para um nível de confiança $1-alpha$:
+  $
+    PP(-z_(1-alpha\/2) <= sqrt(T) hat(rho) (h) <= z_(1-alpha\/2)) approx 1-alpha    \
+
+    PP(-z_(1-alpha\/2) / sqrt(T) <= hat(rho) (h) <= z_(1-alpha\/2) / sqrt(T)) approx 1-alpha
+  $
+]
+
+Com esse corolário, podemos interpretar o seguinte: Em um teste de nível de significância $alpha=0.05$ (confiança $95%$), usamos o quantil $z_(0.975) approx 1.96$, logo o intervalo de confiança é dado por
+$
+  [-1.96 / sqrt(T), 1.96 / sqrt(T)]
+$
+
+se o valor amostral $hat(rho) (h)$ ultrapassar um desses limites, então rejeita-se a hipótese nula $H_0$ da *ausência de autocorrelação* no lag $h$, ou seja, existe evidência de que a série temporal possui memória linear. Caso contrário, não rejeitamos a hipótese nula, indicando que não há evidência suficiente para afirmar que existe autocorrelação nesse lag
 
 
 #pagebreak()
