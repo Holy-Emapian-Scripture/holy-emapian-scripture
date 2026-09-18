@@ -737,131 +737,121 @@ O problema aqui é de outra natureza: `get_instance` deveria receber tudo que o 
 - *Closure* — função que "lembra" variáveis do escopo onde foi definida, mesmo depois que esse escopo termina de executar.
 - *Freevar (variável livre)* — variável usada dentro de uma função mas definida fora dela, capturada pela closure.
 
-= quinta
 
-quero fazer um widget de calendario e clima
-criando fabrica de elemento de interface
-fabrica concreta das fabricas
-separa em ipad e ios
-ao escolher uma fabrica, todo o restante do programa se adequa a ela 
-geração de widgets de acordo com osistema operacional
-mas ainda tá desconexo
-aqui tem uns ifs
-fabricas concretas de cada familia
-todos os produtos de todas as familias são tratados como genéricos
+= Aula 4 - Abstract Factory
 
+A aula parte da ideia um app com widget de calendário e de clima, que precisa se comportar diferente dependendo do sistema (iPadOS ou iOS).
+
+== Abstract Factory
+
+A solução pro problema de criar algo generalizável de acordo com o sistema é criar uma fábrica que produz, de uma vez, todos os widgets daquele sistema. Cada produto (calendário, clima) continua sendo decidido por um Factory Method, igual ao que já vimos, só que agora vários desses métodos moram juntos, na mesma fábrica:
 
 ```python
-"""
-A Abstract Factory (Fábrica Abstrata) é um padrão de projeto criacional que permite
-produzir famílias de objetos relacionados ou dependentes sem especificar suas classes concretas.
-
-Importante:
-As classes de Abstract Factory frequentemente são baseadas em um conjunto de Factory Methods, mas também é possível usar Prototype para compor os métodos dessas classes. Mas, como a turma conhece Factory Methods, vou seguir esta abordagem
-"""
-
 from abc import ABC, abstractmethod
 
 class UIFactory(ABC):
-	@abstractmethod
-	def create_calendar(self): ...
+    @abstractmethod
+    def create_calendar(self): ...
 
-	@abstractmethod
-	def create_weather(self): ...
+    @abstractmethod
+    def create_weather(self): ...
 
 class iPadOSFactory(UIFactory):
-	def create_calendar(self):
-		print("Factory da Plataforma iPadOS: Calendário")
-		iPadOSCalendarWidget().create_calendar()
+    def create_calendar(self):
+        print("Factory da Plataforma iPadOS: Calendário")
+        widget = iPadOSCalendarWidget()
+        widget.create_calendar()
+        return widget
 
-	def create_weather(self):
-		print("Factory da Plataforma iPadOS: Clima")
-		iPadOSWeatherWidget().create_weather()
+    def create_weather(self):
+        print("Factory da Plataforma iPadOS: Clima")
+        widget = iPadOSWeatherWidget()
+        widget.create_weather()
+        return widget
 
 class iOSFactory(UIFactory):
-	def create_calendar(self):
-		print("Factory da Plataforma iOS: Calendário")
-		iOSCalendarWidget().create_calendar()
+    def create_calendar(self):
+        print("Factory da Plataforma iOS: Calendário")
+        widget = iOSCalendarWidget()
+        widget.create_calendar()
+        return widget
 
-	def create_weather(self):
-		print("Factory da Plataforma iOS: Clima")
-		iOSWeatherWidget().create_weather()
+    def create_weather(self):
+        print("Factory da Plataforma iOS: Clima")
+        widget = iOSWeatherWidget()
+        widget.create_weather()
+        return widget
 
-####################
 
 class CalendarWidget(ABC):
-	@abstractmethod
-	def create_calendar(self): ...
+    @abstractmethod
+    def create_calendar(self): ...
 
 class iPadOSCalendarWidget(CalendarWidget):
-	def create_calendar(self):
-		print("Criando um calendário para iPadOS")
+    def create_calendar(self):
+        print("Criando um calendário para iPadOS")
 
 class iOSCalendarWidget(CalendarWidget):
-	def create_calendar(self):
-		print("Criando um calendário para iOS")
+    def create_calendar(self):
+        print("Criando um calendário para iOS")
 
-####################
 
 class WeatherWidget(ABC):
-	@abstractmethod
-	def create_weather(self): ...
+    @abstractmethod
+    def create_weather(self): ...
 
 class iPadOSWeatherWidget(WeatherWidget):
-	def create_weather(self):
-		print("Criando um painel climático para iPadOS")
+    def create_weather(self):
+        print("Criando um painel climático para iPadOS")
 
 class iOSWeatherWidget(WeatherWidget):
-	def create_weather(self):
-		print("Criando um painel climático para iOS")
-		
-####################
+    def create_weather(self):
+        print("Criando um painel climático para iOS")
+
 
 class ApplicationInterface:
-	def get_factory(self, platform_type):
-		if platform_type == "iPadOS":
-			return iPadOSFactory()
-		if platform_type == "iOS":
-			return iOSFactory()
-		
-		raise ValueError("Esta plataforma não existe")
+    def get_factory(self, platform_type):
+        if platform_type == "iPadOS":
+            return iPadOSFactory()
+        if platform_type == "iOS":
+            return iOSFactory()
 
-####################
+        raise ValueError("Esta plataforma não existe")
+
 
 application_interface = ApplicationInterface()
-
-# Platform type can be read from config file etc.
-print("#"*40)
 
 print("***** iPadOS *****")
 widget_factory = application_interface.get_factory("iPadOS")
 widget_factory.create_calendar()
 widget_factory.create_weather()
-print("#"*40)
 
 print("***** iOS *****")
 widget_factory = application_interface.get_factory("iOS")
 widget_factory.create_calendar()
 widget_factory.create_weather()
-print("#"*40)
+```
 
-###############################################################################
+(Reparo à parte: no material original da aula, `create_calendar` e `create_weather` da `UIFactory` criavam o widget e chamavam o método dele sem `return` — o widget criado era descartado, e `widget_factory.create_calendar()` sempre devolvia `None`. Funcionava pro demo porque tudo acontecia via `print`, mas quebrava o contrato usual de um Factory Method, que é devolver o produto pra quem pediu. Um `return` sozinho na frente da chamada não teria resolvido, porque o problema se repetia um nível abaixo — `iPadOSCalendarWidget().create_calendar()` também não tinha `return`. O código acima já está corrigido: cada método guarda o widget numa variável, chama o método dele pelo efeito colateral do `print`, e devolve o próprio widget — não o resultado de chamar `create_calendar()` nele. Assim `widget_factory.create_calendar()` devolve um `CalendarWidget` de verdade, que quem chamou pode guardar e usar depois. O exemplo de ciência de dados logo abaixo já seguia esse contrato desde o início: cada `create_X` devolve o objeto (`return PandasDatasetLoader()`), em vez de só imprimir e descartar.)
 
+"Ao escolher uma fábrica, todo o restante do programa se adequa a ela": quem pede um widget a `iPadOSFactory` nunca recebe, por engano, um widget de iOS — os dois métodos vivem na mesma classe, então saem garantidamente da mesma família. `ApplicationInterface.get_factory` é o ponto único de decisão — mesma forma do `FabricaDeFrete.criar`, um `if` que devolve objetos diferentes.
+
+Isso é *Abstract Factory*: "um padrão de projeto criacional que permite produzir famílias de objetos relacionados ou dependentes sem especificar suas classes concretas". E, como o próprio material registra, "as classes de Abstract Factory frequentemente são baseadas em um conjunto de Factory Methods" — `create_calendar` e `create_weather`, cada um isolado, já é um Factory Method; o Abstract Factory só os empacota juntos.
+
+=== Herança vs. composição
+
+A diferença entre os dois padrões não é a quantidade de métodos — é *como* a variação acontece. Factory Method varia por herança: pra trocar de família, você troca de **classe**. `CentroSaoPaulo` e `CentroManaus` são subclasses diferentes de `CentroDeDistribuicao`; a identidade da classe já carrega a decisão.
+
+Abstract Factory varia por composição: a classe que usa a fábrica nunca muda. `ApplicationInterface` é uma classe só, do início ao fim — o que muda é qual **objeto** está guardado dentro dela (`iPadOSFactory()` ou `iOSFactory()`), recebido como retorno de um método, nunca por herança. É o mesmo mecanismo que já existia desde o Simple Factory (`Loja3` guardando `self.fabrica`, sem herdar de `FabricaDeFrete`) — só que agora a fábrica guardada tem vários métodos de criação em vez de um.
+
+=== Por que se usa mais Abstract Factory do que Factory Method?
+
+Fica a pergunta em aberto na aula: "se usa muito mais o abstract factory do que o factory method (porque?)". A resposta é que sistemas reais raramente precisam criar uma coisa isolada — quase sempre precisam de várias coisas que têm que combinar entre si. O segundo exemplo de aula, um pipeline de ciência de dados, mostra isso com três produtos em vez de dois — "mais uma classe com 3 métodos, a fábrica cria as mesmas classes, com as funções definidas antes":
+
+```python
 from abc import ABC, abstractmethod
 
-# ============================================================
-# The Abstract Factory  is a creational design pattern that allows producing families
-# of related or dependent objects without specifying their concrete classes.
-#
-# Abstract Factory classes are often based on a set of Factory Methods, but you can also use 
-# Prototype to compose the methods on these classes.
-#
-# For this lesson, we will use the Factory Methods approach
-# ============================================================
-
-# ============================================================
-# 1) ABSTRAÇÕES (produtos) - o cliente conhece apenas isso
-# ============================================================
+# ABSTRAÇÕES (produtos) - o cliente conhece apenas isso
 
 class DatasetLoader(ABC):
     @abstractmethod
@@ -875,9 +865,7 @@ class Visualizer(ABC):
     @abstractmethod
     def plot(self) -> None: ...
 
-# ============================================================
-# 2) ABSTRAÇÃO DA FÁBRICA - contrato da família de produtos
-# ============================================================
+# ABSTRAÇÃO DA FÁBRICA - contrato da família de produtos
 
 class DataScienceFactory(ABC):
     @abstractmethod
@@ -889,9 +877,7 @@ class DataScienceFactory(ABC):
     @abstractmethod
     def create_visualizer(self) -> Visualizer: ...
 
-# ============================================================
-# 3) PRODUTOS CONCRETOS - Família Local (Pandas / Sklearn / Matplotlib)
-# ============================================================
+# PRODUTOS CONCRETOS - Família Local (Pandas / Sklearn / Matplotlib)
 
 class PandasDatasetLoader(DatasetLoader):
     def load(self) -> None:
@@ -905,10 +891,7 @@ class MatplotlibVisualizer(Visualizer):
     def plot(self) -> None:
         print("[MatplotlibVisualizer] Plotando curva ROC e matriz de confusão com Matplotlib.")
 
-
-# ============================================================
-# 4) PRODUTOS CONCRETOS - Família Distribuída (Spark / MLlib / Seaborn)
-# ============================================================
+# PRODUTOS CONCRETOS - Família Distribuída (Spark / MLlib / Seaborn)
 
 class SparkDatasetLoader(DatasetLoader):
     def load(self) -> None:
@@ -922,115 +905,128 @@ class SeabornVisualizer(Visualizer):
     def plot(self) -> None:
         print("[SeabornVisualizer] Gerando pairplot e heatmap de correlação com Seaborn.")
 
-# ============================================================
-# 5) FÁBRICAS CONCRETAS - produzem uma FAMÍLIA coerente de produtos
-# ============================================================
+# FÁBRICAS CONCRETAS - produzem uma FAMÍLIA coerente de produtos
 
 class LocalPandasFactory(DataScienceFactory):
     """Família "local" para dados pequenos/medianos."""
     def create_dataset_loader(self) -> DatasetLoader:
-        print("[LocalPandasFactory] -> criando DatasetLoader (Pandas)")
         return PandasDatasetLoader()
 
     def create_model(self) -> Model:
-        print("[LocalPandasFactory] -> criando Model (Scikit-learn)")
         return SklearnModel()
 
     def create_visualizer(self) -> Visualizer:
-        print("[LocalPandasFactory] -> criando Visualizer (Matplotlib)")
         return MatplotlibVisualizer()
 
 class DistributedSparkFactory(DataScienceFactory):
     """Família "distribuída" para grandes volumes de dados."""
     def create_dataset_loader(self) -> DatasetLoader:
-        print("[DistributedSparkFactory] -> criando DatasetLoader (Spark)")
         return SparkDatasetLoader()
 
     def create_model(self) -> Model:
-        print("[DistributedSparkFactory] -> criando Model (MLlib)")
         return MLlibModel()
 
     def create_visualizer(self) -> Visualizer:
-        print("[DistributedSparkFactory] -> criando Visualizer (Seaborn)")
         return SeabornVisualizer()
 
-# ============================================================
-# 6) "SELETOR" DE FÁBRICA - ponto único de decisão concreta
-#    (poderia vir de config/env/CLI; mantido simples para aula)
-# ============================================================
+# "SELETOR" DE FÁBRICA - ponto único de decisão concreta
 
 class ApplicationInterface:
     def get_factory(self, stack: str) -> DataScienceFactory:
-        """
-        stack: "local" ou "distributed"
-        Retorna a fábrica apropriada, sem expor classes concretas ao restante do cliente.
-        """
         if stack == "local":
-            print("[ApplicationInterface] Selecionando família LOCAL (Pandas/Sklearn/Matplotlib)")
             return LocalPandasFactory()
         if stack == "distributed":
-            print("[ApplicationInterface] Selecionando família DISTRIBUÍDA (Spark/MLlib/Seaborn)")
             return DistributedSparkFactory()
         raise ValueError("Stack inválida. Use \"local\" ou \"distributed\".")
 
 
-# ============================================================
-# 7) DRIVER CODE
-# ============================================================
-
 app = ApplicationInterface()
 
-# ---- Execução com a família LOCAL ----
 print("\n===== Cenário A: Pipeline LOCAL (dados pequenos/medianos) =====")
-factory = app.get_factory("local")                      # cliente recebe a FÁBRICA (abstração)
-loader = factory.create_dataset_loader()                # abstração DatasetLoader
-modelo = factory.create_model()                         # abstração Model
-viz = factory.create_visualizer()                       # abstração Visualizer
-
-print("\n[Cliente] Executando pipeline LOCAL (mesmo cliente, família 1):")
+factory = app.get_factory("local")        # cliente recebe a FÁBRICA (abstração)
+loader = factory.create_dataset_loader()  # abstração DatasetLoader
+modelo = factory.create_model()           # abstração Model
+viz = factory.create_visualizer()         # abstração Visualizer
 loader.load()
 modelo.train()
 viz.plot()
 
-# ---- Troca de fábrica em tempo de execução (sem mudar o cliente) ----
 print("\n===== Cenário B: Pipeline DISTRIBUÍDO (big data) =====")
-factory = app.get_factory("distributed")                # troca a família
+factory = app.get_factory("distributed")  # troca a família, sem mudar o cliente
 loader = factory.create_dataset_loader()
 modelo = factory.create_model()
 viz = factory.create_visualizer()
-
-print("\n[Cliente] Executando pipeline DISTRIBUÍDO (mesmo cliente, família 2):")
 loader.load()
 modelo.train()
 viz.plot()
 ```
 
-aqui estamos criando um cara pra carregar dataset, rodar modelo, e visualizar resposta
-analitica diagnostia podia ser assim
-classe abstrata define um comportamento da class (modelo, dataset, visualizacao)
+O cliente "só precisa conhecer as abstrações das nossas fábricas" — nunca importa `SklearnModel` nem `SparkDatasetLoader` diretamente, só `DataScienceFactory`. Fica também a régua de quando é seguro mexer: "o que pode mudar à vontade é acrescentar classes; classe concreta você não pode mudar" sem quebrar quem já depende dela — trocar o modelo de dentro de `LocalPandasFactory` é seguro; mudar a assinatura de `DataScienceFactory` (a abstração) afeta todo mundo que já depende dela.
 
-mais uma classe com 3 metodos,
-a fabrica cria as mesmas classes, com as funções definidas antes
-usuario so precisa conhecer as abstrações das nossas fábricas
-se usa muito mais o abstract factory do que o factory method (porque?)
-voce pode criar quantos loaders vcs quiser, quantos modelos vcs quiserem.
-a fabrica local de pandas tem a mesma estrutura do datscience factory
-pra mudar, você só precisa pegar a classe de Modelo.
-voce criou a classe inteira e só precisa mudar na linha de SkLearn
-a única decisão do usuário é escolher a fabrica que ele quer?
+=== Voltando pra Loja
 
-como estruturar essa quantidade de classes
-se vc mudar a estrutura vc muda o padrãoo que que pode mudar a vontade é acrescentar classes
-vc (não) pode mudar classes concretas
+A aula fecha puxando de volta pro exemplo que já vínhamos construindo: "se eu quiser ter uma calculadora de frete e recibo diferente pra cada estado, o que fazer?" A resposta sugerida nas anotações é dar um Factory Method pra cada peça que precisa variar (`criar_frete`, `criar_calculadora`, `criar_recibo`) e empacotar as três dentro de um Abstract Factory por centro. Um jeito de fazer isso, seguindo os dois exemplos acima:
+
+```python
+class ComponentesDeCentro(ABC):
+    @abstractmethod
+    def criar_frete(self): ...
+
+    @abstractmethod
+    def criar_calculadora(self): ...
+
+    @abstractmethod
+    def criar_recibo(self): ...
 
 
-voltando ao exemplo da loja
-testes de regressão
-se eu quiser ter uma calculadora de frete e recibo diferente pra cada estado, o que fazer?
-se quiser evoluir, usa um abstractfactory nelas
-cria factory method na calculadora e no recibo, e  o abstractfactory nos centrossingleton de fabricadefrete
-OCP
-se a gente quiser colocar belem no frete aereo
+class ComponentesSaoPaulo(ComponentesDeCentro):
+    def criar_frete(self):
+        return FreteRodoviario()
 
-pra faze isso, teriamos que estender de Frete, sem precisar modificar só estendendo.
-copia o fretefluvial e bota aereo
+    def criar_calculadora(self):
+        return CalculadoraTotalSP()
+
+    def criar_recibo(self):
+        return ReciboSP()
+
+
+class ComponentesManaus(ComponentesDeCentro):
+    def criar_frete(self):
+        return FreteFluvial()
+
+    def criar_calculadora(self):
+        return CalculadoraTotalAM()
+
+    def criar_recibo(self):
+        return ReciboAM()
+
+
+class Loja4:
+    def __init__(self, componentes):
+        self.componentes = componentes
+
+    def processar(self, cliente, valor, peso_kg, cidade):
+        frete = self.componentes.criar_frete()
+        calculadora = self.componentes.criar_calculadora()
+        recibo = self.componentes.criar_recibo()
+        total = calculadora.total(valor, frete.custo(peso_kg))
+        return recibo.gerar(cliente, total, cidade)
+
+
+loja = Loja4(ComponentesSaoPaulo())
+print(loja.processar(cliente, valor, peso_kg, "Sao Paulo"))
+
+loja = Loja4(ComponentesManaus())
+print(loja.processar(cliente, valor, peso_kg, "Manaus"))
+```
+
+`CalculadoraTotalSP`/`CalculadoraTotalAM` e `ReciboSP`/`ReciboAM` são hipotéticos aqui — não existem nas classes já construídas, só ilustram a forma de como a alíquota de ICMS ou o layout de nota variariam por estado. `Loja4` nunca muda de classe entre um pedido de São Paulo e um de Manaus; o que muda é qual `Componentes` foi passado pro construtor.
+
+E reaparece o OCP: "se a gente quiser colocar Belém no frete aéreo, pra fazer isso, teríamos que estender de `Frete`, sem precisar modificar, só estendendo — copia o `FreteFluvial` e bota `Aereo`" — a mesma `FreteAereo` que já ficou pronta, esperando, lá na Aula 2.
+
+== Termos da Aula 4
+
+- *Abstract Factory* — padrão criacional que produz uma família inteira de objetos relacionados através de uma única fábrica, trocável por composição.
+- *Composição* — relação "tem-um": um objeto guarda uma referência a outro em vez de herdar dele; trocar o comportamento é trocar o objeto guardado, não a classe.
+- *Família de produtos* — conjunto de objetos relacionados que precisam ser usados juntos e saem garantidamente compatíveis entre si, por virem da mesma fábrica concreta.
+
