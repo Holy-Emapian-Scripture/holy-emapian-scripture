@@ -669,6 +669,110 @@ Depois que o *RoIAlign* é aplicado, cada proposta de região é representada po
 
 #pagebreak()
 
+== Introdução e Modelagem de Dados Sequenciais
+As RNNs são redes neurais projetadas para lidar com dados sequenciais, onde os dados possuem um tipo de relação sequencial, seja por tempo, posição ou qualquer outra forma de dependência entre os elementos da sequência. Diferente das redes feedforward tradicionais, as RNNs possuem conexões recorrentes que permitem que informações de etapas anteriores da sequência influenciem a saída atual, tornando-as ideais para tarefas como processamento de linguagem natural, reconhecimento de fala, séries temporais e processamento de vídeos.
+
+== Simple RNN (Vanilla RNN)
+É o modelo mais básico de RNN, onde cada célula da rede recebe a entrada atual e o estado oculto da etapa anterior, processando essas informações para gerar uma saída e atualizar o estado oculto para a próxima etapa da sequência.
+
+Antes de partir para a estrutura matemática em si, vamos ver esse simples exemplo: Imagine uma cafeteria, e a @rnn-example representa a sequência de pratos principais que um cliente pode pedir ao longo de uma semana. Cada dia da semana representa uma etapa da sequência. A RNN é capaz de capturar essa dependência sequencial, permitindo que a rede aprenda padrões de pedidos ao longo do tempo.
+
+#figure(
+  image("images/A1/rnn-example.png", width: 100%),
+  caption: "Exemplo de RNN em uma cafeteria"
+)<rnn-example>
+
+Podemos interpretar cada um dos pratos principais como vetores *one-hot*
+$
+  "Lasanha" = [1,0,0] wide "Salsicha" = [0,1,0] wide "Frango" = [0,0,1]
+$
+
+E perceba que a seguinte relação é apresentada
+$
+  "Lasanha" -> "Salsicha" -> "Frango" -> "Lasanha" -> "Salsicha" -> "Frango" -> "Lasanha"
+$
+
+Conseguimos facilmente representar essa rotatividade utilizando de uma matriz de transição:
+$
+  X =mat(0,0,1; 1,0,0; 0,1,0)   \
+
+  X "Lasanha" = "Salsicha" wide X "Salsicha" = "Frango" wide X "Frango" = "Lasanha"
+$
+
+Considere agora a influência de uma variável externa na decisão do restaurante com relação ao prato do dia, digamos o *clima*. Agora além dos vetores de pratos principais, temos também vetores *one-hot* representando o clima:
+$
+  "Sol" = [1,0] wide "Chuva" = [0,1]
+$
+
+Agora a rede depende tanto das informações de *histórico* (pratos anteriores) quanto das informações de *contexto* (clima atual). A rede agora aprende a prever isso através de *duas* matrizes
+- $W_(h h)$: Matriz que aprende as regras da sequência do cardápio, ela responde a pergunta "Se ontem foi servido Frango, qual seria a mesma comida e qual será a próxima?"
+
+#figure(
+  image("images/A1/rnn-example-2.png", width: 100%),
+  caption: "Exemplo de RNN em uma cafeteria com influência do clima"
+)
+
+- $W_(x h)$: Matriz que aprende a influência do clima na decisão do cardápio, ela responde a pergunta "Se hoje está chovendo, devo manter a escolha de comida ou mudar para a  próxima da sequência?"
+
+Mas como a rede toma a decisão? A cada passo temporal (dia $t$), a rede utiliza a seguinte fusão: *Consulta a memória* pegando a comida do dia anterior $h_(t-1)$ e multiplica por $W_(h h)$ para entender a tendência do cardápio, *lê o presente* pegando o clima atual $x_t$ e multiplica pela matriz $W_(x h)$, depois *soma e aplica ativação* e *gera a saída*, o novo estado oculto $h_t$ que passa por uma matriz final $W_(h o)$ que decide qual será a comida do dia $t$.
+
+Definindo de forma mais formal, a RNN pode ser definida pela seguinte estrutura
+$
+  h_t = f_(theta) (h_(t-1), x_t) = tanh(W_(h h) h_(t-1) + W_(x h) x_t + b_h)   \
+$
+
+e a saída no instante $t$ é dada por
+$
+  o_t = W_(h o) h_t + b_o
+$
+
+Podemos representar toda essa estruturação em bloco da seguinte forma
+$
+  h_t = "NL"([W_(h h)|W_(x h)|b_(h)]mat(h_(t-1); x_t; 1))   \
+
+  o_t = [W_(h o)|b_(o)]mat(h_t; 1)
+$
+
+#figure(
+  image("images/A1/rnn-block.png", width: 70%),
+  caption: "Bloco de uma RNN"
+)
+
+=== Arquitetura
+Podemos estruturar uma arquitetura visual fixa para cada um dos passos temporais que a rede recorrente faz
+
+#figure(
+  image("images/A1/rnn-architecture.png", width: 80%),
+  caption: "Arquitetura de uma RNN"
+)
+
+=== RNN Unroling
+Baseado na arquitetura mostrada, podemos escolher que o output da rede seja o *output* de cada passo temporal, ou apenas o *output* do último passo temporal. A primeira abordagem é útil quando queremos prever uma sequência de saídas, enquanto a segunda abordagem é útil quando queremos prever uma única saída baseada em toda a sequência de entradas.
+
+Baseado nisso, conseguimos desenvelopar o parâmetro de tempo da RNN, mostrando como a rede processa cada elemento da sequência ao longo do tempo. Esse processo é conhecido como *unrolling* da RNN, e nos permite visualizar claramente como as informações fluem através da rede em cada passo temporal.
+
+#figure(
+  image("images/A1/rnn-unrolling.png", width: 100%),
+  caption: "Desenrolando uma RNN"
+)
+
+=== Tipos de mapeamento sequencial
+- *Many-to-many*: Existem duas variações, a primeira é quando a entrada e a saída são sequências de comprimentos iguais. Por exemplo, os momentos de um vídeo e a categoria que aquele momento se encaixa (drama, terror, etc.)
+  #figure(
+    image("images/A1/rnn-many-to-many-1.png", width: 100%),
+    caption: "Exemplo de mapeamento many-to-many"
+  )
+  A segunda variação é quando a entrada e a saída são sequências de comprimentos diferentes. Por exemplo, uma frase em inglês e sua tradução em português.
+  #figure(
+    image("images/A1/rnn-many-to-many-2.png", width: 100%),
+    caption: "Exemplo de mapeamento many-to-many"
+  )
+
+- *One-to-many*: 
+  #figure(
+    image("images/A1/rnn-one-to-many.png", width: 100%),
+    caption: "Exemplo de mapeamento one-to-many"
+  )
 
 #pagebreak()
 
