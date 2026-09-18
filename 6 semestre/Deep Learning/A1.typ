@@ -716,6 +716,63 @@ Agora a rede depende tanto das informações de *histórico* (pratos anteriores)
 
 Mas como a rede toma a decisão? A cada passo temporal (dia $t$), a rede utiliza a seguinte fusão: *Consulta a memória* pegando a comida do dia anterior $h_(t-1)$ e multiplica por $W_(h h)$ para entender a tendência do cardápio, *lê o presente* pegando o clima atual $x_t$ e multiplica pela matriz $W_(x h)$, depois *soma e aplica ativação* e *gera a saída*, o novo estado oculto $h_t$ que passa por uma matriz final $W_(h o)$ que decide qual será a comida do dia $t$.
 
+Definindo de forma mais formal, a RNN pode ser definida pela seguinte estrutura
+$
+  h_t = f_(theta) (h_(t-1), x_t) = tanh(W_(h h) h_(t-1) + W_(x h) x_t + b_h)   \
+$
+
+e a saída no instante $t$ é dada por
+$
+  o_t = W_(h o) h_t + b_o
+$
+
+Podemos representar toda essa estruturação em bloco da seguinte forma
+$
+  h_t = "NL"([W_(h h)|W_(x h)|b_(h)]mat(h_(t-1); x_t; 1))   \
+
+  o_t = [W_(h o)|b_(o)]mat(h_t; 1)
+$
+
+#figure(
+  image("images/A1/rnn-block.png", width: 70%),
+  caption: "Bloco de uma RNN"
+)
+
+=== Arquitetura
+Podemos estruturar uma arquitetura visual fixa para cada um dos passos temporais que a rede recorrente faz
+
+#figure(
+  image("images/A1/rnn-architecture.png", width: 80%),
+  caption: "Arquitetura de uma RNN"
+)
+
+=== RNN Unroling
+Baseado na arquitetura mostrada, podemos escolher que o output da rede seja o *output* de cada passo temporal, ou apenas o *output* do último passo temporal. A primeira abordagem é útil quando queremos prever uma sequência de saídas, enquanto a segunda abordagem é útil quando queremos prever uma única saída baseada em toda a sequência de entradas.
+
+Baseado nisso, conseguimos desenvelopar o parâmetro de tempo da RNN, mostrando como a rede processa cada elemento da sequência ao longo do tempo. Esse processo é conhecido como *unrolling* da RNN, e nos permite visualizar claramente como as informações fluem através da rede em cada passo temporal.
+
+#figure(
+  image("images/A1/rnn-unrolling.png", width: 100%),
+  caption: "Desenrolando uma RNN"
+)
+
+=== Tipos de mapeamento sequencial
+- *Many-to-many*: Existem duas variações, a primeira é quando a entrada e a saída são sequências de comprimentos iguais. Por exemplo, os momentos de um vídeo e a categoria que aquele momento se encaixa (drama, terror, etc.)
+  #figure(
+    image("images/A1/rnn-many-to-many-1.png", width: 100%),
+    caption: "Exemplo de mapeamento many-to-many"
+  )
+  A segunda variação é quando a entrada e a saída são sequências de comprimentos diferentes. Por exemplo, uma frase em inglês e sua tradução em português.
+  #figure(
+    image("images/A1/rnn-many-to-many-2.png", width: 100%),
+    caption: "Exemplo de mapeamento many-to-many"
+  )
+
+- *One-to-many*: 
+  #figure(
+    image("images/A1/rnn-one-to-many.png", width: 100%),
+    caption: "Exemplo de mapeamento one-to-many"
+  )
 
 #pagebreak()
 
