@@ -746,6 +746,20 @@ Podemos estruturar uma arquitetura visual fixa para cada um dos passos temporais
   caption: "Arquitetura de uma RNN"
 )
 
+Podemos utilizar uma fórmula *recursiva* para representar a RNN, onde o estado oculto $h_t$ é atualizado a cada passo temporal com base no estado oculto anterior $h_(t-1)$ e na entrada atual $x_t$.
+$
+  underbrace(h_t, "Estado Oculto") = f_(theta) (underbrace(h_(t-1), "Estado Anterior"), underbrace(x_t, "Entrada Atual"))   \
+$
+
+e vale ressaltar que o *mesmo conjunto de parâmetros $theta$* é utilizado em *todos os passos temporais*, diferente de uma rede neural padrão onde *cada camada possui um conjunto de parâmetros diferente*. Isso permite que a RNN generalize melhor para sequências de diferentes comprimentos e capture padrões temporais de forma mais eficiente.
+
+Tomemos a simples RNN $h_t = tanh(W_(h h) h_(t-1) + W_(x h) x_t)$ e vamos ver como a recursividade se comporta com $T=3$
+$
+  h_3 &= tanh(W_(h h) h_2 + W_(x h) x_3)   \
+  h_3 &= tanh(W_(h h) (tanh(W_(h h) h_1 + W_(x h) x_2)) + W_(x h) x_2)   \
+  h_3 &= tanh(W_(h h) (tanh(W_(h h) (tanh(W_(h h) h_0 + W_(x h) x_1)) + W_(x h) x_2)) + W_(x h) x_3)
+$
+
 === RNN Unroling
 Baseado na arquitetura mostrada, podemos escolher que o output da rede seja o *output* de cada passo temporal, ou apenas o *output* do último passo temporal. A primeira abordagem é útil quando queremos prever uma sequência de saídas, enquanto a segunda abordagem é útil quando queremos prever uma única saída baseada em toda a sequência de entradas.
 
@@ -768,11 +782,132 @@ Baseado nisso, conseguimos desenvelopar o parâmetro de tempo da RNN, mostrando 
     caption: "Exemplo de mapeamento many-to-many"
   )
 
-- *One-to-many*: 
+- *One-to-many*: Quando o modelo recebe uma única entrada e gera uma sequência de saídas. Por exemplo, uma imagem e a legenda que descreve a imagem.
   #figure(
     image("images/A1/rnn-one-to-many.png", width: 100%),
     caption: "Exemplo de mapeamento one-to-many"
   )
+- *Many-to-one*: Quando o modelo recebe uma sequência de entradas e gera uma única saída. Por exemplo, uma sequência de palavras e a classificação da sentença.
+  #figure(
+    image("images/A1/rnn-many-to-one.png", width: 100%),
+    caption: "Exemplo de mapeamento many-to-one"
+  )
+
+
+== Treinamento e Problemas de Gradiente na RNN
+Como comentamos, os mesmos parâmetros $theta$ são utilizados em *todas as camadas* da rede neural, por conta disso, não podemos usar o *backpropagation* tradicional, e sim o *backpropagation through time (BPTT)*, que é uma extensão do algoritmo de retropropagação para redes recorrentes.
+
+=== Backpropagation Through Time (BPTT)
+Como cada célula da RNN é uma camada da rede neural, o processo de unrolling da RNN ao longo do tempo cria uma rede profunda, onde cada passo temporal é tratado como uma camada separada com o diferencial que os mesmos parâmetros são usados em todos os passos.
+
+Em uma tarefa com saída de múltiplos passos temporais (many-to-many), o erro global $E$ é acumulado e calculado a cada instante temporal $t$
+$
+  E = sum_(t=1)^T E_t
+$
+
+Para atualizar a matriz de pesos compartilhada $W_(h h)$ precisamos calcular a derivada parcial de $E$ em relação a $W_(h h)$. Pela regra da cadeia, o erro $E_t$ em um determinado instante $t$ depende não apenas da célula no instante $t$, mas de toda a história de estados ocultos anteriores $h_k space (k<=t)$
+$
+  (partial E) / (partial W_(h h)) = sum_(k=1)^T (partial E_t) / (partial h_t) (partial h_t) / (partial h_k) (partial h_k) / (partial W_(h h))
+$
+
+As derivadas da esquerda ($(partial E_t) / (partial h_t)$) e direita ($(partial h_k) / (partial W_(h h))$) são fáceis de visualizar pela relação direta que a função derivada tem com o termo da derivação, no entanto, o termo do meio é um pouco mais complexo, mas ele representa *o fluxo do gradiente retropropagado do passo $t$ até o passo $k$*
+$
+  (partial h_t) / (partial h_k) = product_(j=k+1)^t (partial h_j) / (partial h_(j-1))
+$
+
+#figure(
+  image("images/A1/rnn-backpropagation.png", width: 100%),
+  caption: "Fluxo do gradiente retropropagado do passo $t$ até o passo $k$"
+)
+
+=== A matemática dos gradientes explosivos ou desvanecentes
+No entanto, essa estrutura pode gerar um grande problema quando a diferença $t-k$ é muito grande. Tomando como base a equação base da RNN $h_t = tanh(W_(h h) h_(t-1) + W_(x h) x_t)$, podemos calcular a derivada do estado oculto $h_j$ em relação ao estado oculto anterior $h_(j-1)$
+$
+  (partial h_j) / (partial h_(j-1)) = "diag"(1 - tanh^2(dot)) W_(h h)^T
+$
+
+então a propagação do gradiente de $h_0$ até $h_t$ envolve a multiplicação repetida de $t-k$ termos $W_(h h)^T$ e da derivada de $tanh$
+
+Podemos chegar nesse mesmo resultado de uma forma mais matemática fazendo uma análise por SVD. Considere a decomposição SVD da matriz de transição $W_(h h) = U Sigma V^T$ e seja a parcial derivada do estado oculto $h_j$ em relação ao estado oculto anterior $h_(j-1)$ escrita como
+$
+  (partial h_j) / (partial h_(j-1)) = D_j W_(h h)^T
+$
+
+então sabemos que a derivada de $h_t$ com relação a um estado oculto anterior $h_k$ é dada por
+$
+  (partial h_t) / (partial h_k) = product_(j=k+1)^t D_j W_(h h)^T
+$
+
+vamos então medir a norma $L_2$ desse gradiente para entender como ele se comporta
+$
+  lr(||(partial h_t) / (partial h_k)||)_2 = lr(||product_(j=k+1)^t D_j W_(h h)^T||)_2
+$
+
+Pela propriedade submultiplicativa das normas matriciais $||A B||_2 <= ||A||_2 ||B||_2$, temos que:
+$
+  lr(||(partial h_t) / (partial h_k)||)_2 <= product_(j=k+1)^t ||D_j||_2 ||W_(h h)^T||_2
+$
+
+No entanto, temos que $||D_j||_2 = sigma_"max" (D_j) = max_(i) |1 - tanh^2(z_(j i))| <= 1$ e $||W_(h h)^T||_2 = sigma_"max" (W_(h h)^T)$, então
+$
+  &lr(||(partial h_t) / (partial h_k)||)_2 <= product_(j=k+1)^t 1 dot sigma_"max" (W_(h h)^T)      \
+
+  => &lr(||(partial h_t) / (partial h_k)||)_2 <= (sigma_"max" (W_(h h)^T))^(t-k)
+$
+
+A conclusão que temos dessa análise é que, se o maior valor singular é menor que 1, então o gradiente vai decair exponencialmente com o aumento da diferença $t-k$, levando ao problema de *vanishing gradient*. Por outro lado, se o maior valor singular é maior que 1, então o gradiente vai crescer exponencialmente com o aumento da diferença $t-k$, levando ao problema de *exploding gradient*.
+
+=== Métodos de mitigação
+Para mitigar o problema de *exploding gradients* e *vanishing gradients*. A principal técnica utilizada é uma variação do BPTT.
+
+*Truncated BPTT*: No BPTT original, para atualizar o pesos, eu faço o forward pass por TODOS os $T$ passos temporais e retropropago por eles novamente. Nessa versão simplificada, existem dois hiperparâmetros $k_1$ e $k_2$. Na parte do forward, a rede propaga por apenas $k_1$ passos temporais, e na parte do backward, a rede retropropaga por apenas $k_2$ passos temporais (obrigatoriamente $k_2 < k_2$). Isso reduz a profundidade da rede e ajuda a evitar o problema de gradientes explosivos ou desvanecentes.
+
+#figure(
+  image("images/A1/rnn-truncated-bptt.png", width: 70%),
+  caption: "Exemplo de Truncated BPTT com k1=3 e k2=2"
+)
+
+== Limitações da RNN
+
+Em RNN simples, ela consegue capturar contexto relevante de curto prazo, mas tem dificuldade em capturar dependências de longo prazo. Isso ocorre porque, à medida que a sequência se torna mais longa, o gradiente pode se tornar muito pequeno (vanishing gradient) ou muito grande (exploding gradient), dificultando o aprendizado de padrões de longo prazo. Por exemplo, na frace _"I grew up in france, [...] I speak fluent french"_ as palavras _france_ e _french_ estão separadas por várias palavras, e a RNN simples pode ter dificuldade em capturar essa relação de longo prazo.
+
+Não só isso, como a RNN também pode ter dificuldade, mesmo em dependências de curto prazo, de selecionar a informação que é de fato relevante para aquele contexto
+
+#figure(
+  image("images/A1/rnn-limitation.png", width: 100%),
+  caption: "Exemplo de limitação da RNN simples"
+)
+
+== Long-short Term Memory (LSTM)
+Veio para corrigir as limitações presentes na RNN simples, introduzindo uma arquitetura de célula mais complexa que permite que a rede aprenda a manter ou esquecer informações ao longo do tempo.
+
+Enquanto a RNN simples possui apenas um estado oculto $h_t$, a LSTM possui dois estados,um estado oculto $h_t$ e um estado de célula $c_t$ que atua como uma "esteira rolante" (*conveyor belt*) que carrega a informação relevante ao longo da sequência temporal com alterações mínimas.
+
+#figure(
+  image("images/A1/lstm.png", width: 74.9%),
+  caption: "Arquitetura de uma célula LSTM"
+)
+
+Podemos estruturar a seguinte comparação: Na RNN Simples, tinhamos que $h_t$ era dado por
+$
+  h_t = tanh(W mat(h_(t-1);x_t))
+$
+enquanto na LSTM, temos que:
+$
+  mat(f;i;s;tilde(c)_t) = mat(sigma;sigma;sigma;tanh) W^T mat(h_(t-1);x_t)   \
+
+  W = mat(W_f;W_i;W_s;W_c)   \
+
+  c_t = f dot.o c_(t-1) + i dot.o tilde(c)_t   \
+
+  h_t = s dot.o tanh(c_t)
+$
+
+Mas o que são esse bando de informação extra que a gente adicionou? Para controlar aquilo que entra, permanece e sai do estado celular $c_t$, a LSTM utiliza de três portas (*gates*), onde cada porta consiste em uma camada de *rede neural* com *ativação sigmoide* combinada com uma operação de multiplicação ponto a ponto (*pointwise*). As portas e componentes são dividos em
+
+- *Porta de esquecimento (forget gate $f_t$)*: Quantidade de informação a apagar do estado celular passado
+- *Porta do input ($i_t$)*: Quantidade de nova informação a adicionar ao estado celular
+
 
 #pagebreak()
 
