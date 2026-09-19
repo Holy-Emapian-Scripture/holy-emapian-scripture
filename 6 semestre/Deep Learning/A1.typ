@@ -905,10 +905,112 @@ $
 
 Mas o que são esse bando de informação extra que a gente adicionou? Para controlar aquilo que entra, permanece e sai do estado celular $c_t$, a LSTM utiliza de três portas (*gates*), onde cada porta consiste em uma camada de *rede neural* com *ativação sigmoide* combinada com uma operação de multiplicação ponto a ponto (*pointwise*). As portas e componentes são dividos em
 
-- *Porta de esquecimento (forget gate $f_t$)*: Quantidade de informação a apagar do estado celular passado
+- *Porta de esquecimento ($f_t$)*: Quantidade de informação a apagar do estado celular passado
 - *Porta do input ($i_t$)*: Quantidade de nova informação a adicionar ao estado celular
 - *Valores candidatos ($tilde(c)_t$)*: Valores propostos para serem adicionados ao estado celular
 - *Porta de saída/seleção ($s_t$)*: Quantidade do estado celular a revelar como saída no estado oculto
+
+Vamos passar com um pouco mais de calma em cada passo dessa nova arquitetura. Para cada passo temporal $t$ a célula recebe a entrada atual $x_t$, o estado oculto anterior $h_(t-1)$ e o estado celular anterior $c_(t-1)$.
+
+Primeiro decidimos quais informações do estado celular anterior $c_(t-1)$ devem ser esquecidas. Isso é feito através da porta de esquecimento $f_t$, que utiliza uma função sigmoide para gerar valores entre 0 e 1, onde 0 significa "esquecer completamente" e 1 significa "manter completamente". A equação para a porta de esquecimento é:
+$
+  f_t = sigma(W_f mat(h_(t-1); x_t) + b_f)
+$
+
+Então a célula calcula um novo vetor de valores candidatos $tilde(c)_t$, que contém informações que poderiam ser adicionadas ao estado celular. Isso é feito através de uma função tangente hiperbólica, que gera valores entre -1 e 1. A equação para os valores candidatos é:
+$
+  tilde(c)_t = tanh(W_c mat(h_(t-1); x_t) + b_c)
+$
+
+Então calculamos a porta de input $i_t$, que decide quais valores candidatos devem ser adicionados ao estado celular. Isso é feito através de uma função sigmoide, que gera valores entre 0 e 1. A equação para a porta de input é:
+$
+  i_t = sigma(W_i mat(h_(t-1); x_t) + b_i)
+$
+
+O novo estado celular $c_t$ é calculado combinando a memória antiga filtrada com os novos candidatos filtrados ($dot.o$ representa a multiplicação elemento a elemento):
+$
+  c_t = f_t dot.o c_(t-1) + i_t dot.o tilde(c)_t
+$
+
+Depois o portão de seleção vai decidir quais partes do estado celular $c_t$ devem ser reveladas como saída. A porta de seleção $s_t$ é calculada usando uma função sigmoide:
+$
+  s_t = sigma(W_s mat(h_(t-1); x_t) + b_s)
+$
+
+então aplicamos $s_t$ ao estado celular $c_t$ passando por uma função tangente hiperbólica para gerar o novo estado oculto $h_t$:
+$
+  h_t = s_t dot.o tanh(c_t)
+$
+
+=== A inovação no Fluxo do Gradiente
+A grande inovação matemática da LSTM que resolve o problema do Gradiente Desaparecido (Vanishing Gradient) está na forma como o erro retropropaga pelo Cell State ($c_t$)
+
+Na Simple RNN, a derivada do estado em relação ao estado anterior exigia a multiplicação matricial pela transposta dos pesos
+$
+  (partial h_t) / (partial h_(t-1)) prop W_(h h)^T
+$
+
+Ao retropropagar por $T - k$ passos, acumulava-se a multiplicação de matrizes $(W_(h h)^T)^(T-k)$, fazendo o gradiente desaparecer quando o maior valor singular era menor que $1$
+
+Na LSTM, a atualização do estado celular é aditiva: $c_t = f_t dot.o c_(t-1) + i_t dot.o tilde(c)_t$. Ao calcular a derivada parcial do estado celular atual $c_t$ diretamente em relação ao estado celular anterior $c_(t-1)$
+$
+  (partial c_t) / (partial c_(t-1)) = f_t
+$
+
+Ao retropropagar o erro ao longo de uma sequência de $T$ até um instante distante $k$ exclusivamente pela linha do Cell State, o gradiente resultante é dado por
+$
+  (partial c_T) / (partial c_k) = product_(j=k+1)^T f_j
+$
+
+Sem Multiplicação Matricial Sucessiva: A retropropagação de $c_(t-1)$ para $c_t$ envolve apenas multiplicação elemento a elemento pelo vetor do forget gate $f_t$, eliminando a multiplicação matricial por $W^T$. Como cada passo temporal possui um vetor $f_j$ diferente (calculado dinamicamente com base em $h_(j-1)$ e $x_j$), a rede pode aprender a definir $f_j approx 1.0$ para manter memórias importantes intactas. Desta forma, a informação e o gradiente conseguem fluir sem desaparecer ao longo da "esteira" do Cell State por centenas de passos temporais.
+
+== Gated Recurrent Unit (GRU)
+A *Gated Recurrent Unit (GRU)* foi introduzida em $2014$ por Cho et al. como uma variação simplificada da LSTM, também projetada para evitar o problema das dependências de longo prazo (*long-term dependency problem*).
+
+Por ter uma estrutura mais enxuta, a GRU possui menos parâmetros e é ligeiramente mais rápida de treinar do que a LSTM
+
+#figure(
+  image("images/A1/gru.png", width: 70%),
+  caption: "Arquitetura de uma célula GRU"
+)
+
+As principais diferenças que ocorrem são a *eliminação do cell state* $c_t$ e utilizamos apenas o estado oculto $h_t$ e agora são $2$ poras em vez de $3$
+- *Porta de atualização ($z_t$)*: Determina quanto do novo estado oculto deve ser atualizado com base no novo input
+- *Porta de redefinição ($r_t$)*: Controla quanto do estado oculto anterior deve ser usado para calcular o novo estado oculto
+
+Para cada passo temporal $t$, dada a entrada $x_t$e o estado oculto anterior $h_(t-1)$, os gates são calculados como:
+$
+  z_t = sigma(W_z mat(h_(t-1); x_t) + b_z)   \
+  r_t = sigma(W_r mat(h_(t-1); x_t) + b_r)
+$
+
+Depois o estado oculto candidato é calculado utilizando a porta de redefinição $r_t$ para controlar a influência do estado oculto anterior:
+$
+  tilde(h)_t = tanh(W_h mat(r_t dot.o h_(t-1); x_t) + b_h)
+$
+
+E finalmente atualizamos e geramos o novo estado oculto $h_t$ utilizando a porta de atualização $z_t$:
+$
+  h_t = z_t dot.o h_(t-1) + (1 - z_t) dot.o tilde(h)_t
+$
+
+== Aplicando CNN
+Podemos querer utilizar as RNNs para processar sequências de imagens, como em vídeos, onde cada frame é uma imagem. Nesse caso, podemos combinar Convolutional Neural Networks (CNNs) com RNNs para extrair características espaciais das imagens e capturar dependências temporais entre os frames.
+
+#figure(
+  image("images/A1/cnn-rnn.png", width: 100%),
+  caption: "Arquitetura de uma CNN seguida por uma RNN"
+)
+
+O encoder fica responsável por extrair características espaciais de cada frame do vídeo, enquanto a RNN processa essas características ao longo do tempo para capturar a dinâmica temporal do vídeo, já o decoder fica responsável por gerar a saída final. Essa abordagem é útil em tarefas como reconhecimento de ações em vídeos, onde é importante entender tanto o conteúdo visual de cada frame quanto a sequência de eventos ao longo do tempo.
+
+== RNN Bidirecionais
+As RNN padrão utilizam apenas informação do *passado* para prever a saída atual, mas em muitas tarefas, a informação do *futuro* também pode ser útil. As RNN bidirecionais (BRNNs) processam a sequência de dados em duas direções: uma RNN lê a sequência do início ao fim (forward), enquanto outra RNN lê a sequência do fim ao início (backward). As saídas das duas RNNs são então combinadas para formar a saída final.
+
+#figure(
+  image("images/A1/rnn-bidirectional.png", width: 100%),
+  caption: "Arquitetura de uma RNN Bidirecional"
+)
 
 
 #pagebreak()
