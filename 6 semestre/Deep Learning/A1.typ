@@ -907,6 +907,8 @@ Mas o que são esse bando de informação extra que a gente adicionou? Para cont
 
 - *Porta de esquecimento (forget gate $f_t$)*: Quantidade de informação a apagar do estado celular passado
 - *Porta do input ($i_t$)*: Quantidade de nova informação a adicionar ao estado celular
+- *Valores candidatos ($tilde(c)_t$)*: Valores propostos para serem adicionados ao estado celular
+- *Porta de saída/seleção ($s_t$)*: Quantidade do estado celular a revelar como saída no estado oculto
 
 
 #pagebreak()
