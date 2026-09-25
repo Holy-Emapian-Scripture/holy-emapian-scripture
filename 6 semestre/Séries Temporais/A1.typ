@@ -673,6 +673,20 @@ se o valor amostral $hat(rho) (h)$ ultrapassar um desses limites, então rejeita
 
 #pagebreak()
 
+No capítulo passado, nós definimos ACF, e como podemos utilizar ela para *diagnosticar* a presença de memória linear em uma série temporal. No entanto, não falamos sobre como utilizar essa informação para *prever* o futuro da série temporal
+
+== Previsão via Autocorrelação $rho(h)$ e Esperança Condicional
+
+#definition()[
+  Seja ${Y_t}$ um processo estocástico *gaussiano* e *fracamente estacionário*, com média constante $EE[Y_t] = mu$, variância $VV[Y_t] = gamma_Y (0) = sigma^2$ e função de autocorrelação $rho_Y (h) = gamma_Y (h) \/ sigma^2$. O vetor formado pela observação presente $Y_n$ e pela observação futura $Y_(n + h)$ segue uma distribuição normal bivariada
+  $
+    mat(Y_n;Y_(n+h)) ~ cal(N)(mat(mu;mu), mat(sigma^2, rho_Y (h) sigma^2; rho_Y (h) sigma^2, sigma^2))
+  $
+]
+
+#theorem("Condicional Gaussiana")[
+  Sob a hipótesse de gaussianidade 
+]
 
 
 #pagebreak()
