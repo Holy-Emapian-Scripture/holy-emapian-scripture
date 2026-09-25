@@ -434,7 +434,7 @@ Quando o conjunto não é compacto, o teorema de Weierstrass não garante a exis
 #definition("Coercividade")[
   Seja $f: RR^n -> RR$. A função é dita coerciva se:
   $
-    lim_(||x||->infinity) = infinity
+    lim_(||x||->infinity) f(x) = infinity
   $
 ]
 

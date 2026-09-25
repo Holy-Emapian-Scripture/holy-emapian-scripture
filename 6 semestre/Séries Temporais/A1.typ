@@ -685,7 +685,289 @@ No capítulo passado, nós definimos ACF, e como podemos utilizar ela para *diag
 ]
 
 #theorem("Condicional Gaussiana")[
-  Sob a hipótesse de gaussianidade 
+  Sob a hipótesse de gaussianidade no processo ${Y_t}$, a distribuição condicional de $Y_(n+h)$ dado $Y_n=y_n$ é dada por
+  $
+    Y_(n+h) | Y_n = y_n ~ cal(N)(mu + rho_Y (h) (y_n - mu), sigma^2 (1 - rho_Y (h)^2))
+  $
+]
+#proof[
+  Defina a variável transformada $Z=(Y_(n+h) - mu) - beta (Y_n - mu)$ onde $beta$ é uma constante real *a ser determinada* para que $Z$ e $Y_n$ sejam *não-correlacionadas*. Pela definição de covariância, temos que
+  $
+    "Cov"(Z, Y_n) &= "Cov"((Y_(n+h) - mu) - beta (Y_n - mu), Y_n)   \
+    
+    &= "Cov"(Y_(n+h), Y_n) - beta VV[Y_n]   \
+    
+    &= gamma_Y (h) - beta sigma^2
+  $
+
+  para anular a covariância, escolhemos $beta = (gamma_Y (h)) / sigma^2 = rho_Y (h)$, assim:
+  $
+    Z = (Y_(n+h) - mu) - rho_Y (h) (Y_n - mu)
+  $
+
+  como $(Z, Y_n)$ é um vetor normal, temos que o fato de $"Cov"(Z, Y_n) = 0$ implica que $Z$ e $Y_n$ são independentes. Utilizando desse fato, sabemos que
+  $
+    EE[Z | Y_n] = EE[Z] &= 0    \
+    EE[Y_(n+h) - mu - rho_Y (h) (Y_n - mu) | Y_n] &= 0   \
+    EE[Y_(n+h) | Y_n] - mu - rho_Y (h) (Y_n - mu) &= 0   \
+    EE[Y_(n+h) | Y_n] &= mu + rho_Y (h) (Y_n - mu)
+  $
+
+  Já para a variância condional, temos que
+  $
+    VV[Y_(n+h) | Y_n] &= VV[Z + rho_Y (h) (Y_n - mu) | Y_n]
+  $
+  como é DADO $Y_n$, o termo $rho_Y (h) (Y_n - mu)$ é uma constante, logo
+  $
+    VV[Y_(n+h) | Y_n] &= VV[Z | Y_n] = VV[Z]   \
+    &= VV[Y_(n+h) - mu - rho_Y (h) (Y_n - mu)]   \
+    &= VV[Y_(n+h)] + rho_Y (h)^2 VV[Y_n] - 2 rho_Y (h) "Cov"(Y_(n+h), Y_n)   \
+    &= sigma^2 + rho_Y (h)^2 sigma^2 - 2 rho_Y (h) gamma_Y (h)   \
+    &= sigma^2 + rho_Y (h)^2 sigma^2 - 2 rho_Y (h)^2 sigma^2   \
+    &= sigma^2 (1 - rho_Y (h)^2)
+  $
+]
+
+Dado esse contexto, podemos agora mostrar que para *qualquer preditor $g(Y_n)$*, *o preditor que minimiza o erro quadrático médio* é a *média condicional $EE[Y_(n+h) | Y_n]$*.
+
+#theorem("Preditor que minimiza o MSE")[
+  Para qualquer preditor $g(Y_n)$ baseado na observação $Y_n$, o preditor que minimiza o erro quadrático médio ($EE[(Y_(n+h) - g(Y_n))^2]$) é dado por
+  $
+    g(Y_n) = EE[Y_(n+h) | Y_n]
+  $
+]
+#proof[
+  Definindo o erro quadrático médio como $f$, temos:
+  $
+    f(y_n) &= EE[(Y_(n+h) - g(Y_n))^2|Y_n=y_n]
+  $
+  
+  expandindo o termo quadrático, derivando e igualando a $0$, vamos ter que
+  $
+    g(Y_n) = EE[Y_(n+h) | Y_n=y_n]
+  $
+]
+
+Sob a hipótese de gaussianidade, o preditor linear possui forma fechada de:
+$
+  EE[Y_(n+h) | Y_n] = mu + rho_Y (h) (Y_n - mu)
+$
+no entanto, sem essa premissa, o preditor linear pode não possuir forma fechada, mas ainda assim é o preditor que minimiza o erro quadrático médio. E como podemos perceber, a função $rho_Y (h)$ determina diretamente a qualidade e o formato da predição
+
+- $rho_Y (h) -> 0$: A previsão tende a $mu$ e o erro quadrático médio tende a $sigma^2$, ou seja, a informação presente $Y_n$ não traz informação útil sobre o futuro $Y_(n+h)$. O melhor preditor reduz-se à média incondicional e a incerteza atinge a variância total da série
+- $rho_Y (h) -> 1$: A previsão tende a $Y_n$ e o erro quadrático médio tende a $0$, ou seja, a informação presente $Y_n$ praticamente carrega toda a informação sobre o futuro $Y_(n+h)$. O melhor preditor aproxima-se do valor atual e a incerteza diminui significativamente
+
+Mas como eu comentei antes, esse é o melhor preditor *sobre gaussianiedade*, mas não necessariamente o melhor preditor *sobre a série temporal*. No entanto, é possível chegar que, definindo um preditor genérico $l(Y_n) = alpha Y_n + beta$, o melhor $l$ é exatamente o preditor linear que obtivemos na prova anterior
+
+#theorem("Preditor Linear que minimiza o MSE")[
+  Para qualquer preditor linear $l(Y_n) = alpha Y_n + beta$ baseado na observação $Y_n$, o preditor que minimiza o erro quadrático médio ($EE[(Y_(n+h) - l(Y_n))^2]$) é dado por
+  $
+    l(Y_n) = mu + rho_Y (h) (Y_n - mu)
+  $
+  e apresenta um erro quadrático médio de $sigma^2 (1 - rho_Y (h)^2)$
+]
+#proof[
+  Queremos determinar os escalares $alpha$ e $beta$ que minimizam o erro quadrático médio
+  $
+    f(alpha, beta) = EE[(Y_(n+h) - (alpha Y_n + beta))^2]
+  $
+  expandindo o termo quadrático (e lembrando que $EE[Y_n] = EE[Y_(n+h)] = mu$), temos que
+  $
+    f(alpha, beta) = EE[Y_(n+h)^2] - 2 alpha EE[Y_n Y_(n+h)] - 2 beta mu + alpha^2 EE[Y_n^2] + 2 alpha beta mu + beta^2
+  $
+  e derivando com relação à $alpha$
+  $
+    (partial f)/(partial alpha) = -2 EE[Y_n Y_(n+h)] + 2 alpha EE[Y_n^2] + 2 beta mu = 0
+  $
+  igualando a $0$ e isolando $alpha$, temos que
+  $
+    alpha = (EE[Y_n Y_(n+h)] - beta mu) / EE[Y_n^2]
+  $
+  agora derivando com relação à $beta$
+  $
+    (partial f)/(partial beta) = -2 mu + 2 alpha mu + 2 beta = 0
+  $
+  igualando a $0$ e isolando $beta$, temos que
+  $
+    beta = mu(1 - alpha)
+  $
+  substituindo $beta$ na equação de $alpha$, temos que
+  $
+    alpha = (EE[Y_n Y_(n+h)] - mu^2(1 - alpha)) / EE[Y_n^2]   \
+    alpha EE[Y_n^2] = EE[Y_n Y_(n+h)] - mu^2 + alpha mu^2   \
+    alpha (EE[Y_n^2] - mu^2) = EE[Y_n Y_(n+h)] - mu^2   \
+    alpha VV[Y_n] = "Cov"(Y_n, Y_(n+h))   \
+    alpha = rho_Y (h)
+  $
+  
+  Voltando na equação de $beta$, temos que
+  $
+    beta = mu(1 - alpha) = mu(1 - rho_Y (h))
+  $
+
+  agora substituindo na equação do preditor linear, temos que
+  $
+    l(Y_n) &= alpha Y_n + beta   \
+    &= rho_Y (h) Y_n + mu(1 - rho_Y (h))   \
+    &= mu + rho_Y (h) (Y_n - mu)
+  $
+
+  Substituindo isso tudo que encontramos na fórmula do erro quadrático médio, vamos acabar chegando que
+  $
+    f(alpha, beta) = sigma^2 (1 - rho_Y (h)^2)
+  $
+]
+
+== Métodos simples de previsão (baseline)
+Um baseline estabelece o padrão mínimo. Se um modelo sofisticado perde para aa média ou para o último valor (previsores que vimos anteriormente), o sofisticado ainda não justificou sua complexidade. O baseline estabelece um *limite inferior* para o desempenho de modelos mais complexos.
+
+#definition[
+  $hat(Y)_(T+h|T)$ representa a previsão do valor futuro $Y_(T+h)$ dado os dados observados até o instante $T$.
+]
+
+=== Método da média
+#figure(
+  image("images/A1/mean.png"),
+  caption: "Ilustração do método da média"
+)
+
+Prevemos todas as observações futuras pela média aritmética histórica da amostra:
+$
+  hat(Y)_(T+h|T) = overline(Y)_T = (1)/(T) sum_(t=1)^T Y_t wide forall h >= 1
+$
+
+o método da média assume que o processo é *fracamente estacionário*, sem tendência e sem sazonalidade
+$
+  Y_t = mu + epsilon_t, wide epsilon_t ~ "WN"(0, sigma^2)
+$
+
+Corresponde ao caso em que a autocorrelação $rho(h) approx 0$ para todo $h >= 1$ (série sem memória linear)
+
+Conseguimos notar também que esse estimador é *não-viesado* e *consistente*, ou seja, a previsão converge para o valor real da série temporal à medida que o tamanho da amostra aumenta (pois a média amostral converge para a média populacional).
+
+#theorem("Variância do Erro de Previsão")[
+  $
+    VV[epsilon_(T+h)] = sigma^2(1 + 1/T) wide forall h >= 1
+  $
+  Ou seja, a precisão converge para a variância do ruído branco à medida que o tamanho da amostra aumenta ($T -> infinity$)
+]
+#proof[
+  $
+    VV[Y_(T+h) - overline(Y)_T] &= VV[epsilon_(T+h)]   \
+    
+    &= VV[Y_(T+h)] + VV[overline(Y)_T] - 2 "Cov"(Y_(T+h), overline(Y)_T)   \
+    &= sigma^2 + sigma^2/T    \
+    &= sigma^2(1 + 1/T)
+  $
+  Aqui a covariância entre $Y_(T+h)$ e $overline(Y)_T$ é nula, pois o ruído branco não possui memória linear, logo não há correlação entre o valor futuro e a média amostral (além de que o valor futuro está fora dos valores utilizados para a estimação da média amostral, pois $h>=1$)
+]
+
+=== Método ingênuo (Passeio aleatório sem tendência)
+#figure(
+  image("images/A1/naive.png"),
+  caption: "Ilustração do método ingênuo"
+)
+
+A previsão para qualquer horizonte futuro é o *último valor observado* da série
+$
+  hat(Y)_(T+h|T) = Y_T wide forall h >= 1
+$
+
+ele assume que o processo segue um *Passeio Aleatório* puro (não-estacionário na variância)
+$
+  Y_t = Y_(t-1) + epsilon_t, wide epsilon_t ~ "IID"(0, sigma^2)
+$
+
+É o caso limite em que a autocorrelação de curto prazo é extremamente alta ($rho(h) approx 1$ para $h$ pequeno). O estado atual $Y_T$ é a melhor estimativa para a posição futura
+
+O erro de previsão acaba por ser a soma dos ruídos futuros acumulados
+$
+  Y_(T+h) - hat(Y)_(T+h|T) = Y_(T+h) - Y_T = epsilon_(T+1) + ... + epsilon_(T+h)
+$
+
+É fácil ver que o estimador é não-viezado (basta tirar a esperança do erro de previsão). E podemos mostrar que a variância da previsão aumenta linearmente com o horizonte de previsão, pois a variância do erro de previsão é a soma das variâncias dos ruídos futuros
+
+#theorem("Variância do Erro de Previsão")[
+  $
+    VV[Y_(T+h) - hat(Y)_(T+h|T)] = h sigma^2 wide forall h >= 1
+  $
+  Ou seja, a precisão da previsão diminui linearmente com o horizonte de previsão, pois a variância do erro de previsão aumenta linearmente com o horizonte de previsão
+]
+#proof[
+  $
+    VV[Y_(T+h) - hat(Y)_(T+h|T)] &= VV[epsilon_(T+1) + ... + epsilon_(T+h)]   \
+    &= VV[epsilon_(T+1)] + ... + VV[epsilon_(T+h)]   \
+    &= h sigma^2
+  $
+]
+
+=== Método ingênuo sazonal
+#figure(
+  image("images/A1/seasonal_naive.png"),
+  caption: "Ilustração do método ingênuo sazonal"
+)
+
+Para séries com sazonalidade de período $m$ (ex: $m = 12$ para dados mensais, $m = 4$ para dados trimestrais), a previsão copia o valor observado na mesma fase do ciclo sazonal anterior
+$
+  hat(Y)_(T+h|T) = Y_(T+h-m(K+1)) wide forall h >= 1 wide K = floor((h-1)/m)
+$
+
+Esse método assume um modelo de *Passeio Aleatório Sazonal* sem tendência:
+$
+  Y_t = Y_(t-m) + epsilon_t, wide epsilon_t ~ "IID"(0, sigma^2)
+$
+
+Já aqui, conseguimos mostrar que a incerteza cresce não com $h$, mas a *cada ciclo sazonal completo*
+$
+  VV[epsilon_(T+h)] = (K+1) sigma^2
+$
+
+#theorem("Variância do Erro de Previsão")[
+  $
+    VV[Y_(T+h) - hat(Y)_(T+h|T)] = (K+1) sigma^2 wide forall h >= 1 wide K = floor((h-1)/m)
+  $
+  Ou seja, a precisão da previsão diminui a cada ciclo sazonal completo, pois a variância do erro de previsão aumenta a cada ciclo sazonal completo
+]
+#proof[
+  $
+    VV[Y_(T+h) - hat(Y)_(T+h|T)] &= VV[epsilon_(T+h-m(K+1)) + ... + epsilon_(T+h)]   \
+    &= VV[epsilon_(T+h-m(K+1))] + ... + VV[epsilon_(T+h)]   \
+    &= (K+1) sigma^2
+  $
+]
+
+=== Método do desvio (drift)
+#figure(
+  image("images/A1/drift.png"),
+  caption: "Ilustração do método do desvio"
+)
+
+Extrapola uma tendência linear permitindo que a previsão mude ao longo do tempo a uma taxa constante $C$
+$
+  hat(Y)_(T+h|T) = Y_T + h C wide forall h >= 1
+$
+
+onde a taxa de variação (inclinação do desvio) é estimada pela variação média por período entre a primeira e a última observação da amostra
+$
+  C = (Y_T - Y_1) / (T - 1)
+$
+
+na intuição geométrica, estamos traçando uma linha reta entre o primeiro e o último ponto da série temporal, e projetando essa linha para frente. Esse método assume um modelo de *Passeio Aleatório com Drift (Tendência)*:
+$
+  Y_t = C + Y_(t-1) + epsilon_t, wide epsilon_t ~ "WN"(0, sigma^2)
+$
+
+== Valores Ajustados V.S Previsões
+É importante notar que os métodos de previsão que vimos até agora são *modelos de previsão*, e não *modelos de ajuste*. Ou seja, eles não são modelos que descrevem a série temporal, mas sim modelos que descrevem como prever o futuro da série temporal. 
+
+Para um modelo de séries temporais ajustado sobre um conjunto de dados históricos $cal(F)_T = {Y_1,...,Y_T}$ temos as seguintes definições
+
+#definition("Valores ajustados")[
+  O valor ajustado $hat(Y)_(t|t-1)$ é a estimativa *dentro da amostra* de um passo à frente ($h=1$) para instantes passados $t = 2, 3, ..., T$. Representa o valor que o modelo teria previsto para o instante $t$ conhecendo as observações anteriores $Y_1, Y_2, ..., Y_(t-1)$ e com parâmetros globais *já calibrados na amostra completa*
+]
+
+#definition("Previsão (Forecast)")[
+  A previsão $hat(Y)_(T+h|T)$ são as projeções *fora da amostra* de $h$ passos à frente ($h>=1$) para instantes futuros $t = T+1, T+2, ...$. Utilizam estritamente a informação disponível até o instante de corte $T$, sem qualquer acesso visual ou numérico às realizações reais de $Y_(T+h)$
 ]
 
 
