@@ -1020,3 +1020,118 @@ As RNN padrão utilizam apenas informação do *passado* para prever a saída at
 ]
 
 #pagebreak()
+
+== Motivação e Modelos Generativos
+Essa categoria de modelos de machine learning tem crescido exponencialmente nos últimos tempos, tanto pela ideia intuitiva e elegante para o treinamento da rede quanto pelos seus resultados impressionantes em diversas tarefas, como geração de imagens, tradução de estilo, super-resolução e síntese de dados.
+
+Antes de realmente entrarmos no conceito de GANs, precisamos entender o que ela propõe a ser, um *modelo generativo*. Modelos generativos são modelos de aprendizado de máquina que aprendem a gerar novos dados a partir de uma *distribuição* de dados existente. Eles são capazes de capturar a complexidade e a diversidade dos dados de treinamento, permitindo a criação de novas amostras que se assemelham aos dados originais.
+
+#figure(
+  image("images/A1/generative-models.png", width: 100%),
+  caption: "Ilustração de como os modelos generativos funcionam"
+)
+
+No entanto, existe um obstáculo oculto nessa abordagem. A distribuição dos dados visuais da vida real residem em um espaço de *alta dimensionalidade* e *muito complexo*, por conta disso, é extremamente difícil modelar essa distribuição de forma explícita. Por exemplo, a distribuição de imagens de rostos humanos é altamente complexa, com variações em expressões faciais, iluminação, ângulos de visão e características individuais. Modelar essa distribuição explicitamente exigiria uma quantidade enorme de dados e uma modelagem matemática sofisticada.
+
+É daí que entram as GANs, que propõem uma abordagem alternativa. Em vez de aproximar ou estimar $p_"data"$ diretamente, elas aprendem uma *função de transformação*, onde a partir de uma distribuição simples e *conhecida*, usamos essa função de transformação para gerar as amostras que se assemelham com as da vida real.
+
+É importante destacar que essa função de transformação *não é trivial*, por isso que utilizamos *redes profundas* para as aproximar
+
+
+== Introdução às GANs
+Goodfellow em seu artigo de 2014 propôs uma abordagem inovadora para o treinamento de modelos generativos, onde duas redes neurais competem entre si em um jogo de soma zero.
+
+=== Two-player Game
+A primeira rede, chamada de *gerador* (Generator), é responsável por gerar novas amostras a partir de uma distribuição simples, enquanto a segunda rede, chamada de *discriminador* (Discriminator), é responsável por distinguir entre amostras reais e amostras geradas pelo gerador.
+
+#figure(
+  image("images/A1/gan-architecture.png", width: 100%),
+  caption: "Arquitetura de uma GAN"
+)
+
+O objetivo do gerador é gerar imagens cada vez melhores, de forma que ele consiga *enganar* o discriminador, enquanto o objetivo do discriminador é se tornar cada vez melhor em distinguir entre imagens reais e imagens geradas. Esse processo de competição leva a um aprimoramento contínuo de ambas as redes, resultando em um gerador capaz de produzir amostras altamente realistas. Mas vale ressaltar que o objetivo principal é a melhora da rede *geradora*, mas nós aprimoramos a discriminadora também com a intenção de que ela se torne mais forte e assim force a geradora a melhorar ainda mais.
+
+=== Função objetivo
+Seja $omega$ e $phi$ o conjunto de parâmetros da rede geradora e discriminadora respectivamente, a função objetivo da GAN é dada por um jogo de soma zero (minmax game) que escrevemos da seguinte forma
+$
+  min_(omega) max_(phi) [EE_(x ~ p_"data") [log D_(phi)(x)] + EE_(z ~ p_"synthetic") [log(1 - D_(phi)(G_(omega)(z)))]]
+$
+
+onde $D_(phi)$ é a função de decisão do discriminador e $G_(omega)$ é a função de geração do gerador. Essa função é basicamente uma *entropia cruzada* entre a classificação do discriminador sobre os dados reais e a sua classificação sobre os dados *gerados pelo gerador*, com a diferença que na entropia cruzada clássica, o sinal negativo é aplicado pra que a otimização vire uma *minimzação* (por isso que na fórmula do GAN a equação está *maximizando* o discriminador e *minimizando* o gerador). Por consequência, nós minimizamos com relação ao gerador para que ele consiga *atrapalhar* a percepção do discriminador.
+
+Na prática computacional, as esperanças são aproximadas pelas médias amostrais dentro de cada mini batch.
+
+=== Dinâmica de Treinamento e Ajuste do Gradiente
+O treinamento fica alterando entre atualizar os pesos do *discriminador* e os pesos do *gerador*
+
+#pseudocode-list(
+  booktabs: true,
+  title: "Treinamento de uma GAN",
+)[
+  + *function* trainGan($G$, $D$) {
+    + *for each* _epoch_ {
+      + *for* $k$ *do* {
+        + ${z^((1)),...,z^((m))} ~ p_"z"$
+        + ${x^((1)),...,x^((m))} ~ p_"data"$
+        + $nabla_phi 1/m sum^m_(i=1)[log D_phi (x^((i))) + log (1 - D_phi (G(z^((i))))) ]$
+      + }
+      + ${z^((1)),...,z^((m))} ~ p_"z"$
+      + $nabla_omega 1/m sum^m_(i=1)[log (1 - D_phi (G(z^((i))))) ]$
+    + }
+  + }
+]
+
+No entanto, essa abordagem precisa de um pequeno ajuste. Acontece que a função $log(1-D(G(z)))$ possui uma região extremamente plana quando $D(G(z)) approx 0$, o que faz com que, no inicio do treinamento, o aprendizado seja *extremamente lento*.
+
+Para contornar esse problema, em vez de minimizarmos $log(1-D(G(z)))$, maximizamos $log(D(G(z)))$ com Gradient Ascent, fornecendo gradientes fortes para o gerador no início do treinamento, quando ele ainda está produzindo amostras de baixa qualidade.
+
+=== Evolução Arquitetural e uso em inferência
+*DCGANs (Deep Convolutional GANs)*@dcgans, são uma evolução das GANs originais que substituem as camadas totalmente conectadas por arquiteturas convolucionais profundas. No gerador, utilizam-se convoluções transpostas (*deconvs*) onde a maioria das camadas é estabilizada por *Batch Normalization*
+
+#figure(
+  image("images/A1/dcgan-architecture.png", width: 100%),
+  caption: "Arquitetura de uma DCGAN"
+)
+
+Uma vez concluído o treinamento, o discriminador é descartado e utiliza-se exclusivamente a rede geradora para sintetizar novas amostras a partir de vetores de ruído $z$
+
+
+== GANs Condicionais (cGANs)
+
+=== Motivação
+
+=== Formulação da Loss
+
+=== Arquitetura Clássica
+
+=== Aplicações das cGANs
+
+
+
+== CycleGANs (Tradução sem dados pareados)
+
+=== Motivação
+
+=== Conceito
+
+=== Estrutura de pareamento duplo
+
+=== Função objetivo completa
+
+=== Aplicações de CycleGANs
+
+
+
+== Outras aplicações de GANs
+
+=== Síntexe de texto para imagem
+
+=== Super-resolução de imagens
+
+=== The GAN Zoo
+
+
+
+#pagebreak()
+
+#bibliography("works.bib", title: "Referências")
