@@ -1097,26 +1097,106 @@ Uma vez concluído o treinamento, o discriminador é descartado e utiliza-se exc
 
 
 == GANs Condicionais (cGANs)
+No modelo original de GANs, o gerador produz amostras a partir de um vetor de ruído estocástico $z ~ p(z)$. Isso remove o possível controle que poderíamos ter sobre o gerador, por exemplo, se eu quiser especificar que quero gerar uma imagem de um gato, eu não consigo, eu tenho que torcer para que o gerador me dê a imagem de um gato quando eu solicitar.
 
-=== Motivação
+#figure(
+  image("images/A1/cgan-architecture.png", width: 100%),
+  caption: "Arquitetura de uma cGAN"
+)
+
+Para solucionar esse problema, foi introduzido o conceito de *GANs condicionais (cGANs)*@cgans, onde tanto o gerador quanto o discriminador recebem informações adicionais $y$ como entrada. Essa informação adicional pode ser qualquer coisa, como rótulos de classe, atributos ou até mesmo outra imagem.
 
 === Formulação da Loss
+Vamos definir nossa condição genérica como $c$, que pode ser um vetor de rótulos, uma imagem ou qualquer outra informação relevante. A função objetivo da cGAN é então modificada para incorporar essa condição:
+$
+  min_(omega) max_(phi) [EE_((c,y) ~ p_"data") [log D_(phi)(c,y)] + EE_(z ~ p_"synthetic") [log(1 - D_(phi)(c, G_(omega)(c,z)))]]
+$
+
+assim, o discriminador sabe a informação de qual classe a imagem pertence, e o gerador sabe qual classe ele deve gerar. Isso permite que o gerador produza amostras específicas de acordo com a condição fornecida.
 
 === Arquitetura Clássica
+#figure(
+  image("images/A1/pix2pix-architecture.png", width: 50%),
+  caption: "Arquitetura de uma cGAN clássica (pix2pix)"
+)
+
+A arquitetura clássica de cGANs é a _pix2pix_, que é uma abordagem de tradução de imagem para imagem supervisionada. Nessa arquitetura, o gerador é tipicamente uma rede do tipo *U-Net*, que possui conexões de *skip* entre as camadas correspondentes do encoder e do decoder, permitindo que informações de baixo nível sejam preservadas durante a geração da imagem.
 
 === Aplicações das cGANs
+==== Sensoriamento remoto
+*Problema*: Imagens ópticas de satélite sofrem com cobertura de nuvens, enquanto dados de Radar de Abertura Sintética (SAR) penetram nuvens e funcionam em qualquer condição meteorológica, mas são difíceis de interpretar
 
+*Solução*: O modelo recebe a imagem SAR como condição $x$ e sintetiza a imagem óptica correspondente $G(x)$, permitindo a observação contínua da superfície terrestre mesmo com interferência atmosférica
+
+#figure(
+  image("images/A1/cgan-sar.png", width: 55%),
+  caption: "Exemplo de aplicação de cGANs em sensoriamento remoto"
+)
+
+==== Síntese Controlável de Lesões de Pele para Aumento de Dados
+*Desafio*: Falta de dados rotulados e diversidade de formas/texturas para treinar redes de segmentação de câncer de pele.
+
+*Abordagem cGAN*: Utiliza *Curvas de Bézier aleatórias* para gerar a máscara de formato da lesão. Tira retalhos de textura (*texture patches*) para áreas de pele e de lesão. A cGAN sintetiza dermoscopias altamente realistas combinando a forma geométrica e as texturas[4].
+
+*Resultado*: O uso dessas amostras sintéticas no treinamento elevou significativamente a acurácia de modelos como U-Net, PSPNet e DeepLabv3
+
+#figure(
+  image("images/A1/cgan-skin-lesion.png", width: 55%),
+  caption: "Exemplo de aplicação de cGANs em síntese controlável de lesões de pele"
+)
 
 
 == CycleGANs (Tradução sem dados pareados)
+Agora o objetivo é traduzir imagens de um domínio para outro sem a necessidade de dados pareados, ou seja, se eu recebo uma imagem de, por exemplo, um cavalo, eu quero que a rede substitua ele por uma zebra, mantendo posição, aparência, iluminação etc. No entanto, nós *não temos* acesso à imagens pareadas, como uma foto idêntica com cavalos e zebras na mesma pose, etc. Então como fazer a GAN aprender?
 
-=== Motivação
-
-=== Conceito
+É aí que entram as CyclGANs@cyclegans para aprender essa dependência e mapeamento sem utilização de pares
 
 === Estrutura de pareamento duplo
+Para realizar a tradução bidirecional entre dois domínios $X$ e $Y$, a arquitetura utiliza *dois geradores* e *dois discriminadores*
+
+- Gerador $G: X -> Y$ e Discriminador $D_Y$: O gerador $G$ aprende a mapear imagens do domínio $X$ para o domínio $Y$, enquanto o discriminador $D_Y$ avalia a autenticidade das imagens geradas em relação às imagens reais do domínio $Y$ (por exemplo, se $X$ são imagens de cavalos e $Y$ são imagens de zebras, $G$ tenta gerar imagens de zebras a partir das de cavalos e $D_Y$ avalia se as imagens geradas são realmente imagens *reais* de *zebras*).
+
+- Gerador $F: Y -> X$ e Discriminador $D_X$: O gerador $F$ aprende a mapear imagens do domínio $Y$ para o domínio $X$, enquanto o discriminador $D_X$ avalia a autenticidade das imagens geradas em relação às imagens reais do domínio $X$ (por exemplo, se $Y$ são imagens de zebras e $X$ são imagens de cavalos, $F$ tenta gerar imagens de cavalos a partir das de zebras e $D_X$ avalia se as imagens geradas são realmente imagens *reais* de *cavalos*).
 
 === Função objetivo completa
+Nas cycle GANs, existem algumas losses que vão se agregar, cada uma garantindo que o modelo se comporte como esperamos, vamos passar por cada uma, mostrar o que elas fazem e como se comportam e mostrar a função objetivo final
+
+Mas antes, por que a loss original não garante o comportamento esperado? Acontece que utilizando a perca original, ela sozinha não conseguiria garantir a *correspondência*, ou seja, se eu passar uma imagem de cavalo, ele poderia retornar *qualquer imagem de zebra aleatória*, e não a zebra correspondente àquela pose, iluminação, etc. Então precisamos de uma *loss adicional* que garanta essa correspondência.
+
+==== Adversarial Loss
+Introduzimos a loss clássica, só que aplicada para *cada uma das transformações*
+
+$
+  lambda_("GAN") (G, D_Y, X, Y) = EE_(y ~ p_"data"(y)) [log D_Y (y)] + EE_(x ~ p_"data" (x)) [log(1 - D_Y (G(x)))]
+$
+$
+  lambda_("GAN") (F, D_X, Y, X) = EE_(x ~ p_"data"(x)) [log D_X (x)] + EE_(y ~ p_"data" (y)) [log(1 - D_X (F(y)))]
+$
+
+==== Consistency Loss
+Outra característica que as cycle GANs devem manter é a consistência, ou seja, se meu modelo gerou uma imagem de cavalo $x$, então o gerador $F$ deve ser capaz de pegar a imagem gerada e transformar de volta na imagem original de cavalo $x$.
+$
+  G(F(y)) approx y, forall y in Y   \
+  F(G(x)) approx x, forall x in X
+$
+
+#figure(
+  image("images/A1/cycle-consistency.png", width: 80%),
+  caption: "Exemplo de consistência em CycleGANs"
+)
+
+A loss de consistência é dada por
+$
+  lambda_"iden" (G,F) = EE_(y ~ p_"data" (y)) [||G(F(y)) - y||_1] + EE_(x ~ p_"data" (x)) [||F(G(x)) - x||_1]
+$
+
+==== Identity Loss
+Também queremos que a rede seja capaz de manter a identidade da imagem, ou seja, se eu passar uma imagem de zebra para o gerador de zebra, ele deve retornar a mesma imagem de zebra, e não uma imagem de cavalo ou uma imagem de zebra alterada. Isso é importante para garantir que a rede não altere imagens que já estão no domínio desejado.
+
+A loss de identidade é dada por
+$
+  lambda_"iden" (G,F) = EE_(y ~ p_"data" (y)) [||G(y) - y||_1] + EE_(x ~ p_"data" (x)) [||F(x) - x||_1]
+$
 
 === Aplicações de CycleGANs
 
