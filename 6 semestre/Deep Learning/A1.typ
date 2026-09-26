@@ -1167,10 +1167,10 @@ Mas antes, por que a loss original não garante o comportamento esperado? Aconte
 Introduzimos a loss clássica, só que aplicada para *cada uma das transformações*
 
 $
-  lambda_("GAN") (G, D_Y, X, Y) = EE_(y ~ p_"data"(y)) [log D_Y (y)] + EE_(x ~ p_"data" (x)) [log(1 - D_Y (G(x)))]
+  cal(L)_("GAN") (G, D_Y, X, Y) = EE_(y ~ p_"data"(y)) [log D_Y (y)] + EE_(x ~ p_"data" (x)) [log(1 - D_Y (G(x)))]
 $
 $
-  lambda_("GAN") (F, D_X, Y, X) = EE_(x ~ p_"data"(x)) [log D_X (x)] + EE_(y ~ p_"data" (y)) [log(1 - D_X (F(y)))]
+  cal(L)_("GAN") (F, D_X, Y, X) = EE_(x ~ p_"data"(x)) [log D_X (x)] + EE_(y ~ p_"data" (y)) [log(1 - D_X (F(y)))]
 $
 
 ==== Consistency Loss
@@ -1187,7 +1187,7 @@ $
 
 A loss de consistência é dada por
 $
-  lambda_"iden" (G,F) = EE_(y ~ p_"data" (y)) [||G(F(y)) - y||_1] + EE_(x ~ p_"data" (x)) [||F(G(x)) - x||_1]
+  cal(L)_("consistency") (G, F) = EE_(y ~ p_"data" (y)) [||G(F(y)) - y||_1] + EE_(x ~ p_"data" (x)) [||F(G(x)) - x||_1]
 $
 
 ==== Identity Loss
@@ -1195,21 +1195,68 @@ Também queremos que a rede seja capaz de manter a identidade da imagem, ou seja
 
 A loss de identidade é dada por
 $
-  lambda_"iden" (G,F) = EE_(y ~ p_"data" (y)) [||G(y) - y||_1] + EE_(x ~ p_"data" (x)) [||F(x) - x||_1]
+  cal(L)_("identity") (G,F) = EE_(y ~ p_"data" (y)) [||G(y) - y||_1] + EE_(x ~ p_"data" (x)) [||F(x) - x||_1]
 $
 
-=== Aplicações de CycleGANs
+==== Loss completa
+Reunindo todas as loss juntas, vamos obter a função objetivo completa das CycleGANs, que é uma combinação ponderada das três losses mencionadas:
+$
+  cal(L)(G, F, D_X, D_Y) =& lambda_"GAN" [cal(L)_("GAN") (G, D_Y, X, Y) + cal(L)_("GAN") (F, D_X, Y, X)]    \
+  &+ lambda_"consistency" cal(L)_("consistency") (G, F)   \
+  &+ lambda_"identity" cal(L)_("identity") (G,F)
+$
 
+Dessa forma, podemos reescrever o aprendizado da nossa cycle GAN como
+$
+  min_(G,F) max_(D_X,D_Y) cal(L)(G, F, D_X, D_Y)
+$
+
+=== Arquitetura de CycleGANs
+Já vimos os tipos de redes dentro dos CycleGANs, mas como elas se comportam internamente? Na verdade utilizamos de algumas arquiteturas clássicas de redes neurais, como *ResNet* e *U-Net*, para construir os geradores e discriminadores. A escolha da arquitetura depende do tipo de dados e da complexidade da tarefa de tradução de imagem.
+
+#figure(
+  image("images/A1/generator-cyclegan-architecture.png", width: 100%),
+  caption: "Arquitetura dos geradores em CycleGANs"
+)
+
+Dentro do bloco de transformação, é utilizado um bloco de *ResNet* com *residual blocks*, que permite que a rede aprenda funções de mapeamento mais complexas e facilita o treinamento de redes profundas.
+
+#figure(
+  image("images/A1/transformation-block-cyclegan-architecture.png", width: 50%),
+  caption: "Arquitetura dos discriminadores em CycleGANs"
+)
+
+Já no discriminador, se é utilizada uma estrutura de *PatchGAN*, que classifica cada *patch* da imagem como real ou falsa, em vez de classificar a imagem inteira. Isso permite que o discriminador se concentre em detalhes locais e aprenda a distinguir melhor entre imagens reais e geradas.
+
+#figure(
+  image("images/A1/discriminator-cyclegan-architecture.png", width: 100%),
+  caption: "Arquitetura dos discriminadores em CycleGANs"
+)
 
 
 == Outras aplicações de GANs
 
 === Síntexe de texto para imagem
 
+#figure(
+  image("images/A1/gans-text2image-1.png", width: 100%),
+  caption: "Exemplo de aplicação de GANs em síntese de texto para imagem"
+)
+
+#figure(
+  image("images/A1/gans-text2image-2.png", width: 60%),
+  caption: "Exemplo de aplicação de GANs em síntese de texto para imagem"
+)
+
 === Super-resolução de imagens
 
-=== The GAN Zoo
+#figure(
+  image("images/A1/gans-super-resolution.png", width: 100%),
+  caption: "Exemplo de aplicação de GANs em super-resolução de imagens"
+)
 
+=== The GAN Zoo
+Uma coletânia de modelos GAN com diferentes propósitos, para acessar, clique #link("https://github.com/hindupuravinash/the-gan-zoo/tree/8849647498ae0906f653be2515393eacc7c3234c", "aqui")
 
 
 #pagebreak()
