@@ -99,6 +99,284 @@
 #pagebreak()
 
 #align(center + horizon)[
+  = Convolutional Neural Networks (CNNs)
+]
+
+#pagebreak()
+
+Nessa seção de CNNs, não vamos nos repetir com informações já apresentadas no resumo da #link("https://github.com/Holy-Emapian-Scripture/holy-emapian-scripture/blob/main/5%20semestre/Machine%20Learning/A2.pdf", "A2 de Machine Learning"), aqui nós vamos trazer apenas os tópicos que não foram diretamente discutidos no resumo anterior
+
+== Limitações, Mecânica de Profundidade e Visualização
+Em redes neurais MLP tradicionais, a arquitetura exige que *cada neurônio esteja ligado com todos os neurônios da última camada*. Quando aplicamos essa abordagem diretamente com imagens, o número de parâmetros cresce descontroladamente, tornando a rede inviável para imagens de alta resolução.
+
+#example[
+  Considere uma imagem colorida de tamanho $200 times 200$ (baixa resolução). Como a imagem é colorida, o total de valores na entrada será de $200 times 200 times 3 = 120000$. Se a primeira camada oculta do MLP tiver $100.000$ neurônios, a quantidade de pesos $W$ a serem estimados apenas nessa camada será de $approx 120000 times 100000 = 1.2 times 10^10$
+]
+
+Essa quantidade astronômica de parâmetros torna a utilização de MLPs para imagens computacionalmente inviável e aumenta drasticamente o risco de overfitting. Além do problema computacional, o MLP apresenta limitações estruturais para dados visuais.
+
+Os neurônios em uma mesma camada oculta de um MLP são *totalmente independentes* e não compartilham conexões nem pesos. Em dados visuais isso é ruim porque a informação de um pixel é altamente dependente da informação dos pixels vizinhos, e o MLP não consegue capturar essa relação de proximidade espacial.
+
+Para alimentar um MLP, a imagem precisa ser "achatada" (*flattened*) em um vetor unidimensional. Essa operação destrói a topologia bidimensional e a relação de proximidade espacial entre pixels vizinhos.
+
+Se o objeto de interesse (ex: um gato) se mover alguns pixels para o lado, o MLP trata a imagem como um conjunto de dados completamente novo, pois não há reaproveitamento das feições aprendidas em diferentes regiões da imagem
+
+Para contornar essas limitações, surgiram as Redes Neurais Convolucionais (CNNs), que utilizam operações de convolução para extrair características locais da imagem, preservando a topologia espacial e permitindo o reaproveitamento de feições aprendidas em diferentes regiões da imagem. Não vamos nos aprofundar novamente em como a convolução funciona e como ela é aplicada em imagens, pois isso já foi discutido no resumo da #link("https://github.com/Holy-Emapian-Scripture/holy-emapian-scripture/blob/main/5%20semestre/Machine%20Learning/A2.pdf", "A2 de Machine Learning"), no entanto, vamos reforçar algumas regras aqui, principalmente de dimensão
+
+#figure(
+  image("images/A1/convolution-dimensions.png", width: 70%),
+  caption: "Dimensões de entrada e saída de uma convolução"
+)
+
+Em redes convolucionais, a imagem (vetor de entrada) é tridimensional com tamanho $H times W times D$ onde $H$ é a altura da imagem, $W$ a largura e $D$ a profundidade/quantidade de canais (imagens coloridas RGB tem $3$ canais). Já o filtro, em uma convolução padrão, tem tamanho $h times w times D$, onde $w$ é a largura do filtro e $h$ é a altura do filtro, e $D$ tem que ser exatamente do mesmo tamanho que a profundidade da imagem, pois o filtro precisa percorrer todos os canais da imagem. A saída da convolução é uma feature map de tamanho $H' times W' times 1$, onde $H'$ e $W'$ são definidos pelas fórmulas
+$
+  H' = H - h + 1    \
+  W' = W - w + 1
+$
+
+e para que a rede aprenda diversos padrões diferentes dentro da imagem, aplicamos $n$ filtros diferentes, resultando em uma feature map de tamanho $H' times W' times n$, onde $n$ é a quantidade de filtros aplicados na convolução.
+
+Outro conceito imporante é *por que* as convoluções $1 times 1$ existem! Elas são muito aplicadas em diferentes arquiteturas, e seu propósito principal é a *redução de dimensionalidade dos canais*
+
+#example[
+  Dado tudo que foi discutido, imagine que após diversos filtros, você chegou em um feature map de tamanho $256 times 256 times 128$, então anteriormente você aplicou $128$ filtros diferentes. Se você aplicar uma convolução $1 times 1$ com $64$ filtros, a nova dimensão seria
+  $
+    H' = 256 - 1 + 1 = 256    \
+    W' = 256 - 1 + 1 = 256    \
+  $
+  No entanto, como você tem $64$ filtros, a nova profundidade será $64$, resultando em uma feature map de tamanho $256 times 256 times 64$, ou seja, você reduziu a quantidade de canais pela metade, mantendo a dimensão espacial da imagem. Isso é muito útil para reduzir o número de parâmetros e operações na rede, além de permitir que a rede aprenda representações mais compactas das features.
+]
+
+A arquitetura das CNNs possui forte inspiração na organização do sistema visual biológico dos mamíferos, baseando-se nos experimentos de Hubel & Wiesel sobre o córtex visual. No cérebro, a luz captada pelos olhos passa pelo Núcleo Geniculado Lateral (*Lateral Geniculate Nucleus*) e atinge o Córtex Visual. Os neurônios individuais não reagem a toda a cena visual de uma vez, mas apenas a pequenas regiões específicas do campo visual, chamadas de *campos receptivos*. Na CNN, a janela do filtro convolucional atua exatamente como esse campo receptivo local, processando pequenas regiões espaciais e compartilhando os mesmos pesos ao longo de toda a imagem.
+
+Quando visualizamos os mapas de ativação ao longo das camadas de uma CNN profunda (como a VGG-16), percebe-se um processo de abstração hierárquica clara:
+
+#align(center)[
+_Imagem Bruta_ $->$ _Camadas Iniciais_ $->$ _Camadas Intermediárias_ $->$ _Camadas Profundas_ $->$ _Classificador Linear_
+]
+
+
++ *Camadas Iniciais (ex: VGG-16 Conv1\_1)*:
+  - Reagindo a campos receptivos muito pequenos, estas camadas aprendem detectores de feições simples de baixo nível (*low-level features*).
+  - *O que detectam*: Bordas orientadas em ângulos específicos (verticais, horizontais, diagonais), contraste de cor e gradientes simples[8].
+2. *Camadas Intermediárias (ex: VGG-16 Conv3\_2)*:
+  - Ao agrupar as saídas das camadas anteriores, os campos receptivos efetivos aumentam.
+  - *O que detectam*: Combinações de bordas formando feições de nível médio (*mid-level features*), como texturas complexas, padrões geométricos, cantos, curvas, olhos ou rodas.
+3. *Camadas Profundas (ex: VGG-16 Conv5\_3)*:
+  - Cobrem grandes regiões da imagem original[8].
+  - *O que detectam*: Representações complexas de alto nível (*high-level features*), reconhecendo partes inteiras de objetos, rostos de animais, veículos ou estruturas completas[8].
+4. *Separabilidade Linear*:
+  - O papel das camadas convolucionais é transformar o espaço de pixels altamente complexo e não-linear em uma representação de feições de alto nível onde as classes se tornam *linearmente separáveis* para a camada classificadora final (Dense / Softmax)
+
+#figure(
+  image("images/A1/cnn-activation-maps.png", width: 100%),
+  caption: "Mapas de ativação ao longo das camadas de uma CNN profunda (VGG-16) mostrando a hierarquia de abstração"
+)
+
+
+== Histórico e Arquiteturas Clássicas e Modernas
+
+=== LeNet-5
+Rede convolucional pioneira de $7$ camadas desenvolvida por Yann LeCun@lenet5 para o reconhecimento de dígitos manuscritos (MNIST) em cheques bancários digitizados em escala de cinza de $32 times 32$ pixels. Antes da LeNet, a visão computacional dependia do extrator de características manual + classificador estatístico. A LeNet provou que a própria rede aprende a melhor representação interna a partir dos pixels brutos.
+
+#figure(
+  image("images/A1/lenet5.png", width: 90%),
+  caption: "Arquitetura da LeNet-5"
+)
+
+$
+  &"INPUT"(32 times 32) -> "CONV1"(5 times 5) -> "AVGPOOL2"(2 times 2)  \
+  
+  -> &"CONV3"(5 times 5) -> "AVGPOOL4"(2 times 2) -> "CONV5" -> "FC6" -> "FC7"
+$
+
+Ativações: Utilizava a função tangente hiperbólica ($tanh$) tanto nas camadas convolucionais quanto nas totalmente conectadas
+
+=== AlexNet
+Foi desenvolvida para uma competição de classificação de imagens, a chamada ImageNet, um conjunto de dados com mais de $14$ milhões de imagens com labels manualmente anotados com $1000$ classes
+
+A AlexNet foi uma inovação no ramo de redes de classificação de imagem, ela introduziu diversas inovações de arquitetura e apresentou excelentes resultados.
+
+#figure(
+  image("images/A1/alexnet.png", width: 100%),
+  caption: "Arquitetura da AlexNet"
+)
+
+A AlexNet substituiu a função de ativação $tanh$ pela função $"ReLU"$, fazendo com que a velocidade de convergência acelerasse em até $6$ vezes. Também foi introduzido uma regularização por *dropout* antes das últimas duas camadas *totalmente conectadas*, desligando aleatoriamente alguns neurônios da rede para *conter o overfitting*. Outra modificação importante foi introduzida por conta da primeira mudança. Quando utilizamos a função $"ReLU"(x) = max(0, x)$, ela *não tem limite superior*, o que poderia causar que alguns neurônios estourassem e desbalanceassem o treinamento, para mitigar esse problema, foi introduzido também a camada de *"normalização local"* (*local response normalization*), que normaliza a ativação de cada neurônio em relação aos seus vizinhos, evitando que alguns neurônios dominem a ativação da rede.
+$
+  b_(x,y)^((i)) = a_(x,y)^((i)) / (k + alpha sum_(j=max(0, i - n/2))^(min(N-1, i + n/2)) (a_(x,y)^((j)))^2)^beta
+$
+
+=== ZFNet
+Manteve a estrutura da AlexNet, mas otimizou hiperparâmetros vitais ao observar as primeiras camadas via deconvoluções: reduziu o tamanho do filtro da Conv1 de $11 times 11$ para $7 times 7$ e diminuiu o stride de $4$ para $2$
+
+Introduziu normalização de contraste local reforçando a competição entre feições adjacentes, que estão no mesmo local espacial mas em feature maps diferentes
+$
+  b_(x,y)^((i)) = sqrt(1/(d times n) sum_(k=1)^d sum_(j=i-n/2)^(i+n/2) (a_(x,y)^((j)) - overline(a))^2))    \
+
+  overline(a) = 1/(d times n) sum_(k=1)^d sum_(j=i-n/2)^(i+n/2) a_(x,y)^((j))
+$
+
+=== VGGNet
+Uniformizou a arquitetura, utilizando apenas filtros $3 times 3$ e *max pooling* $2 times 2$ com stride $2$, aumentando a profundidade da rede para até $16$ (VGG-16) e $19$ (VGG-19) camadas.
+
+#figure(
+  image("images/A1/vggnet.png", width: 100%),
+  caption: "Arquitetura da VGGNet"
+)
+
+Duas camadas convolucionais $3 times 3$ empilhadas possuem o mesmo campo receptivo efetivo de um filtro $5 times 5$, mas com menos parâmetros e com o dobro de não-linearidades (duas ReLUs em vez de uma). Apesar de ser computacionalmente pesada, continua sendo amplamente utilizada como extrator de características (backbone) para tarefas como detecção de objetos e segmentação 
+
+== Redes Multiescala e Fatoradas
+Até o momento, as modificações nas arquiteturas eram tamanho de filtro, colocar mais e mais filtros, mais e mais camadas, etc. Agora, as arquiteturas implementaram diferentes truques para melhorar a acurácia dos modelos e sua velocidade
+
+=== GoogLeNet (Inception v1)
+
+#figure(
+  image("images/A1/googlenet.png", width: 100%),
+  caption: "Arquitetura da GoogLeNet (Inception v1)"
+)
+
+Para capturar objetos que apresentam diferentes tamanho e escalas nas imagens, a GoogLeNet introduziu o módulo *Inception*, que combina múltiplos filtros de diferentes tamanhos ($1 times 1$, $3 times 3$ e $5 times 5$) em paralelo, permitindo que a rede aprenda representações multiescala, de forma que os feature maps gerados são *concatenados* no final.
+
+#figure(
+  image("images/A1/inception-module.png", width: 100%),
+  caption: "Módulo Inception da GoogLeNet"
+)
+
+Também de é utilizado de convoluções $1 times 1$ antes de cada convolução maior para reduzir a dimensionalidade dos canais, diminuindo o número de parâmetros e operações da rede.
+
+Além disso, a GoogLeNet introduziu *auxiliary classifiers*, que são classificadores adicionais inseridos em camadas intermediárias da rede, ajudando a melhorar o fluxo de gradiente durante o treinamento. Esses classificadores ajudam a previnir o problema do *vanishing gradient* já que a rede costuma ser bem grande. Vale ressaltar que esses classificadores auxiliares são descartados durante a inferência, sendo utilizados apenas durante o treinamento.
+
+=== Inception v2
+Construido em cima do Inception v1, mirando melhorar a acurácia e velocidade de treinamento
+
+Utiliza do princípio da *associatividade* de *convoluções*
+$
+  f * h * g = f * (h * g) = (f * h) * g
+$
+
+Vamos supor que temos uma imagem $X$ com dimensões $200 times 200$ e um filtro $3 times 3$. Ao aplicar nosso filtro, utilizando a fórmula que vimos no começo do capítulo, vamos ter um feature map de tamanho
+$
+  H' = 200 - 3 + 1 = 198    \
+  W' = 200 - 3 + 1 = 198
+$
+
+Aplicando novamente outro filtro $3 times 3$, teremos um feature map de tamanho
+$
+  H'' = 198 - 3 + 1 = 196    \
+  W'' = 198 - 3 + 1 = 196
+$
+
+Agora vamos pegar nossa imagem original e aplicar um filtro de tamanho $5 times 5$.
+$
+  H''' = 200 - 5 + 1 = 196    \
+  W''' = 200 - 5 + 1 = 196
+$
+
+Perceba que aplicando dois filtros $3 times 3$ em sequência, obtemos o mesmo resultado que aplicando um filtro $5 times 5$, ou seja, a convolução é associativa. Não só isso, em um filtro $5 times 5$, temos um total de $25$ parâmetros, enquanto com dois $3 times 3$, temos um total de $18$ parâmetros, ou seja, conseguimos reduzir a quantidade de parâmetros e operações da rede, mantendo o mesmo campo receptivo efetivo.
+
+#figure(
+  image("images/A1/inception-v2-block-a.png", width: 60%),
+  caption: "Bloco Inception v2 A"
+)
+
+#figure(
+  image("images/A1/inception-v2-block-b.png", width: 60%),
+  caption: "Bloco Inception v2 B"
+)
+
+Seguindo essa mesma ideia, todas as convoluções $n times n$ são substituídas por duas convoluções $n times 1$ e $1 times n$, reduzindo ainda mais a quantidade de parâmetros e operações da rede, mantendo o mesmo campo receptivo efetivo.
+
+=== Inception v3
+Incorporou todas as características das versões anteriores adicionando otimizador *RMSProp*, fatoração de convoluções $7 times 7$, aplicação de *batch normalization* dentro dos classificadores auxiliares e *label smoothing* para corrigir o problema dos rótulos rígidos. Em um problema de classificação com $K$ classes, a representação tradicional do rótulo real $y$ é um vetor one-hot:
+$
+  y_k &= 1 "para a classe correta"   \
+  y_k &= 0 "para todas as outras classes"
+$
+
+e a rede neural gera vetores de saída *não normalizados*, os famosos *logits* ($z_1,...,z_K$) e calcula as probabilidades de saídas através da função softmax
+$
+  p_k = exp(z_k) / (sum_(j=1)^K exp(z_j))
+$
+
+e a função de perca clássica é dada por
+$
+  cal(L) = - sum_(k=1)^K y_k log(p_k)
+$
+
+Para que a rede atinja seu mínimo teórico ($cal(L) -> 0$), ela precisa com que $p_k -> 1$ para a classe correta, mas analisando a equação da softmax, a única forma matemática de fazer com que $p_k = 1$ é quanto
+$
+  z_"correta" - z_k -> infinity wide forall k != "correta"
+$
+
+A rede é forçada a aumentar descontroladamente o valor dos seus pesos $W$ para produzir logits gigantescos. Isso gera superconfiança (overconfidence), reduz a capacidade de generalização e deixa o modelo vulnerável a ruídos nas imagens
+
+Para solucionar esse problema, eles introduziram o *label smoothing*, que suaviza os rótulos reais, transformando o vetor one-hot $y$ em uma distribuição suavizada $y_"ls"$
+$
+  y_"ls" = (1 - alpha) y + alpha / K
+$
+
+Ao aplicar a entropia cruzada sobre o rótulo suavizado, ela se expande em
+$
+  cal(L)_"LS" &= - sum_(k=1)^K ((1 - alpha)y_k + alpha / K) log(p_k)    \
+  
+  &= (1 - alpha) underbrace(cal(L), "Entropia Cruzada Original") + alpha underbrace(D_"KL" (u || p), "Distância KL com distribuição uniforme") + C
+$
+
+onde $U$ é a distribuição uniforme sobre todas as classes. Com o Label Smoothing, a rede não precisa mais buscar $z_"correta" - z_k -> infinity$. O ponto de mínimo da perda agora ocorre quando a diferença entre os logits atinge um valor finito e limitado:
+$
+  z_"correta" - z_k = log(((1 - alpha)K) / alpha + 1) wide forall k != "correta"
+$
+
+=== Inception v4
+
+#figure(
+  image("images/A1/inception-v4.png", width: 60%),
+  caption: "Arquitetura da Inception v4"
+)<inception-initial-stem>
+
+
+Modificou e padronizou a camada inicial de entrada (*stem*) da rede antes dos blocos Inception e tornou todos os módulos Inception A, B e C mais simples, uniformes e simétricos. Como podemos ver na @inception-initial-stem, o tronco inicial de entrada da imagem antes dos blocos Inception é totalmente modificado
+
+== Soluções para Redes Extremamente Profundas (ResNet e DenseNet)
+Algo que nós iniciantes em machine learning podemos pensar é que, quanto mais profunda a rede, melhor ela vai ser, já que ela vai conseguir representar funções mais complexas. Isso tem um certo fundo de verdade, mas não é bem assim, redes muito profundas podem apresentar problemas de *vanishing gradient*, onde o gradiente fica cada vez mais pequeno e as camadas iniciais não aprendem *quase nada*, fazendo com que a quantidade de dados necessária para o treinamento dessas redes seja *muito grande*
+
+Pensando nesse problema, alguns truques inteligentes foram implementados para permitir que redes extremamente profundas fossem treinadas de forma eficiente, como a ResNet e a DenseNet
+
+=== ResNet
+
+#figure(
+  image("images/A1/resnet.png", width: 60%),
+  caption: "Arquitetura da ResNet"
+)
+
+A ideia dessa rede é que, em vez de ela aprender uma função direta entre a entrada e a saída $x |-> H(x)$, ela aprende apenas *o que é necessário para sair de $x$ e chegar no meu objetivo*, ou seja $x |-> F(x) + x$. Por exemplo, se eu não quero alterar minha imagem, é muito mais fácil a rede aprender $F(x)=0$ do que $F(x)=x$. Calculando o gradiente, podemos ver que
+$
+  (partial L) / (partial x) = (partial L) / (partial H) (partial H) / (partial x) = (partial L) / (partial H) ((partial F) / (partial x) + 1) = (partial L) / (partial H) (partial F) / (partial x) + (partial L) / (partial H)
+$
+
+ou seja, o gradiente volta para as primeiras camadas intacto.
+
+Cada bloco residual possui duas camadas de convolução $3 times 3$, de forma que o que varia dentro da rede é predominantemente a *quantidade de filtros*. A ResNet permitiu o treinamento de redes extremamente profundas, com até $152$ camadas, sem sofrer com o problema de *vanishing gradient*, e apresentou resultados excelentes em diversas tarefas de visão computacional.
+
+=== DenseNet
+
+#figure(
+  image("images/A1/densenet.png", width: 80%),
+  caption: "Arquitetura da DenseNet"
+)
+
+Leva a conexão de atalho ao extremo. Dentro de um bloco denso, *cada camada recebe os mapas de características de TODAS as camadas anteriores via concatenação*. Também há a introdução das *Camadas de Transição*, que são posicionadas entre blocos densos consecutivos, compostas por uma convolução $1 times 1$ e pooling para alterar a dimensão espacial e comprimir os canais
+
+#figure(
+  image("images/A1/densenet-transition-layer.png", width: 100%),
+  caption: "Camada de Transição da DenseNet"
+)
+
+#pagebreak()
+
+#align(center + horizon)[
   = Segmentação Semântica 
 ]
 
