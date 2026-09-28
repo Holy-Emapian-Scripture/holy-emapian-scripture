@@ -979,6 +979,151 @@ Para um modelo de séries temporais ajustado sobre um conjunto de dados históri
 
 #pagebreak()
 
+== Introdução
+
+No capítulo passado visualizamos formas de previsão utilizando da relação linear que as covariáveis possuem entre si ($rho(h)$). Nesse capítulo, vamos entender que tipo de informações conseguimos retirar a partir dos *resíduos* das previsões
+
+#definition("Resíduo")[
+  Um resíduo $e_t$ é a diferença entre o valor observado $Y_t$ e o valor previsto $hat(Y)_t$
+  $
+    e_t = Y_t - hat(Y)_t
+  $
+]
+
+ele representa justamente aquilo que o modelo não absorveu, ou seja, a parte da série temporal que não foi explicada pelo modelo. Se o modelo for bom, os resíduos devem se comportar como *ruído branco*, ou seja, não devem apresentar autocorrelação significativa, ou seja, eles devem apresentar $EE[e_t] = 0$ e $"Cov"(e_t, e_(t+h)) = 0$, garantindo que não houve memória não explorada.
+
+Algumas outras características, não obrigatórias, mas desejáveis, são variância constante $VV[e_t] = sigma^2$ e distribuição *aproximadamente* normal, essencial para o ajuste de intervalos de confiança e testes de hipóteses.
+
+Nós vamos ver alguns testes de hipótese que trabalham em cima dos resíduos e testam justamente as propriedades que citamos, mas, mesmo que nós já tenhamos visto isso em matérias anteriores, vale ressaltar que o teste *passar*, não significa que o modelo é bom, mas sim que *não há evidência suficiente* para rejeitar a hipótese nula de que os resíduos são ruído branco. Já se o teste *falha*, significa que o modelo é *inadequado* e que há memória não explorada na série temporal, ou seja, há espaço para sua melhoria.
+
+== Testes de Autocorrelação conjunta
+Antes de iniciarmos, os dois testes apresentados serão os _testes portmanteau_, que têm o mesmo objetivo, avaliar a autocorrelação conjunta dos resíduos até um lag limite $l$
+$
+  H_0: rho_e (1) = rho_e (2) = ... = rho_e (l) = 0    \
+  H_1: exists h in {1,...,l} "tal que" rho_e (h) != 0
+$
+ou seja, atuam sobre a hipótese nula que *não existe* autocorrelação significativa nos resíduos até o lag $l$. Antes de partirmos para os testes, vale também ressaltar a definição:
+$
+  r_k = hat(rho)_e (k) = (sum_(t=k+1)^T (e_t - overline(e))(e_(t-k) - overline(e))) / (sum_(t=1)^T (e_t - overline(e))^2) wide forall k in {1,...,l}
+$
+
+Os testes vão se basear no @acf-amostral-dist que nos garante que, sob a hipótese nula de IID, temos que
+$
+  sqrt(T) r_k ->^d cal(N)(0,1) wide forall k in {1,...,l}
+$
+
+=== Teste de Box-Pierce
+Dado o @acf-amostral-dist, então podemos enunciar o seguinte teorema
+
+#theorem("Normalidade Conjunta")[
+  Se ${Y_t} ~ "IID"(0, sigma^2)$ com $EE[Y_t^4]<infinity$, então para qualquer $h>0$ fixo, quando $T->infinity$ e para um $l$ fixo:
+  $
+    sqrt(T) mat(r_1,...,r_l)^T ->^d cal(N)(0, I_l)
+  $
+]
+
+Sabendo que cada um dos lags $r_k$ converge para uma distribuição normal padrão, podemos construir a estatística de teste de Box-Pierce como
+$
+  Q = T sum_(k=1)^l r_k^2
+$
+dessa forma, sob a hipótese nula, temos que
+$
+  Q ->^d chi^2_l
+$
+
+No entanto esse teste possui uma limitação em amostras finitas, pois sob $H_0$, é possível mostrar que a variância de $r_k^2$ para um lag $k$ é
+$
+  EE[T r_k^2] approx (T - k) / (T + 2) < 1
+$
+
+como a estatística de teste $Q$ trata $EE[T r_k^2] = 1$, então $Q$ torna-se sistematicamente *superestimado* em amostras finitas, o que leva a rejeitar a hipótese nula de ruído branco mesmo quando ela é verdadeira (muito conservador). Para contornar esse problema, foi proposto o teste de Ljung-Box
+
+=== Teste de Ljung-Box
+Aplica um fator de reescalonamento que pondera cada lag pelo inverso de sua variância exata sob a hipótese nula, assim, a estatística de teste de Ljung-Box é definida como
+$
+  Q^* = T (T + 2) sum_(k=1)^l (r_k^2 / (T - k))
+$
+assim, a distribuição empírica de $Q^*$ aproxima-se com maior precisão da distribuição teórica Qui-Quadrado em amostras finitas, sendo o teste preferido na prática
+
+=== Distribuição Assintótica e Regra de Decisão Formal
+Sob a hipótese nula $H_0$, ambas as estatísticas seguem assintoticamente uma distribuição Qui-Quadrado:
+$
+  Q ->^a Chi^2(d) wide Q^* ->^a Chi^2(d)
+$
+
+onde $d = l - K$ representa os graus de liberdade, $l$ o número de lags testados. Há uma regra prática de fixar $l = 10$ para dados não-sazonais e $l = 2m$ para dados sazonais. A escolha de $l$ deve ser fixada antes do cálculo do $p$-valor. $K$ é o número de parâmetros estimados no modelo que gerou os resíduos5 (para as baselines simples sem calibração por otimização, $K = 0 => d = l$)
+
+Fixando o nível de significância $alpha$, queremos rejeitar $H_0$ quando a estatística de teste $Q$ ou $Q^*$ forem maiores que um $c_(1-alpha)$, ou seja
+$
+  PP(Q > c_(1-alpha)) = alpha
+$
+
+dado que, sob a hipótese nula, $Q$ e $Q^*$ seguem uma distribuição Qui-Quadrado com $d$ graus de liberdade, então o limite crítico $c_(1-alpha)$ é dado pelo quantil $(1-alpha)$ da distribuição Qui-Quadrado, logo
+$
+  c_(1-alpha) = chi^2_d (1-alpha)
+$
+e o p-valor
+$
+  p = PP(Chi^2_d > Q|H_0 "verdade") = 1 - F_(Chi^2_d)(Q)
+$
+
+#figure(
+  image("images/A1/box_pierce.png", width: 85%),
+  caption: "Ilustração do teste de Box-Pierce"
+)
+
+=== Intervalos de Precisão
+Sob a premissa de que os erros seguem distribuição Normal $e_t ~ cal(N)(0, sigma^2)$ e são não-correlacionados, o intervalo de previsão com $95$% de confiança para o horizonte $h$ é
+$
+  hat(Y)_(T+h|T) plus.minus 1.96 sqrt(VV[Y_(T+h) - hat(Y)_(T+h|T)]) = hat(Y)_(T+h|T) plus.minus 1.96 sqrt(h sigma^2)
+$
+onde o desvio padrão do erro de previsão é estimado como
+$
+  hat(sigma) = sqrt(1/(T - K - M) sum_(t=1)^T hat(e)_t^2)
+$
+
+A acumulação do desvio padrão futuro $hat(sigma)_h$ varia conforme a estrutura de cada baseline
+
+- *Naive*: $hat(sigma)_h = sqrt(h) dot hat(sigma)$
+  #figure(
+    image("images/A1/naive-std.png", width: 85%),
+    caption: "Ilustração do método ingênuo"
+  )
+
+- *Mean*: $hat(sigma)_h = hat(sigma) sqrt(1 + 1/T)$
+  #figure(
+    image("images/A1/mean-std.png", width: 85%),
+    caption: "Ilustração do método da média"
+  )
+
+- *Naive Sazonal*: $hat(sigma)_h = sqrt(K+1) dot hat(sigma)$ com $K = floor((h-1)/m)$
+  #figure(
+    image("images/A1/seasonal-naive-std.png", width: 85%),
+    caption: "Ilustração do método ingênuo sazonal"
+  )
+
+- *Drift*: $hat(sigma)_h = hat(sigma) dot sqrt((h (h+1))/(T-1))$
+  #figure(
+    image("images/A1/drift-std.png", width: 85%),
+    caption: "Ilustração do método do desvio"
+  )
+
+== Intervalo de Previsão por Bootstrap
+Quando a distribuição dos resíduos apresenta assimetria ou caudas pesadas, a premissa de normalidade falha, gerando intervalos paramétricos mal calibrados
+
+Algoritmo de Construção das Trajetórias Simuladas:
+
++ Extrair os resíduos observados de 1 passo ${ hat{e}_1, ..., hat{e}_T }$.
++ Para o horizonte $h = 1$, sortear com reposição um resíduo $e_{T+1}^* in { hat{e}_t }$ e calcular $Y_{T+1}^* = hat(Y)_(T+1 | T) + e_{T+1}^*$.
++ Para os passos subsequentes $h = 2, 3, ...$, sortear com reposição um novo resíduo $e_{T+h}^*$ e atualizar recursivamente $Y_(T+h)^* = hat(Y)_(T+h | T+h-1)^* + e_(T+h)^*$.
++ Repetir esse processo $B$ vezes (gerando $B$ trajetórias futuras) e extrair os quantis empíricos de $2,5$% e $97,5$% para formar o intervalo a $95$% de confiança.
+
+O bootstrap não conserta um modelo com erros autocorrelacionados. Se a ACF dos resíduos indicar memória, a reamostragem i.i.d. mistura choques dependentes como se fossem independentes, destruindo a cobertura nominal do intervalo. O bootstrap relaxa a hipótese de normalidade, mas exige rigorosamente a ausência de autocorrelação.
+
+#figure(
+  image("images/A1/bootstrap.png", width: 100%),
+  caption: "Ilustração do método de bootstrap"
+)
 
 
 #pagebreak()
