@@ -847,7 +847,7 @@ Vale ressaltar que esse *pós-processamento* é feito com *todas* as caixas de a
 
 === Evolução Arquitetural
 ==== YOLOv1 & YOLO9000
-Arquiteturas iniciais, foi na YOLO9000 onde as anchor boxes foram introduzidas e, em vez de prever diretamente prosição e tamanho das caixas, a rede aprende a prever *offsets* para ajustar as *anchor boxes* pré-definidas.
+Arquiteturas iniciais, foi na YOLO9000 onde as anchor boxes foram introduzidas e, em vez de prever diretamente a posição e tamanho das caixas, a rede aprende a prever *offsets* para ajustar as *anchor boxes* pré-definidas.
 
 ==== YOLOv3
 Aumento da profundidade da rede, de $53$ camadas para $106$ camadas. Adição de skip connections para melhorar a propagação do gradiente e permitir que a rede aprenda representações mais complexas. Introdução de *multi-scale predictions*, onde a rede prevê caixas em três escalas diferentes, permitindo detectar objetos de tamanhos variados.
@@ -1138,7 +1138,7 @@ A conclusão que temos dessa análise é que, se o maior valor singular é menor
 === Métodos de mitigação
 Para mitigar o problema de *exploding gradients* e *vanishing gradients*. A principal técnica utilizada é uma variação do BPTT.
 
-*Truncated BPTT*: No BPTT original, para atualizar o pesos, eu faço o forward pass por TODOS os $T$ passos temporais e retropropago por eles novamente. Nessa versão simplificada, existem dois hiperparâmetros $k_1$ e $k_2$. Na parte do forward, a rede propaga por apenas $k_1$ passos temporais, e na parte do backward, a rede retropropaga por apenas $k_2$ passos temporais (obrigatoriamente $k_2 < k_2$). Isso reduz a profundidade da rede e ajuda a evitar o problema de gradientes explosivos ou desvanecentes.
+*Truncated BPTT*: No BPTT original, para atualizar o pesos, eu faço o forward pass por TODOS os $T$ passos temporais e retropropago por eles novamente. Nessa versão simplificada, existem dois hiperparâmetros $k_1$ e $k_2$. Na parte do forward, a rede propaga por apenas $k_1$ passos temporais, e na parte do backward, a rede retropropaga por apenas $k_2$ passos temporais (obrigatoriamente $k_2 < k_1$). Isso reduz a profundidade da rede e ajuda a evitar o problema de gradientes explosivos ou desvanecentes.
 
 #figure(
   image("images/A1/rnn-truncated-bptt.png", width: 70%),
@@ -1252,7 +1252,7 @@ Por ter uma estrutura mais enxuta, a GRU possui menos parâmetros e é ligeirame
   caption: "Arquitetura de uma célula GRU"
 )
 
-As principais diferenças que ocorrem são a *eliminação do cell state* $c_t$ e utilizamos apenas o estado oculto $h_t$ e agora são $2$ poras em vez de $3$
+As principais diferenças que ocorrem são a *eliminação do cell state* $c_t$ e utilizamos apenas o estado oculto $h_t$ e agora são $2$ gates em vez de $3$
 - *Porta de atualização ($z_t$)*: Determina quanto do novo estado oculto deve ser atualizado com base no novo input
 - *Porta de redefinição ($r_t$)*: Controla quanto do estado oculto anterior deve ser usado para calcular o novo estado oculto
 
