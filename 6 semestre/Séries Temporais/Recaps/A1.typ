@@ -1474,6 +1474,113 @@ $
 
 #pagebreak()
 
+== Modelos Autoregressivos ($"AR"$)
+Um $"AR"(p)$ descreve a variável objetivo $y_t$ como uma regressão linear nos próprios lags da série temporal
+$
+  y_t = C + phi_1 y_(t-1) + phi_2 y_(t-2) + ... + phi_p y_(t-p) + epsilon_t wide epsilon_t ~ "WN"(0, sigma^2)
+$
+
+Aqui, como os preditores são os próprios valores anteriores da série, a dependência temporal entra de forma explícita no modelo.
+
+=== Caso especial $"AR"(1)$
+$
+  y_t = C + phi_1 y_(t-1) + epsilon_t wide epsilon_t ~ "WN"(0, sigma^2)
+$
+Este é o modelo mais simples de um processo autoregressivo, onde a variável objetivo depende apenas do seu valor anterior.
+
+- $phi_1 = 0, C = 0$: $y_t = epsilon_t$ (Ruído Branco).
+- $phi_1 = 1, C = 0$: $y_t = y_(t-1) + epsilon_t$ (Passeio Aleatório — não-estacionário, variância cresce linearmente com $t$).
+- $phi_1 = 1, C != 0$: $y_t = C + y_(t-1) + epsilon_t$ (Passeio Aleatório com Deriva/Drift).
+- $phi_1 < 0$: A série oscila em torno da média trocando de sinal a cada passo (um valor alto em $y_{t-1}$ empurra $y_t$ para baixo e vice-versa).
+- Estacionariedade no $"AR"(1)$: Exige $|phi_1| < 1$. Se $|phi_1| > 1$, o processo é explosivo (os valores disparam sem limite).
+
+#figure(
+  image("images/A1/ar1-negative-phi.png", width: 100%),
+  caption: [Exemplo de modelo $"AR"(1)$ com $phi_1 < 0$ mostrando oscilações em torno da média.]
+)
+
+#theorem([ACF teórica do $"AR"(1)$ estacionário])[
+  Se $|phi_1| < 1$, a Função de Autocorrelação (ACF) teórica no lag $h >= 0$ para o modelo $"AR"(1)$ é dada por:
+  $
+    rho(h) = phi_1^h
+  $
+]
+
+Ou seja, a função decai exponencialmente para zero à medida que $h -> infinity$. Se $phi_1 > 0$, o decaimento é monótono positivo. Se $phi_1 < 0$, o decaimento oscila alternando sinais.
+
+=== Estacionariedade do $"AR"(p)$
+Usando o operador de defasagem (Backshift $B$), escrevemos o $"AR"(p)$ como:
+$
+  (1 - phi_1 B - phi_2 B^2 - ... - phi_p B^p) y_t = C + epsilon_t <=> phi(B) y_t = C + epsilon_t
+$
+onde $phi(z) = 1 - phi_1 z - phi_2 z^2 - ... - phi_p z^p$ é o Polinômio Característico (ou de Defasagem) associado ao processo.
+
+#theorem([Condição de Estacionariedade do $"AR"(p)$])[
+  O processo $"AR"(p)$ é (fracamente) estacionário se e somente se todas as $p$ raízes do polinômio característico $phi(z) = 0$ estiverem ESTRITAMENTE FORA do círculo unitário no plano complexo:
+  $
+    phi(z_j) = 0 => |z_j| > 1 wide forall j in {1, ..., p}
+  $
+]
+
+#example([Revisitando $"AR"(1)$])[
+  No caso de $p=1$, temos que o polinômio característico será
+  $
+    phi(z) = 1 - phi_1 z = 0    \
+
+    => z = 1/phi_1
+  $
+  logo, para ser estacionaria fraca, será
+  $
+    |z| > 1/phi_1 <=> |phi_1| < z
+  $
+]
+
+#example([O triângulo de estacionariedade do $"AR"(2)$])[
+  No caso de $p=2$, temos o polinômio
+  $
+    phi(z) = 1 - phi_1 z - phi_2 z^2 = 0
+  $
+  exigir que as raízes estejam fora do círculo unitário reduz isso à um *triângulo de estacionariedade* no plano $(phi_1, phi_2)$, definido pelas seguintes condições:
+  $
+    cases(
+      -1 < phi_2 < 1,
+      phi_1 + phi_2 < 1,
+      phi_2 - phi_1 < 1
+    )
+  $
+
+  #figure(
+    image("images/A1/ar2-stationarity-triangle.png", width: 60%),
+    caption: "Triângulo de estacionariedade do modelo AR(2)"
+  )
+]
+
+== Função de Autocorrelação Parcial (PACF)
+A ACF no lag $h$ mede a correlação entre $y_t$ e $y_(t-h)$, contudo, essa correlação pode ser contaminada por *caminhos indiretos* entre os lags intermediários. Se $y_t$ correlaciona fortemente com $y_(t-1)$ e $y_(t-1)$ com $y_(t-2)$, a ACF mostrará uma correlação espúria em $h = 2$, mesmo que não exista nenhuma ligação direta entre $y_t$ e $y_(t-2)$.
+
+#definition("Função de Autocorrelação Parcial")[
+  A Autocorrelação Parcial no lag $k$, denotada por $alpha_k$ ou $phi_(k k)$, é a correlação entre $y_t$ e $y_(t-k)$ após remover o efeito linear de todos os lags intermediários $y_(t-1), y_(t-2), ..., y_(t-k+1)$ (residualização). Matematicamente, $phi_(k k)$ é o último coeficiente da regressão autorregressiva de ordem $k$:
+  $
+    y_t = phi_(k 1) y_(t-1) + phi_(k 2) y_(t-2) + ... + phi_(k k) y_(t-k) + e_t
+  $
+]
+
+#figure(
+  image("images/A1/pacf.png", width: 100%),
+  caption: "Ilustração da PACF"
+)
+
+Nesse exemplo, a primeira imagem mostra a série temporal modelada com $"AR"(1)$ e $phi = 0.8$. A segunda imagem mostra a ACF, que vai decaindo aos poucos, mostrando que quanto mais distante, menos memória vai permanecendo. Já na PACF, a memória decai no instante $p=1$, justamente por conta que o modelo depende exclusivamente do valor anterior.
+
+#theorem([Corte abrupto da PACF no modelo $"AR"(p)$])[
+  Se $y_t$ segue um processo $"AR"(p)$ verdadeiro, então a PACF satisfaz
+  $
+    phi_(k k) = cases(
+      C > 0 wide &k<=p,
+      0 wide &k>p
+    )
+  $
+]
 
 
 #pagebreak()
@@ -1483,3 +1590,84 @@ $
 ]
 
 #pagebreak()
+
+== Modelo de Média Móvel ($"MA"$)
+Ao contrário do $"AR"(p)$, que usa valores passados de $y$, o modelo $"MA"(q)$ escreve $y_t$ como uma combinação linear dos erros passados $epsilon_t$
+
+#definition("Média Móvel")[
+  Ao modelarmos $y_t = "MA"(q)$, dizemos que:
+  $
+    y_t = C + epsilon_t + theta_1 epsilon_(t-1) + ... + theta_q epsilon_(t-q) wide epsilon_t ~ "WN"(0, sigma^2)
+  $
+]
+
+a propriedade fundamental desse modelo é que ele possui *memória finita*, onde após $q$ períodos, o erro $epsilon_t$ não exerce mais influência
+
+#theorem([Memória do $"MA"(q)$])[
+  A Função de Autocorrelação (ACF) teórica de um modelo $"MA"(q)$ corta exatamente após o lag $q$:
+  $
+    rho(h) = 0 wide forall h > q
+  $
+]
+
+=== $"AR"(1)$ como $"MA"(infinity)$
+Todo processo $"AR"(p)$ estacionário pode ser reescrito como um processo $"MA"(infinity)$ de choques passados acumulados:
+
+#theorem()[
+  Se $|phi_1| < 1$, o modelo $y_t = phi_1 y_(t-1) + epsilon_t$ admite a representação:
+  $
+    y_t = sum_(j=0)^(infinity) phi_1^j epsilon_(t-j)
+  $
+]
+#proof[
+  Substituindo a equação de $y_(t-1)$ recursivamente em $y_t$:
+  $
+    y_t = phi_1(phi_1 y_(t-2) + epsilon_(t-1)) + epsilon_t = epsilon_t + phi_1 epsilon_(t-1) + phi_1^2 y_(t-2)
+  $
+  Após $N$ substituições:
+  $
+    y_t = sum_(j=0)^(N) phi_1^j epsilon_(t-j) + phi_1^(N+1) y_(t-N-1)
+  $
+  Tomando o limite $N -> infinity$, como $|phi_1| < 1$, o termo de memória inicial $phi_1^(N+1) y_(t-N-1) -> 0$, resultando em $y_t = sum_(j=0)^(infinity) phi_1^j epsilon_(t-j)$
+]
+
+=== Invertibilidade e Representação $"AR"(infinity)$ de um $"MA"(q)$
+
+Podemos fazer o caminho inverso: expressar o erro $epsilon_t$ em função dos valores observados passados de $y$.
+
+Para o $"MA"(1)$: $y_t = (1 + theta_1 B)epsilon_t => epsilon_t = (1 + theta_1 B)^(-1) y_t$.
+
+Aplicando a expansão em série de Neumann $(1 + x)^(-1) = sum_(j=0)^infinity (-x)^j$:
+$
+  epsilon_t = sum_(j=0)^infinity (-theta_1)^j B^j y_t = y_t - theta_1 y_(t-1) + theta_1^2 y_(t-2) - theta_1^3 y_(t-3) + ...
+$
+
+Isolando $y_t$ para obter a representação $"AR"(infinity)$:
+$
+  y_t = sum_(j=1)^infinity -(-theta_1)^j y_(t-j) + epsilon_t
+$
+
+#theorem("Invertibilidade")[
+  Para que os pesos da recuperação do erro $(-theta_1)^j$ decaiam para zero à medida que nos afastamos no passado (garantindo que observações recentes pesem mais do que o passado remoto), exige-se a condição de Invertibilidade:
+  $
+    "se" z_j "tal que" theta(z_j) = 0 and theta(z) = 1+theta_1 z + dots + theta_q z^q => |z_j| > 1
+  $
+]
+
+=== Armadilha Matemática da Não-Identificabilidade do $"MA"(1)$ não invertível
+
+#theorem[
+  Os modelos $"MA"(1)$ com parâmetro $theta_1 = theta$ e com parâmetro $theta_1 = 1/theta$ geram exatamente a mesma Função de Autocorrelação (ACF).
+]
+#proof[
+  Seja $rho_theta (1)$ a ACF no lag $1$ do modelo com parâmetro $theta$:
+  $
+    rho_theta (1) = theta/(1 + theta^2)
+  $
+  Substituindo $theta$ por $tilde(theta) = 1/theta}$:
+  $
+   rho_(tilde(theta)) (1) = (1/theta) / (1 + (1/theta)^2) = (1/theta)/((theta^2 + 1)/(theta^2)) = 1/theta dot theta^2/(theta^2 + 1) = (theta)/(1 + theta^2) = rho_theta (1)
+  $
+]
+
+Mas por que isso seria um problema? A amostra de dados não consegue distinguir um $"MA"(1)$ com $theta=0.5$ de um com $theta=1\/2$ pois ambos geram a mesma ACF. Se o modelo tivesse $theta = 2$ (não-invertível), a recuperação do erro usaria pesos $(-2)^j$ que explodem no passado remoto. Para garantir identificabilidade única e uma expansão $"AR"(infinity)$ estável, todos os algoritmos de estimação impõem estritamente a restrição de invertibilidade $|theta| < 1$
