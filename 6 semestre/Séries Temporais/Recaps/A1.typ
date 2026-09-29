@@ -156,7 +156,7 @@ Existem $3$ usos complementares *principais* para séries temporais:
 
 *Diagnosticar*. Avaliar se um modelo (clássico com covariáveis, baseline ingênuo, etc.) ainda deixou memória no tempo nos resíduos. Se os erros em $t$ e em $t+h$ ainda se relacionam de forma sistemática, a estrutura temporal não foi absorvida. Ferramentas formais de identificação (por exemplo ACF e testes como Ljung-Box) entram mais adiante no curso; o ponto conceitual já agora é: diagnóstico temporal é parte do trabalho, não um acessório opcional.
 
-*Prever*. Produzir expectativas para $t+1,...,t+h$ com base no passado disponível até .
+*Prever*. Produzir expectativas para $t+1,...,t+h$ com base no passado disponível até o momento.
 Previsão boa não é apenas “ajustar bem o histórico”; é generalizar para a frente, sob a mesma seta do tempo
 
 
@@ -221,7 +221,7 @@ Em deep learning, expressamos a relação entre $y_t$ e suas covariáveis atrav�
 $
   y_t = f(x_(1 t), ..., x_(p t)) + epsilon_t
 $
-onde $f$ é uma função altamente flexível modelada por uma rede neural, capazes de capturar padrões complexos e não-lineares dos dados
+onde $f$ é uma função altamente flexível modelada por uma rede neural, capaz de capturar padrões complexos e não-lineares dos dados
 
 === Janelas, Batches e Seta do Tempo
 As redes neurais, durante seu treinamento, assumem uma hipótese que muitas vezes esquecemos, mas que são MUITO importantes no nosso contexto. Os dados *podem ser trocados*, eu posso embaralhar minhas amostras *sem perca de informação*. No entanto, o conceito de séries temporais não permite essa premissa, o que podemos fazer para mitigar isso? É aí que entram as *janelas*, onde empacotamos o passado e a dependência temporal entre elas. Por exemplo, imagine que temos a seguinte sequência:
@@ -246,7 +246,7 @@ Além disso, devemos tomar cuidado com *janelas sobrepostas*. Como falei antes, 
 $
   {10, 12, 9, 14, 11, 13, 8, 15, ...}
 $
-as janelas ${10, 12, 9}$ e ${12, 9, 14}$ se sobrepõe, de tal forma que elas NÃO são independentes pois contém a mesma parcela do passado e como ela influencia nos valores internos. O ponto é que, para um SGD, você *pode* embaralhar essas janelas, mas isso não lhe permite tratá-las como *independentes*
+as janelas ${10, 12, 9}$ e ${12, 9, 14}$ se sobrepõem, de tal forma que elas NÃO são independentes pois contém a mesma parcela do passado e como ela influencia nos valores internos. O ponto é que, para um SGD, você *pode* embaralhar essas janelas, mas isso não lhe permite tratá-las como *independentes*
 
 
 #pagebreak()
@@ -274,7 +274,7 @@ onde $T_t$ representa a tendência (nível que a série se move no médio/longo 
 
   Visualmente conseguimos identificar cada um dos componentes da série temporal.
 
-  *$T$*: No médio/longo prazo, a tendência é um crescimento linear, com inclinação positiva. Mesmo que existam flutuações de subida e descida, é perceptível que a cada a no o valor de $y_t$ tende a aumentar.
+  *$T$*: No médio/longo prazo, a tendência é um crescimento linear, com inclinação positiva. Mesmo que existam flutuações de subida e descida, é perceptível que a cada ano o valor de $y_t$ tende a aumentar.
   *$S$*: A série mostra uma sazonalidade de subida no inicio de cada ano e descida no final, mostrando um padrão anual claro (mas de forma que a descida sempre se mantém acima do padrão anterior, gerando a tendência positiva citada anteriormente)
 ]
 
@@ -318,8 +318,6 @@ todo ano (liga a $S_t$) e se a amplitude muda ao longo dos anos. Ainda mistura s
   image("images/A1/tsr-seasonality-boxplot.png"),
   caption: "Exemplo de boxplot por mês"
 )
-
-Em uma frase: overlay = “como o ano se parece”; sem tendência = “a onda no tempo”; boxplot = “estatística por mês”
 
 == Resíduos
 Por definição $R_t = y_t - (T_t + S_t)$, ou seja, o que sobra após extraírmos a tendência e a sazonalidade. Tomemos por exemplo o seguinte gráfico
@@ -528,7 +526,7 @@ No dia a dia, não conseguimos dizer com precisão os parâmetros de uma série 
 
 #theorem("Não-viesamento e Variância da Média Amostral")[
   Se ${Y_t}$ for um processo fracamente estacionário com $EE[Y_t] = mu$ e autocovariância $gamma(h)$ então
-  - $overline(Y)_t$ é um estimador não-viezado de $mu$
+  - $overline(Y)_t$ é um estimador não-viesado de $mu$
   - A variância de $overline(Y)_t$ é dada por
     $
       VV[overline(Y)_t] = 1/T sum_(h=-(T-1))^(T-1) (1 - (|h|)/T) gamma(h)
@@ -599,7 +597,7 @@ No dia a dia, não conseguimos dizer com precisão os parâmetros de uma série 
   $
     a^T hat(Gamma)_k a = a^T (1/T X^T X) a = 1/T (X a)^T (X a) = 1/T ||X a|| >= 0
   $
-  Se dividíssemos por $T-h$ em vez de $T$, esse cancelamento matricial exato falharia, podendo gerar matrizes de autocovariância amostrais não-definidas positivas (com variâncias teóricas negativas para combinações lineares da série) e maior variabilidade estatística em $h$ elevad
+  Se dividíssemos por $T-h$ em vez de $T$, esse cancelamento matricial exato falharia, podendo gerar matrizes de autocovariância amostrais não-definidas positivas (com variâncias teóricas negativas para combinações lineares da série) e maior variabilidade estatística em $h$
 ]
 
 #definition("Autocorrelação Amostral")[
@@ -885,7 +883,7 @@ $
   Y_(T+h) - hat(Y)_(T+h|T) = Y_(T+h) - Y_T = epsilon_(T+1) + ... + epsilon_(T+h)
 $
 
-É fácil ver que o estimador é não-viezado (basta tirar a esperança do erro de previsão). E podemos mostrar que a variância da previsão aumenta linearmente com o horizonte de previsão, pois a variância do erro de previsão é a soma das variâncias dos ruídos futuros
+É fácil ver que o estimador é não-viesado (basta tirar a esperança do erro de previsão). E podemos mostrar que a variância da previsão aumenta linearmente com o horizonte de previsão, pois a variância do erro de previsão é a soma das variâncias dos ruídos futuros
 
 #theorem("Variância do Erro de Previsão")[
   $
@@ -1134,6 +1132,254 @@ O bootstrap não conserta um modelo com erros autocorrelacionados. Se a ACF dos 
 
 #pagebreak()
 
+== Erro de previsão V.S Resíduos
+Antes de aprendermos sobre métricas de avaliação, é importante destacarmos a diferença entre *erro de previsão* e *resíduo*, a diferença é sutil e se encontra no fato da amostra *estar* ou *não estar* no conjunto de treino (ajuste do modelo)
+
+- *Resíduo* $e_t = y_t - hat(y)_(t|t-1) space forall t in {1,...,T}$: Mede a discrepância entre a observação real e o valor ajustado dentro da *amostra utilizada para calibrar o modelo*
+
+- *Erro de previsão* $e_(T+h) = y_(T+h) - hat(y)_(T+h|T) space forall h >= 1$: Mede a discrepância entre a observação real e o valor previsto *fora da amostra utilizada para calibrar o modelo*
+
+== Métricas de Avaliação Pontual
+Para as próximas definições, defina $H$ como o número de pontos *do conjunto de testes* que você reservou para a análise.
+
+=== Métricas de Escala
+Fornecem medidas de erro expressa na mesma escala dos dados (ex: R\$, litros, galões etc.), tornando a interpretação direta.
+
+#definition("Erro Absoluto Médio (MAE)")[
+  $
+    "MAE" = (1)/(H) sum_(h=1)^H |e_(T+h)|
+  $
+]
+
+O interessante dessa métrica é que o erro é tratado de forma proporcional, então errar $10$ unidades machuca no bolso exatamente $10$ vezes mais que errar $1$ unidade. Utilizamos esse erro quando o custo operacional/financeiro cresce proporcionalmente ao erro cometido. Já vimos em teoremas de outras disciplinas que o MAE é minimizado pela *mediana* da distribuição de erros, ou seja, o preditor que minimiza o MAE é $"MED"(Y_(T+h|Y_T))$
+
+#definition("Root Mean Squared Error")[
+  $
+    "RMSE" = sqrt(1/H sum_(h=1)^H e_(T+h)^2)
+  $
+]
+
+O erro RMSE penaliza erros grandes de forma mais severa, pois o erro é elevado ao quadrado. Utilizamos esse erro quando o custo operacional/financeiro de uma falha pequena é relevante, mas o custo de uma falha grande é inaceitável. Por exemplo, na previsão de demanda de energia elétrica, um erro de $10$MW não é $10$ vezes pior do que um de $1$MW — ele pode derrubar a rede elétrica e causar um apagão. O quadrado captura essa _"gravidade exponencial"_. Também vimos em disciplinas passadas que o preditor que minimiza esse erro é $EE[Y_(T+h|T)]$
+
+Por mais interessantes que essas métricas seja, existe um claro problema com elas, eles *não* podem ser usados para comparar erros de séries temporais com *escalas ou magnitudes diferentes*.
+
+#example("Escalas iguais, magnitudes diferentes")[
+  Vamos pensar em um varejo com dois produtos $A$ e $B$, onde o produto $A$ vende aproximadamente $10$ por dia, enquanto o $B$ vende $10000$ por dia. Se o modelo de previsão tem um $"MAE"$ de $10$ para ambos, enquanto no produto $B$ isso é irrelevante, já que é uma quantidade de produtos errados muito baixa comparado ao volume de vendas, para o produto $A$ isso é um *completo desastre*, pois o modelo errou a previsão de vendas em $100%$.
+]
+
+=== Erros Percentuais
+Essas são as métricas que são *livres de escala*, permitindo comparação entre séries temporais com magnitudes diferentes e permitem fácil comunicação com stakeholders
+
+#definition("Mean Absolute Percentage Error")[
+  $
+    P_j = 100 dot e_j / y_j   \
+
+    "MAPE" = 1/H sum_(j=1)^H |P_j|
+  $
+]
+
+Por mais útil que esse erro seja, ainda existem alguns pontos para se ficar atento. Se $y_j = 0$ o $"MAPE"$ é indefinido, e se $y_j$ é muito pequeno, o $"MAPE"$ pode *explodir*. Além disso, o $"MAPE"$ é *assimétrico*, ou seja, ele penaliza mais previsões que *subestimam* a demanda do que previsões que *superestimam* a demanda
+
+#example([Assimetria do $"MAPE"$])[
+  Suponha que $y=1$ e $hat(y)=2$, então o erro percentual é $|P| = |100 dot (1 - 2)/1| = 100%$, agora basta inverter e assumir $y=2$ e $hat(y)=1$ e teremos $|P| = |100 dot (2 - 1)/2| = 50%$
+]
+
+=== Erros Escalados
+A ideia desse erro é calcular o $"MAE"$ do seu modelo e dividir esse erro pelo erro de um modelo *ingênuo* (baseline)
+
+#definition("Mean Absolute Scaled Error")[
+  Em séries não-sazonais
+  $
+    q_j = e_j / (1/(T-1) sum^T_(t=2)|y_t - y_(t-m)|)
+  $
+  em séries sazonais
+  $
+    q_j = e_j / (1/(T-m) sum^T_(t=m+1)|y_t - y_(t-m)|)
+  $
+  e o $"MASE"$ é dado por
+  $
+    "MASE" = 1/H sum_(j=1)^H |q_j|
+  $
+]
+
+Cada $q_j$ indica a quantos _"passos típicos de passeio aleatório"_ equivale o erro de teste.
+- $"MASE" < 1$: Na janela de teste, o modelo foi superior ao Naive.
+
+- $"MASE" = 1$: O modelo empatou com o Naive.
+
+- $"MASE" > 1$: O modelo é pior que o Naive.
+
+A escala é calculada no treino (ficando fixa antes do teste). Não sofre com zeros no teste, não é assimétrica e permite comparar métodos em coleções mistas de séries
+
+== Métricas de Avaliação Distribucional
+$"MAE"$ e $"RMSE"$ avaliam *um* número $hat(y)$. O intervalo $hat(y) plus.minus 1.96 hat(sigma)_h$ era um recorde de uma *distribuição preditiva* $F$ de $Y_(t+h)$ dado o passado. Agora nós gostaríamos de avaliar a *distribuição preditiva*.
+
+=== Erro de Quantil
+Avalia a precisão de um quantil $hat(q)_(t+h|T)$ da distribuição preditiva $F$ de $Y_(t+h)$ dado o passado.
+
+#definition("Pinball Loss")[
+  $
+    Q_(p,t) (hat(q)_(p,t), y_t) = cases(
+      2(1-p)(hat(q)_(p,t)-y_t) wide &y_t<hat(q)_(p,t),
+
+      2 p (y_t - hat(q)_(p,t)) wide &y_t>=hat(q)_(p,t)
+    )
+  $
+]<pinball-loss>
+
+O valor de $y$ que minimiza $EE[Q]$ é o *quantil verdadeiro* da distribuição
+
+#theorem([Minimizador teórico de $Q$])[
+  Seja $Y$ uma variável aleatória contínua com função de distribuição acumulada (cdf) $F_Y (y) = PP(Y<=y)$ estritamente crescente e função de densidade de probabilidade $f_Y (y) > 0$
+
+  Para um quantil fixado $p in (0,1)$, seja a função de perca de quantil $Q_p (q,Y)$ definida em @pinball-loss, a esperança do risco associado
+  $
+    cal(L) = EE[Q_p (q,Y)]
+  $
+  atinge seu mínimo global estrito se e somente se o candidato $q$ for o $p$-quantil verdadeiro da distribuição de $Y$
+  $
+    q^* = F_Y^(-1) (p)
+  $
+]<pinball-loss-minimizer>
+#proof[
+  $
+    cal(L)(q) = integral_(-infinity)^(infinity) Q_p (q,y) f_Y (y) dif y
+  $
+  Dividindo a integral no ponto de corte $q$
+  $
+    cal(L)(q) = integral_(-infinity)^q 2 (1-p) (q - y) f_Y (y) dif y + integral_(q)^infinity 2 p (y - q) f_Y (y) dif y
+  $
+  $
+    cal(L)(q) = underbrace(2 (1-p) integral_(-infinity)^q (q - y) f_Y (y) dif y, "f") + underbrace(2 p integral_(q)^infinity (y - q) f_Y (y) dif y, "g")
+  $
+  Aplicando a regra de leibniz para derivadas de integrais, temos que
+  $
+    dif / (dif q) cal(L)(q) = dif f / (dif q) + dif g / (dif q)
+  $
+  $
+    (dif f) / (dif q) = 2 (1-p)[
+      (q-q) f_Y (q) + integral_(-infinity)^q partial / (partial q) (q - y) f_Y (y) dif y
+    ] = 2 (1-p) F_Y (q)
+  $
+  $
+    (dif g) / (dif q) = 2 p[
+      -(q-q) f_Y (q) + integral_(q)^infinity partial / (partial q) (y - q) f_Y (y) dif y
+    ] = -2 p (1 - F_Y (q))
+  $
+  Logo, para achar o ponto de mínimo:
+  $
+    0 = 2 (1-p) F_Y (q) - 2 p (1 - F_Y (q))   \
+
+    0 = (1-p) F_Y (q) - p + p F_Y (q)   \
+
+    p = (1 - p + p) F_Y (q)   \
+
+    F_Y (q) = p   \
+
+    q^* = F_Y^(-1) (p)
+  $
+  A existência de $F_Y^(-1) (p)$ é garantida pois $F_Y$ é estritamente crescente. Derivando novamente em relação a $q$
+  $
+    (dif^2 cal(L))/(dif q^2) = (dif)/(dif q)[2(F_Y (q) - p)] = 2 f_Y (q)
+  $
+  como $f_Y (q) > 0$ no suporte de $Y$, temos que a segunda derivada é estritamente positiva, garantindo que $q^* = F_Y^(-1) (p)$ seja o *único mínimo global estrito*
+]
+
+#figure(
+  image("images/A1/pinball-error-in-function-of-quantile.png"),
+  caption: "Gráfico de comparação entre a média do pinball error com relação ao valor cadidato do quantil"
+)
+
+=== Score de Winkler
+Avalia a precisão de um intervalo de previsão $hat(I) = [l_(alpha,t), u_(alpha,t)]$ de nível de confiança $1-alpha$ para a distribuição preditiva $F$ de $Y$
+
+#definition("Score de Winkler")[
+  $
+    W_(alpha) (l, u, y_t) = cases(
+      (u-l) + 2/alpha (l - y_t) wide &y_t < l,
+      u-l wide &l<=y_t<=u,
+      (u-l) + 2/alpha (y_t - u) wide &y_t>u
+    )
+  $
+  onde $l$ e $u$ são os limites inferior e superior do intervalo de previsão, respectivamente, e $y_t$ é o valor observado.
+]
+
+Existe uma conexão entre o score de Winkler e a Pinball Loss
+
+#theorem("Decomposição do Score de Winkler")[
+  O score de winkler se decompõe como a soma escalada das Pinball Losses nos quantis $p_1 = alpha/2$ e $p_2 = 1-alpha/2$
+  $
+    W_alpha (l,u,y_t) = 1/alpha [Q_(alpha/2) (l,y) + Q_(1-alpha/2) (u,y)]
+  $
+]<winkler-score-decomposition>
+
+
+#theorem("Mínimo global do Score de Winkler")[
+  A esperança do Score de Winkler $EE[W_alpha (l, u, y_t)]$ atinge seu mínimo global estrito se, e somente se, os limites $l^*$ e $u^*$ forem os quantis teóricos verdadeiros de $y$
+  $
+    l^* &= F_Y^(-1) (alpha/2)   \
+    u^* &= F_Y^(-1) (1-alpha/2)
+  $
+]
+#proof[
+  Aplicando a linearidade da esperança e utilizando do @winkler-score-decomposition, temos que
+  $
+    EE[W_alpha (l, u, y_t)] = 1/alpha [EE[Q_(alpha/2) (l,y)] + EE[Q_(1-alpha/2) (u,y)]]
+  $
+  como o limite inferior $l$ aparece apenas no primeiro termo e o limite superior $u$ no segundo, então a minimização conjunta de $EE[W_alpha (l, u, y_t)]$ se divide em duas otimizações diferentes
+  $
+    min_l EE[Q_(alpha/2)(l, y_t)] wide min_l EE[Q_(1- alpha/2)(u, y_t)]
+  $
+  Pelo @pinball-loss-minimizer, sabemos que o mínimo global de cada termo é atingido quando $l$ e $u$ são os quantis verdadeiros da distribuição de $y$, ou seja
+  $
+    l^* &= F_Y^(-1) (alpha/2)   \
+    u^* &= F_Y^(-1) (1-alpha/2)
+  $
+]
+
+A lógica desse score ´ que, se o valor observado $y_t$ estiver dentro do intervalo de previsão, o score é apenas o tamanho do intervalo, de forma que intervalos mais curtos são preferíveis. Se o valor observado estiver fora do intervalo, o score penaliza a distância do valor observado para o limite mais próximo do intervalo, de forma que intervalos que *não cobrem* o valor observado são penalizados.
+
+#figure(
+  image("images/A1/winkler-score.png", width: 85%),
+  caption: "Dois intervalos. Se o curto cobre o valor observado, ele é preferível. Se o curto não cobre, ele pode ser penalizado e o maior ganhar"
+)
+
+=== Continuous Ranked Probability Score
+Avalia a CDF preditiva inteira $F(x)$ contra a função degrau empírica da realização real $II(x>=y_t)$
+
+#definition("Continuous Ranked Probability Score")[
+  $
+    "CRPS"(F, y_t) = integral_(-infinity)^(infinity) (F(x) - II(x>=y_t))^2 dif x
+  $
+]
+
+Ela mede a área entre a CDF prevista e o degrau unitário empírico em $y_t$ (quanto menor a área, melhor). Existem dois teoremas interessantes que conectam o CRPS com a métrica de avaliação da pinball
+
+#theorem("Equivalência da CRPS")[
+  Seja $Y$ uma variável contínua aleatória com CDF $F_Y$ estritamente crescente, o CRPS de $F_Y$ com relação a uma realização $y$ é equivalente à integral da Pinball Loss sobre todos os quantis, ou seja:
+  $
+    integral_(-infinity)^infinity (F_Y (x) - II(x>=y))^2 dif x = integral_0^1 Q_p (F_Y^(-1)(p), y) dif p
+  $
+]
+
+Ou seja, enquanto o erro de quantil avalia apenas uma fatia $p$ e o wrinkler avalia um intervalo fixo $(alpha/2, 1-alpha/2)$, o CRPS avalia a perda de todos os quantis do espaço amostral continuamente
+
+#theorem("Representação do CRPS por variáveis aleatórias latentes")[
+  Sejam $X$ e $X'$ duas variáveis aleatórias independentes com a mesma distribuição $F$, então, o CRPS pode ser representado como
+  $
+    "CRPS"(F, y) = EE_F |X - y| - 1/2 EE_F |X - X'|
+  $
+]
+
+Mas por que essa representação me é útil? Primeiro que ela é uma *decomposição*, onde $EE_F |X - y|$ é a acurácia/calibração, medindo o erro absoluto médio esperado entre as simulações do modelo e o valor real observado e $EE_F |X - X'|$ é a nitidez/dispersão, medindo a variabilidade/espalhamento interno da própria distribuição do modelo. Como entra com sinal negativo na perda, *recompensa distribuições mais concentradas (nítidas)* e pune incerteza desnecessária. Outro ponto positivo é que, em algoritmos de séries temporais que geram $M$ trajetórias simuladas no futuro via *Bootstrap* ${x^((1)), x^((2)), ..., x^((M))}$, não precisamos calcular nenhuma integral numérica da CDF $F(x)$. O CRPS empírico é calculado diretamente por somatório discreto:
+$
+  "CRPS" = 1/M sum_(m=1)^M |x^((m)) - y| - 1/(2 M^2) sum_(m=1)^M sum_(n=1)^M |x^((m)) - x^((n))|
+$
+
+#figure(
+  image("images/A1/crps.png", width: 100%),
+  caption: [Ilustração do CRPS. $F_1$ com média descolada e $F_2$ verdadeira]
+)
 
 
 #pagebreak()
@@ -1144,6 +1390,80 @@ O bootstrap não conserta um modelo com erros autocorrelacionados. Se a ACF dos 
 
 #pagebreak()
 
+Muitos modelos (e a ACF que já usamos) pedem algo próximo de *estacionariedade* fraca: média e variância estáveis no tempo, sem tendência óbvia. Só que isso óbviamente pode não ocorrer na vida real e para cada *falha* lidamos de uma forma diferente
+
+- *Variância muda com o nível*: Transformação de potência
+- *Nível muda com o tempo*: Diferenciação
+
+*Primeiro estabiliza-se a variância (Box-Cox), depois aplica-se a diferenciação.* _Por quê?_ Diferenciar com o leque ainda aberto faz a série diferenciada misturar mudança de nível com mudança de escala ao mesmo tempo, destruindo o diagnóstico gráfico e da ACF
+
+== Box-Cox
+
+#definition("Transformação de Box-Cox")[
+  Para séries estritamente positivas $y_t > 0$, a transformação de Box-Cox é definida como
+  $
+    w_t = cases(
+      log(y_t) wide &lambda = 0,
+      (y_t^lambda - 1)/lambda wide &lambda != 0
+    )
+  $
+  onde $lambda$ é um híperparâmetro que controla a intensidade da transformação.
+]
+
+#figure(
+  image("images/A1/box-cox.png", width: 100%),
+  caption: "Ilustração da transformação de Box-Cox"
+)
+
+Perceba que na imagem original, a variância cresce conforme o tempo vai passando, já as transformações estabilizam essa variância. Em software, o correto é estimar o $lambda$ ótimo via *Maximum Likelihood* e aplicar a transformação, mas para fins didáticos, testamos apenas alguns valores de $lambda$ e ver qual estabiliza melhor a variância. O gráfico serve também para ver se o $lambda$ faz sentido.
+
+Depois que modelamos o $w$, precisamos que a previsão volte para a escala de $y$, afinal, se eu quero prever *litros de água*, não posso entregar *logaritmo de litros de água*.
+
+Para intervalos de confiança, aplicamos a inversa da transformação nos extremos do intervalo
+$
+  PP(w_1 <= W <= w_2) = 1-alpha => PP(g^(-1)(w_1) <= Y <= g^(-1)(w_2)) = 1-alpha
+$
+onde a inversa é definida como
+$
+  g^(-1)(w) = cases(
+    exp(w) wide &lambda = 0,
+    (lambda w + 1)^(1/lambda) wide &lambda != 0
+  )
+$
+
+Porém, temos que tomar cuidado. Por conta da *desigualdade de Jensen*, eu *não posso* estimar a média de $W$ e aplicar $g^(-1)$ nela para tentar estimar a média de $Y$.
+
+== Operador de Defasagem (Backshift)
+Compacta a álgebra do atraso temporal
+$
+  B^k y_t = y_(t-k) wide k in ZZ
+$
+- Primeira diferença: $(1-B)y_t = y_t - y_(t-1)$
+- Diferença de ordem $d$: $(1-B)^d y_t$
+- Diferença sazonal de período $m$: $(1-B^m) y_t = y_t - y_(t-m)$
+
+== Diferenciação
+=== Diferenciação de Primeira Ordem
+$
+  y'_t = (1-B)y_t = y_t - y_(t-1)
+$
+Quando a média é aproximadamente linear, a diferenciação a estabiliza, removendo a tendência. Dois casos limites úteis:
+
+- Se $y'_t = epsilon_t$ (ruído branco): $y_t$ é um Passeio Aleatório Puro ($y_t = y_(t-1) + epsilon_t$).
+
+- Se $y'_t = c + epsilon_t$: $y_t$ é um Passeio Aleatório com Drift ($y_t = c + y_(t-1) + epsilon_t$, tendência estocástica com inclinação constante $c$)
+
+=== Diferenciação de Segunda Ordem
+$
+  y''_t = (1-B)^2 y_t = (1-B)y'_t = y'_t - y'_(t-1) = y_t - 2y_(t-1) + y_(t-2)
+$
+
+Empregada quando a primeira diferença ainda apresenta tendência (tendência quadrática). Porém, devemos tomar cuidado ao diferenciar demais ($d >= 2$ injustificado) insere autocorrelação negativa artificial nos resíduos e destrói a informação do nível da série
+
+Com tendência e sazonalidade juntas, a ordem usual é: sazonal primeiro, depois 1ª ordem se o nível ainda vagar:
+$
+  (1-B)(1-B^m)y_t = y_t - y_(t-1) - y_(t-m) + y_(t-m-1)
+$
 
 
 #pagebreak()
