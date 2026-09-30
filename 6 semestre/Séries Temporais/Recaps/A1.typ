@@ -1467,7 +1467,7 @@ Existem dois teoremas interessantes que conectam o CRPS com a métrica de avalia
   $
 ]
 
-Ou seja, enquanto o erro de quantil avalia apenas uma fatia $p$ e o wrinkler avalia um intervalo fixo $(alpha/2, 1-alpha/2)$, o CRPS avalia a perda de todos os quantis do espaço amostral continuamente
+Ou seja, enquanto o erro de quantil avalia apenas uma fatia $p$ e o wrinkler avalia um intervalo fixo $(alpha/2, 1-alpha/2)$, o CRPS avalia a perda de *todos *os quantis do espaço amostral continuamente
 
 #theorem("Representação do CRPS por variáveis aleatórias latentes")[
   Sejam $X$ e $X'$ duas variáveis aleatórias independentes com a mesma distribuição $F$, então, o CRPS pode ser representado como
@@ -1533,6 +1533,7 @@ Muitos modelos (e a ACF que já usamos) pedem algo próximo de *estacionariedade
 *Primeiro estabiliza-se a variância (Box-Cox), depois aplica-se a diferenciação.* _Por quê?_ Diferenciar com o leque ainda aberto faz a série diferenciada misturar mudança de nível com mudança de escala ao mesmo tempo, destruindo o diagnóstico gráfico e da ACF
 
 == Box-Cox
+A transformação de box-cox é uma transformação para séries que apresentam variância crescente com o nível da série ($y_t$). A ideia é que, se a variância cresce com o nível, então uma transformação de potência pode estabilizar a variância.
 
 #definition("Transformação de Box-Cox")[
   Para séries estritamente positivas $y_t > 0$, a transformação de Box-Cox é definida como
@@ -1568,6 +1569,22 @@ $
 
 Porém, temos que tomar cuidado. Por conta da *desigualdade de Jensen*, eu *não posso* estimar a média de $W$ e aplicar $g^(-1)$ nela para tentar estimar a média de $Y$.
 
+Não vamos demonstrar o método de delta nesse capítulo (feito no documento de #link("https://github.com/Holy-Emapian-Scripture/holy-emapian-scripture/tree/main/5%20semestre/Modelagem%20Estat%C3%ADstica/Recaps", "Modelagem Estatística")), mas vamos utilizar dele para estimar o resultado do box-cox. A *premissa* é que o desvio padrão pode ser escrita na forma
+$
+  sigma (Y_t) = c dot g(mu_t)
+$
+onde $mu_t$ é a média de $Y_t$ e $c$ é uma constante. Além disso, $f$ é a transformação de box-cox:
+
+- *Caso 1* ($g(mu_t) = mu_t$): Se o desvio padrão cresce linearmente com a média, então
+  $
+    f'(mu_t) prop 1/(mu_t) => f(y) = integral 1/y dif y = log(y) wide (lambda = 0)
+  $
+
+- *Caso 2* ($g(mu_t) = mu_t^(1-lambda)$): Se o desvio padrão cresce com a média elevada a uma potência, então
+  $
+    f'(mu_t) prop 1/(mu_t^(1-lambda)) => f(y) = integral 1/y^(1-lambda) dif y = (y^lambda - 1)/lambda wide (lambda != 0)
+  $
+
 == Operador de Defasagem (Backshift)
 Compacta a álgebra do atraso temporal
 $
@@ -1578,11 +1595,63 @@ $
 - Diferença sazonal de período $m$: $(1-B^m) y_t = y_t - y_(t-m)$
 
 == Diferenciação
+É a transformação que aplicamos para *remover* a *tendência* da média temporal, deixando apenas a variabilidade aleatória.
+
+#theorem("Teorema da Aniquilação de Tendências Polinomiais por Diferenciação")[
+  Seja $Y_t = P_k (t) + epsilon_t$ um processo onde $P_k (t) = sum_(j=0)^k a_j t^j$ é um polinômio determinístico de grau $k >= 1$ em $t$ (com $a_k != 0$) e $epsilon_t ~ "WN"(0, sigma^2)$.
+  
+  A $k$-ésima diferença regular $Y_t^* = (1-B)^k Y_t$ anula completamente a dependência do tempo $t$ na média, tornando a esperança do processo constante (estacionária em média) e igual a: 
+  $
+    EE[(1-B)^k Y_t] = k! dot a_k
+  $
+]
+#proof[
+  Seja $Delta = 1 - B$, vamos avaliar o comportamento do operador sob um *monômio* de *grau $j$*.
+  $
+    Delta t^j = (1-B) t^j = t^j - (t-1)^j
+  $
+  por binômio de newton, $(t-1)^j = t^j - j t^(j-1) + O(t^(j-2))$, logo:
+  $
+    Delta t^j = j t^(j-1) + O(t^(j-2))
+  $
+  como conclusão intermediária, temos que o operador de diferença $Delta$ diminui o grau de qualquer termo polinomial de grau $j$ para $j-1$ e multiplicando pelo coeficiente $j$.
+
+  Agora vamos aplicar o operador $k$ vezes em $Y_t$
+  $
+    Delta^k Y_t = Delta^k P_k(t) + Delta^k epsilon_t
+  $
+  focando no comportamento do operador no polinômio, temos que
+  $
+    Delta^k P_k (t) = Delta^k sum_(j=0)^k a_j t^j = sum_(j=0)^k a_j Delta^k t^j
+  $
+  para todos os termos com $j < k$, o termo $Delta^k t^j$ será $O(t^(j-k)) = O(t^(-1)) -> 0$ quando $t -> infinity$. O único termo que irá sobrar é o de grau $k$, que será reduzido em:
+  $
+    Delta^k t^k &= Delta^(k-1) (k t^(k-1) + O(t^(k-2)))   \
+    
+    &= k Delta^(k-1) t^(k-1) + O(t^(k-2))   \
+    
+    &= k (k-1) Delta^(k-2) t^(k-2) + O(t^(k-3))   \
+    
+    &= ...    \
+    
+    &= k! + O(t^(-1)) -> k!
+  $
+
+  Então tomando a esperança
+  $
+    EE[(1-B)^k Y_t] = EE[Delta^k P_k(t)] + EE[Delta^k epsilon_t] = k! a_k + 0 = k! a_k
+  $
+
+  Logo, aplicar o operador de diferença $k$ vezes em um polinômio de grau $k$ anula completamente a dependência do tempo $t$ na média, e isso implica em *ausência de tendência* na série temporal diferenciada (o contrário não vale, ausência de tendência não implica que a média não tenha dependência temporal).
+]
+
+Falar que a tendência segue uma forma polinomial parece ser muito forte, mas é *muito raro* no dia a dia encontrar séries temporais com tendências fora desse formato ou que não possam ser aproximadas por esse formato. O teorema acima mostra que, ao aplicar a diferenciação de ordem $k$, a tendência é completamente removida
+
 === Diferenciação de Primeira Ordem
 $
   y'_t = (1-B)y_t = y_t - y_(t-1)
 $
-Quando a média é aproximadamente linear, a diferenciação a estabiliza, removendo a tendência. Dois casos limites úteis:
+Quando a média é aproximadamente linear (polinômio de grau $1$), a diferenciação a estabiliza, removendo a tendência. Dois casos limites úteis:
 
 - Se $y'_t = epsilon_t$ (ruído branco): $y_t$ é um Passeio Aleatório Puro ($y_t = y_(t-1) + epsilon_t$).
 
@@ -1593,7 +1662,7 @@ $
   y''_t = (1-B)^2 y_t = (1-B)y'_t = y'_t - y'_(t-1) = y_t - 2y_(t-1) + y_(t-2)
 $
 
-Empregada quando a primeira diferença ainda apresenta tendência (tendência quadrática). Porém, devemos tomar cuidado ao diferenciar demais ($d >= 2$ injustificado) insere autocorrelação negativa artificial nos resíduos e destrói a informação do nível da série
+Empregada quando a primeira diferença ainda apresenta tendência (tendência quadrática, polinômio de grau $2$). Porém, devemos tomar cuidado ao diferenciar demais ($d >= 2$ injustificado) insere autocorrelação negativa artificial nos resíduos e destrói a informação do nível da série
 
 Com tendência e sazonalidade juntas, a ordem usual é: sazonal primeiro, depois 1ª ordem se o nível ainda vagar:
 $
@@ -1640,6 +1709,44 @@ Este é o modelo mais simples de um processo autoregressivo, onde a variável ob
     rho(h) = phi_1^h
   $
 ]
+#proof[
+  Pelo @ar-stationarity-condition, sabemos que o $"AR"(1)$ é estacionário se $|phi_1| < 1$. Como ela é estacionária, podemos escrever a média como
+  $
+    EE[Y_t] = mu wide forall t
+  $
+  então vamos obter a seguinte relação
+  $
+    EE[Y_t] &= phi EE[Y_(t-1)] + EE[epsilon_t]    \
+
+    mu &= phi mu
+  $
+  como $phi != 1$, temos que $mu = 0$. Agora, vamos calcular a correlação:
+  $
+    rho(h) = EE[Y_t Y_(t-h)]/gamma(0)
+  $
+  analisando o termo de cima, vamos ter que
+  $
+    EE[Y_t Y_(t-h)] &= EE[(phi Y_(t-1) + epsilon_t) Y_(t-h)]    \
+
+    &= phi EE[Y_(t-1) Y_(t-h)] + EE[epsilon_t Y_(t-h)]    \
+
+    &= phi gamma(h-1) + EE[epsilon_t] EE[Y_(t-h)]    \
+
+    &= phi gamma(h-1)
+  $
+  então voltando para a correlação, temos que
+  $
+    rho(h) &= phi gamma(h-1)/gamma(0)    \
+
+    &= (phi^2 gamma(h-2))/gamma(0)    \
+
+    &= ...    \
+
+    &= phi^h gamma(0)/gamma(0)    \
+
+    &= phi^h
+  $
+]
 
 Ou seja, a função decai exponencialmente para zero à medida que $h -> infinity$. Se $phi_1 > 0$, o decaimento é monótono positivo. Se $phi_1 < 0$, o decaimento oscila alternando sinais.
 
@@ -1648,7 +1755,7 @@ Usando o operador de defasagem (Backshift $B$), escrevemos o $"AR"(p)$ como:
 $
   (1 - phi_1 B - phi_2 B^2 - ... - phi_p B^p) y_t = C + epsilon_t <=> phi(B) y_t = C + epsilon_t
 $
-onde $phi(z) = 1 - phi_1 z - phi_2 z^2 - ... - phi_p z^p$ é o Polinômio Característico (ou de Defasagem) associado ao processo.
+onde $phi(z) = 1 - phi_1 z - phi_2 z^2 - ... - phi_p z^p$ é o *Polinômio Característico* (ou de Defasagem) associado ao processo.
 
 #definition("Polinômio Característico")[
   Dado um processo $"AR"(p)$, o polinômio característico $phi(z)$ é definido como
@@ -1661,6 +1768,30 @@ onde $phi(z) = 1 - phi_1 z - phi_2 z^2 - ... - phi_p z^p$ é o Polinômio Caract
   O processo $"AR"(p)$ é (fracamente) estacionário se e somente se todas as $p$ raízes do polinômio característico $phi(z) = 0$ estiverem ESTRITAMENTE FORA do círculo unitário no plano complexo:
   $
     phi(z_j) = 0 => |z_j| > 1 wide forall j in {1, ..., p}
+  $
+]<ar-stationarity-condition>
+#proof[
+  A dinâmica estocástica do $"AR"(p)$ é governada pela equação de diferença estocástica. A solução geral para $y_t$ é a soma da solução particular (devida às inovações $epsilon_t$) com a solução homogênea da equação determinística:
+  $
+    y_t - phi_1 y_(t-1) - phi_2 y_(t-2) - ... - phi_p y_(t-p) = 0
+  $
+  propondo uma solução do tipo $y_t^((h)) = A dot z^(-t)$ e substituindo na equação homogênea:
+  $
+    z^(-t) - phi_1 z^(-(t-1)) - phi_2 z^(-(t-2)) - ... - phi_p z^(-(t-p)) = 0
+  $
+  
+  Multiplicando toda a equação por $z^t$:
+  $
+    1 - phi_1 z - phi_2 z^2 - ... - phi_p z^p = 0 <=> phi(z) = 0
+  $
+  
+  Se $z_1, z_2, ..., z_p$ são as $p$ raízes (complexas ou reais) de $phi(z) = 0$, a solução homogênea é uma combinação linear dos modos de memória:
+  $
+    y_t^((h)) = sum_(j=1)^(p) A_j dot z_j^(-t)
+  $
+  Para que o processo seja estacionário (isto é, para que a memória dos choques passados se dilua no tempo e a variância não exploda quando $t -> infinity$), é necessário que cada modo $z_j^(-t)$ convirja para zero quando $t -> infinity$:
+  $
+    lim_(t -> infinity) |z_j^(-t)| = 0 <=> |z_j^(-1)| < 1 <=> |z_j| > 1
   $
 ]
 
@@ -1705,6 +1836,7 @@ A ACF no lag $h$ mede a correlação entre $y_t$ e $y_(t-h)$, contudo, essa corr
   $
     y_t = phi_(k 1) y_(t-1) + phi_(k 2) y_(t-2) + ... + phi_(k k) y_(t-k) + e_t
   $
+  e $e_t$ é o erro de *projeção ortogonal*, tal que $EE[e_t y_(t-j)] = 0 space forall j = 1, 2, ...$
 ]
 
 #figure(
@@ -1722,6 +1854,37 @@ Nesse exemplo, a primeira imagem mostra a série temporal modelada com $"AR"(1)$
       0 wide &k>p
     )
   $
+]
+#proof[
+  Tomando a equação da definição da regressão de ordem $k$
+  $
+    y_t = phi_(k 1) y_(t-1) + phi_(k 2) y_(t-2) + ... + phi_(k k) y_(t-k) + e_t
+  $
+  
+  Multiplicando ambos os lados por $y_(t-j)$ e tomando a esperança
+  $
+    EE[y_t y_(t-j)] = phi_(k 1) EE[y_(t-1) y_(t-j)] + phi_(k 2) EE[y_(t-2) y_(t-j)] + ... + phi_(k k) EE[y_(t-k) y_(t-j)] + underbrace(EE[e_t y_(t-j)], 0)
+  $
+  então dividindo tudo por $gamma(0)$, temos que
+  $
+    rho(j) = phi_(k 1) rho(j-1) + phi_(k 2) rho(j-2) + ... + phi_(k k) rho(j-k)
+  $
+  e podemos representar isso por um sistema matricial de equações lineares (Sistema de Yule-Walker):
+  $
+    mat(rho(1); rho(2); dots.v; rho(k)) = mat(rho(0), rho(1), ..., rho(k-1); rho(1), rho(0), ..., rho(k-2); ...; rho(k-1), rho(k-2), ..., rho(0)) mat(phi_(k 1); phi_(k 2); ...; phi_(k k))
+  $
+
+  Agora podemos reescrever o processo verdadeiro $"AR"(p)$ e escolhemos analisar um lag $k > p$, podemos reescrever deixando os coeficientes do modelo verdadeiro explicitamente $0$:
+  $
+    y_t = phi_1 y_(t-1) + phi_2 y_(t-2) + ... + phi_p y_(t-p) + 0 y_(t-(p+1)) + ... + 0 y_(t-k) + epsilon_t
+  $
+
+  comparando com o real, teríamos o vetor
+  $
+    mat(phi_1; phi_2; ...; phi_p; 0; ...; 0) = mat(phi_(k 1); phi_(k 2); ...; phi_p ; phi_(p+1) ; ... ; phi_(k k))
+  $
+
+  então para $k > p$, temos que $phi_(k k) = 0$, mostrando que a PACF corta abruptamente no lag $p$ do modelo verdadeiro
 ]
 
 
