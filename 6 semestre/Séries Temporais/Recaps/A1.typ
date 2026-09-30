@@ -1515,6 +1515,13 @@ $
 $
 onde $phi(z) = 1 - phi_1 z - phi_2 z^2 - ... - phi_p z^p$ é o Polinômio Característico (ou de Defasagem) associado ao processo.
 
+#definition("Polinômio Característico")[
+  Dado um processo $"AR"(p)$, o polinômio característico $phi(z)$ é definido como
+  $
+    phi(z) = 1 - phi_1 z - phi_2 z^2 - ... - phi_p z^p
+  $
+]
+
 #theorem([Condição de Estacionariedade do $"AR"(p)$])[
   O processo $"AR"(p)$ é (fracamente) estacionário se e somente se todas as $p$ raízes do polinômio característico $phi(z) = 0$ estiverem ESTRITAMENTE FORA do círculo unitário no plano complexo:
   $
@@ -1664,7 +1671,7 @@ $
   $
     rho_theta (1) = theta/(1 + theta^2)
   $
-  Substituindo $theta$ por $tilde(theta) = 1/theta}$:
+  Substituindo $theta$ por $tilde(theta) = 1/theta$:
   $
    rho_(tilde(theta)) (1) = (1/theta) / (1 + (1/theta)^2) = (1/theta)/((theta^2 + 1)/(theta^2)) = 1/theta dot theta^2/(theta^2 + 1) = (theta)/(1 + theta^2) = rho_theta (1)
   $
@@ -1690,3 +1697,87 @@ Mas por que isso seria um problema? A amostra de dados não consegue distinguir 
 ]
 
 Aqui vemos a relação inversa com PACF e ACF que o $"MA"(q)$ possui em relação ao "AR(p)". Enquanto o $"AR"(p)$ possui corte abrupto na PACF e decaimento exponencial na ACF, o $"MA"(q)$ possui corte abrupto na ACF e decaimento exponencial na PACF.
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Modelo ARIMA
+]
+
+#pagebreak()
+
+O modelo $"ARIMA"(p,d,q)$ unifica tudo que vimos de modelagem de séries temprais até o momento
+
++ $"I"(d)$ (Integração/Diferenciação): Remove a *tendência estocástica* e ajusta o nível da série original $y_t$ através de $d$ diferenças para torná-la estacionária: $y^*_t = (1-B)^d y_t$
++ $"AR"(p)$ (Autoregressivo): Modela a dependência temporal (*memória*) da série diferenciada $y^*_t$ através de $p$ lags passados: $y^*_t = phi_1 y^*_(t-1) + ... + phi_p y^*_(t-p) + epsilon_t$
++ $"MA"(q)$ (Média Móvel): Modela a dependência temporal nos erros passados $epsilon_t$ através de $q$ lags passados: $y^*_t = epsilon_t + theta_1 epsilon_(t-1) + ... + theta_q epsilon_(t-q)$
+
+== Formulação Geral
+Aplicando $d$ diferenças na série original $y_t$, temos a série diferenciada $y^*_t = (1-B)^d y_t$, então $y^*_t$ segue um modelo $"ARMA"(p,q)$:
+$
+  y^*_t = C + phi_1 y^*_(t-1) + ... + phi_p y^*_(t-p) + epsilon_t + theta_1 epsilon_(t-1) + ... + theta_q epsilon_(t-q) wide epsilon_t ~ "WN"(0, sigma^2)
+$
+
+Lembrando que $B^k y_t = y_(t-k)$, conseguimos simplificar a equação acima usando o operador de defasagem $B$:
+$
+  y^*_t = C + (phi_1 B + phi_2 B^2 + ... + phi_p B^p) y^*_t + (1 + theta_1 B + theta_2 B^2 + ... + theta_q B^q) epsilon_t
+$
+colocando os $y^*_t$ em evidência e usando a definição $y^*_t = (1-B)^d y_t$, conseguimos o modelo simplificado do $"ARIMA"(p,d,q)$:
+$
+  underbrace((1 - phi_1 B - phi_2 B^2 - ... - phi_p B^p), "AR") underbrace((1-B)^d y_t, "I") = C + underbrace((1 + theta_1 B + theta_2 B^2 + ... + theta_q B^q) epsilon_t, "MA")
+$
+
+== $C$ e $d$ em Previsões de Longo Prazo
+O $C$ e $d$ tem um papel conjunto muito importante na previsão de longo prazo da série
+
+=== $C=0$ e $d=0$
+Previsão de longo prazo converge para a média da série original $y_t$.
+$
+  lim_(h->infinity) hat(Y)_(T+h|T) = mu = C/(1 - sum_(i=1)^p phi_i)
+$
+
+#figure(
+  image("images/A1/arima-c0-d0.png", width: 100%),
+  caption: "Previsão de longo prazo converge para a média da série"
+)
+
+=== $C=0$ e $d=1$
+A previsão congela no último valor observado da série original $y_t$.
+$
+  lim_(h->infinity) hat(Y)_(T+h|T) = y_T
+$
+
+#figure(
+  image("images/A1/arima-c0-d1.png", width: 100%),
+  caption: "Previsão de longo prazo congela no último valor observado da série"
+)
+
+=== $C!=0$ e $d=1$
+A constante $C$ se torna-se a *inclinação* de uma *tendêncial linear determinística* no nível original de $y$
+$
+  hat(Y)_(T+h|T) approx hat(Y)_(T|T) + h dot mu_(Delta y) \
+
+  mu_(Delta y) = C / (1 - sum_(i=1)^p phi_i)
+$
+
+#figure(
+  image("images/A1/arima-cdiff0-d1.png", width: 100%),
+  caption: "Previsão de longo prazo com $C!=0$ e $d=1$ gera tendência linear determinística no nível original"
+)
+
+=== $d=2$
+Gera uma previsão com curvatura quadrática
+
+#figure(
+  image("images/A1/arima-cdiff0-d2.png", width: 95.8%),
+  caption: "Previsão de longo prazo com $d=2$ gera tendência quadrática determinística no nível original"
+)
+
+== Por que $"ARMA"$ e não só $"AR"$ ou $"MA"$?
+Acontece que os modelos $"AR"$ e $"MA"$ modelam dois extremos diferentes, um cobre dependência temporal dentro das observações passadas (AR) e o outro cobre dependência temporal dentro dos erros passados (MA). A combinação de ambos permite capturar padrões mais complexos de memória temporal, tornando o modelo mais flexível e capaz de se ajustar melhor a uma variedade maior de séries temporais com menos parâmetros do que um modelo puramente AR ou MA.
+
+Além disso, como vimos, teóricamente, todo modelo $"AR"(p)$ estacionário pode ser representado como um modelo $"MA"(infinity)$ e vice-versa, então para aproximar cada um, eu necessitaria de *muitos* parâmetros no outro, gerando risco de *overfitting* e perda de interpretabilidade.
+
+Aqui utilizamos do princípio da parcimônia: *prefira o modelo mais simples que se ajuste bem aos dados*. Se um modelo $"AR"(p)$ com poucos parâmetros consegue capturar a memória temporal de uma série, não há necessidade de adicionar mais parâmetros de média móvel. O mesmo vale para o contrário.
+
+
