@@ -1610,7 +1610,7 @@ a propriedade fundamental desse modelo é que ele possui *memória finita*, onde
   $
 ]
 
-=== $"AR"(1)$ como $"MA"(infinity)$
+== $"AR"(1)$ como $"MA"(infinity)$
 Todo processo $"AR"(p)$ estacionário pode ser reescrito como um processo $"MA"(infinity)$ de choques passados acumulados:
 
 #theorem()[
@@ -1631,7 +1631,7 @@ Todo processo $"AR"(p)$ estacionário pode ser reescrito como um processo $"MA"(
   Tomando o limite $N -> infinity$, como $|phi_1| < 1$, o termo de memória inicial $phi_1^(N+1) y_(t-N-1) -> 0$, resultando em $y_t = sum_(j=0)^(infinity) phi_1^j epsilon_(t-j)$
 ]
 
-=== Invertibilidade e Representação $"AR"(infinity)$ de um $"MA"(q)$
+== Invertibilidade e Representação $"AR"(infinity)$ de um $"MA"(q)$
 
 Podemos fazer o caminho inverso: expressar o erro $epsilon_t$ em função dos valores observados passados de $y$.
 
@@ -1654,7 +1654,7 @@ $
   $
 ]
 
-=== Armadilha Matemática da Não-Identificabilidade do $"MA"(1)$ não invertível
+== Armadilha Matemática da Não-Identificabilidade do $"MA"(1)$ não invertível
 
 #theorem[
   Os modelos $"MA"(1)$ com parâmetro $theta_1 = theta$ e com parâmetro $theta_1 = 1/theta$ geram exatamente a mesma Função de Autocorrelação (ACF).
