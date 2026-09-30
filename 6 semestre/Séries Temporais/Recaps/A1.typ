@@ -1671,3 +1671,22 @@ $
 ]
 
 Mas por que isso seria um problema? A amostra de dados não consegue distinguir um $"MA"(1)$ com $theta=0.5$ de um com $theta=2$ pois ambos geram a mesma ACF. Se o modelo tivesse $theta = 2$ (não-invertível), a recuperação do erro usaria pesos $(-2)^j$ que explodem no passado remoto. Para garantir identificabilidade única e uma expansão $"AR"(infinity)$ estável, todos os algoritmos de estimação impõem estritamente a restrição de invertibilidade $|theta| < 1$
+
+== PACF e ACF do $"MA"(q)$
+
+#theorem([Corte abrupto da ACF do $"MA"(q)$])[
+  Seja $Y_t$ um processo de Média Móvel de ordem $q$, $"MA"(q)$, definido por:
+  $
+    Y_t = C + epsilon_t + theta_1 epsilon_(t-1) + theta_2 epsilon_(t-2) + ... + theta_q epsilon_(t-q), wide epsilon_t ~ "WN"(0, sigma^2)
+  $
+  onde $theta_q != 0$. A Função de Autocorrelação (ACF) teórica $rho(h)$ apresenta um corte abrupto exatamente após o lag $q$:
+  $
+    rho(h) = cases(
+      1 wide & h = 0,
+      (sum_(j=0)^(q-|h|) theta_j theta_(j+|h|))/(sum_{j=0}^(q) theta_j^2) wide & 1 <= |h| <= q "assumindo" theta_0 = 1,
+      0 wide & |h| > q
+    )
+  $
+]
+
+Aqui vemos a relação inversa com PACF e ACF que o $"MA"(q)$ possui em relação ao "AR(p)". Enquanto o $"AR"(p)$ possui corte abrupto na PACF e decaimento exponencial na ACF, o $"MA"(q)$ possui corte abrupto na ACF e decaimento exponencial na PACF.
