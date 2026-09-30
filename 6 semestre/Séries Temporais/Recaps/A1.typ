@@ -1111,9 +1111,9 @@ Quando a distribuição dos resíduos apresenta assimetria ou caudas pesadas, a 
 
 Algoritmo de Construção das Trajetórias Simuladas:
 
-+ Extrair os resíduos observados de 1 passo ${ hat{e}_1, ..., hat{e}_T }$.
-+ Para o horizonte $h = 1$, sortear com reposição um resíduo $e_{T+1}^* in { hat{e}_t }$ e calcular $Y_{T+1}^* = hat(Y)_(T+1 | T) + e_{T+1}^*$.
-+ Para os passos subsequentes $h = 2, 3, ...$, sortear com reposição um novo resíduo $e_{T+h}^*$ e atualizar recursivamente $Y_(T+h)^* = hat(Y)_(T+h | T+h-1)^* + e_(T+h)^*$.
++ Extrair os resíduos observados de 1 passo ${ hat(e)_1, ..., hat(e)_T }$.
++ Para o horizonte $h = 1$, sortear com reposição um resíduo $e_(T+1)^* in (hat(e)_t )$ e calcular $Y_(T+1)^* = hat(Y)_(T+1 | T) + e_(T+1)^*$.
++ Para os passos subsequentes $h = 2, 3, ...$, sortear com reposição um novo resíduo $e_(T+h)^*$ e atualizar recursivamente $Y_(T+h)^* = hat(Y)_(T+h | T+h-1)^* + e_(T+h)^*$.
 + Repetir esse processo $B$ vezes (gerando $B$ trajetórias futuras) e extrair os quantis empíricos de $2,5$% e $97,5$% para formar o intervalo a $95$% de confiança.
 
 O bootstrap não conserta um modelo com erros autocorrelacionados. Se a ACF dos resíduos indicar memória, a reamostragem i.i.d. mistura choques dependentes como se fossem independentes, destruindo a cobertura nominal do intervalo. O bootstrap relaxa a hipótese de normalidade, mas exige rigorosamente a ausência de autocorrelação.
