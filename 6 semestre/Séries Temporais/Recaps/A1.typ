@@ -1670,4 +1670,4 @@ $
   $
 ]
 
-Mas por que isso seria um problema? A amostra de dados não consegue distinguir um $"MA"(1)$ com $theta=0.5$ de um com $theta=1\/2$ pois ambos geram a mesma ACF. Se o modelo tivesse $theta = 2$ (não-invertível), a recuperação do erro usaria pesos $(-2)^j$ que explodem no passado remoto. Para garantir identificabilidade única e uma expansão $"AR"(infinity)$ estável, todos os algoritmos de estimação impõem estritamente a restrição de invertibilidade $|theta| < 1$
+Mas por que isso seria um problema? A amostra de dados não consegue distinguir um $"MA"(1)$ com $theta=0.5$ de um com $theta=2$ pois ambos geram a mesma ACF. Se o modelo tivesse $theta = 2$ (não-invertível), a recuperação do erro usaria pesos $(-2)^j$ que explodem no passado remoto. Para garantir identificabilidade única e uma expansão $"AR"(infinity)$ estável, todos os algoritmos de estimação impõem estritamente a restrição de invertibilidade $|theta| < 1$
