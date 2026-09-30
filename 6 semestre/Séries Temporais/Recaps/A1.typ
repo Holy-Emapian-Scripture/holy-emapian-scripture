@@ -1304,6 +1304,8 @@ Avalia a precisão de um intervalo de previsão $hat(I) = [l_(alpha,t), u_(alpha
   onde $l$ e $u$ são os limites inferior e superior do intervalo de previsão, respectivamente, e $y_t$ é o valor observado.
 ]
 
+A lógica desse score é que, se o valor observado $y_t$ estiver dentro do intervalo de previsão, o score é apenas o tamanho do intervalo, de forma que intervalos mais curtos são preferíveis. Se o valor observado estiver fora do intervalo, o score penaliza a distância do valor observado para o limite mais próximo do intervalo, de forma que intervalos que *não cobrem* o valor observado são penalizados.
+
 Existe uma conexão entre o score de Winkler e a Pinball Loss
 
 #theorem("Decomposição do Score de Winkler")[
@@ -1312,6 +1314,75 @@ Existe uma conexão entre o score de Winkler e a Pinball Loss
     W_alpha (l,u,y_t) = 1/alpha [Q_(alpha/2) (l,y) + Q_(1-alpha/2) (u,y)]
   $
 ]<winkler-score-decomposition>
+#proof[
+  A Pinball Loss para um quantil $p$ e um candidato $q$ é dada por:
+  $
+    Q_p(q, y) = cases(
+      2(1-p)(q - y) wide &y < q,
+      2p(y - q) wide &y >= q
+    )
+  $
+  Avaliamos a soma $Q_(alpha/2) (l, y) + Q_(1-alpha/2) (u, y)$ para os três casos possíveis em relação ao intervalo $[l, u]$:
+  
+  *Caso 1*: $y < l$ (e $y < u$):
+  $
+    Q_(alpha/2)(l, y) &= 2(1 - alpha/2)(l - y)    \
+    
+    &= (2 - alpha)(l - y)   \
+    
+    Q_(1-alpha/2)(u, y) &= 2(1 - (1 - alpha/2))(u - y)    \
+    
+    &= 2((alpha)/(2))(u - y)    \
+    
+    &= alpha(u - y)
+  $
+  somando os dois termos:
+  $
+    Q_(alpha/2)(l, y) + Q_(1-alpha/2)(u, y) = (2 - alpha)(l - y) + alpha(u - y) = 2(l - y) + alpha(u - l)
+  $ 
+  dividindo por $alpha$:
+  $
+    1/alpha [ Q_(alpha/2)(l, y) + Q_(1-alpha/2)(u, y) ] = (u - l) + 2/alpha (l - y) = W_alpha (l, u, y)
+  $
+  
+  *Caso 2*: $l <= y <= u$:
+  $
+    Q_(alpha/2) (l, y) &= 2((alpha)/(2))(y - l)   \
+
+    &= alpha(y - l)   \
+
+    Q_(1-alpha/2)(u, y) &= 2((alpha)(2))(u - y)   \
+    
+    &= alpha(u - y)
+  $
+  somando os dois termos:
+  $
+    Q_(alpha/2) (l, y) + Q_(1-alpha/2) (u, y) = alpha(y - l) + alpha(u - y) = alpha(u - l)
+  $
+  dividindo por $alpha$:
+  $
+    1/alpha [ Q_(alpha/2)(l, y) + Q_(1-alpha/2)(u, y) ] = u - l = W_alpha (l, u, y)
+  $
+  
+  *Caso 3*: $y > u$ (e $y > l$):
+  $
+    Q_(alpha/2)(l, y) &= alpha(y - l)   \
+
+    Q_(1-alpha/2)(u, y) &= 2(1 - (alpha)(2))(y - u)   \
+    
+    &= (2 - alpha)(y - u)
+  $
+  somando os dois termos:
+  $
+    Q_(alpha/2) (l, y) + Q_(1-alpha/2) (u, y) = alpha(y - l) + (2 - alpha)(y - u) = alpha(u - l) + 2(y - u)
+  $
+  dividindo por $alpha$:
+  $
+    (1)/(alpha) [ Q_(alpha/2)(l, y) + Q_(1-alpha/2)(u, y) ] = (u - l) + (2)(alpha)(y - u) = W_alpha(l, u, y)
+  $
+  
+  Isso prova a identidade funcional $W_(alpha)(l, u, y) = (1)/(alpha) [ Q_(alpha/2)(l, y) + Q_(1 - alpha/2)(u, y) ]$
+]
 
 
 #theorem("Mínimo global do Score de Winkler")[
@@ -1337,10 +1408,8 @@ Existe uma conexão entre o score de Winkler e a Pinball Loss
   $
 ]
 
-A lógica desse score ´ que, se o valor observado $y_t$ estiver dentro do intervalo de previsão, o score é apenas o tamanho do intervalo, de forma que intervalos mais curtos são preferíveis. Se o valor observado estiver fora do intervalo, o score penaliza a distância do valor observado para o limite mais próximo do intervalo, de forma que intervalos que *não cobrem* o valor observado são penalizados.
-
 #figure(
-  image("images/A1/winkler-score.png", width: 85%),
+  image("images/A1/winkler-score.png", width: 100%),
   caption: "Dois intervalos. Se o curto cobre o valor observado, ele é preferível. Se o curto não cobre, ele pode ser penalizado e o maior ganhar"
 )
 
@@ -1353,12 +1422,48 @@ Avalia a CDF preditiva inteira $F(x)$ contra a função degrau empírica da real
   $
 ]
 
-Ela mede a área entre a CDF prevista e o degrau unitário empírico em $y_t$ (quanto menor a área, melhor). Existem dois teoremas interessantes que conectam o CRPS com a métrica de avaliação da pinball
+Ela mede a área entre a CDF prevista e o degrau unitário empírico em $y_t$ (quanto menor a área, melhor). A ideia é que, quanto mais a CDF se curva para cima no ponto $y_t$, maior a probabilidade de que a realização real seja $y_t$ verdadeiro, de forma que o caso extremo é justamente a função degrau unitário.
+
+Existem dois teoremas interessantes que conectam o CRPS com a métrica de avaliação da pinball
 
 #theorem("Equivalência da CRPS")[
   Seja $Y$ uma variável contínua aleatória com CDF $F_Y$ estritamente crescente, o CRPS de $F_Y$ com relação a uma realização $y$ é equivalente à integral da Pinball Loss sobre todos os quantis, ou seja:
   $
     integral_(-infinity)^infinity (F_Y (x) - II(x>=y))^2 dif x = integral_0^1 Q_p (F_Y^(-1)(p), y) dif p
+  $
+]
+#proof[
+  Para $x < y$, a função indicador vale $II{x >= y} = 0 => (F(x) - 0)^2 = F(x)^2$. Para $x >= y$, a função indicadora vale $II_{x >= y} = 1 => (F(x) - 1)^2 = (1 - F(x))^2$.
+  
+  Assim, a integral do CRPS decompõe-se em duas regiões:
+  $
+    "CRPS"(F, y) = integral_(-infinity)^(y) F(x)^2 dif x + integral_(y)^(+infinity) (1 - F(x))^2 dif x
+  $
+  
+  Aplicando a mudança de variável por integração por partes na escala de quantis
+  $
+    p = F(x) <=> x = F^(-1)(p)
+  $
+  
+  Para a primeira integral ($x < y <=> p < F(y)$): 
+  $
+    integral_0^(F(y)) 2p (y - F^(-1)(p)) dif p
+    
+    = integral_(-infinity)^(y) F(x)^2 dif x
+  $
+  
+  Note que $2p(y - F^(-1)(p))$ é exatamente a Pinball Loss $Q_p(F^(-1)(p), y)$ quando a previsão subestima o valor real ($y >= q$).
+  
+  Para a segunda integral ($x >= y <=> p >= F(y)$): 
+  $
+    integral_(F(y))^1 2(1-p) (F^(-1)(p) - y) dif p = integral_(y)^(+infinity) (1 - F(x))^2 dif x
+  $
+  
+  Note que $2(1-p)(F^(-1)(p) - y)$ é exatamente a Pinball Loss $Q_p(F^(-1)(p), y)$ quando a previsão superestima o valor real ($y < q$).
+  
+  Somando ambas as integrais ao longo do intervalo $p in (0, 1)$:
+  $
+    "CRPS"(F, y) = integral_(0)^(1) Q_p (F^(-1)(p),  y) dif p
   $
 ]
 
@@ -1368,6 +1473,36 @@ Ou seja, enquanto o erro de quantil avalia apenas uma fatia $p$ e o wrinkler ava
   Sejam $X$ e $X'$ duas variáveis aleatórias independentes com a mesma distribuição $F$, então, o CRPS pode ser representado como
   $
     "CRPS"(F, y) = EE_F |X - y| - 1/2 EE_F |X - X'|
+  $
+]
+#proof[
+  Utilizamos a identidade integral da distância escalar para quaisquer números reais
+  $
+    a, b in RR wide |a - b| = integral_(-infinity)^(+infinity) ( II {a <= x } - II{ b <= x } )^2 dif x
+  $
+  *Cálculo do primeiro termo* ($EE_F |X - y|$): Como $EE_F[II{X <= x}] = PP(X <= x) = F(x)$ e $II{y <= x}$ é determinística:
+  $
+    EE_F |X - y| &= integral_(-infinity)^(+infinity) EE_F [ II{X <= x} - II{y <= x} ]^2 dif x   \
+    
+    &= integral_(-infinity)^(+infinity) ( F(x) - 2 F(x) II{y <= x} + II{y <= x} ) dif x
+  $
+
+  *Cálculo do segundo termo* ($EE_F |X - X'|$): Como $X$ e $X'$ são i.i.d. com $EE[II{X <= x} II{ X' <= x }] = F(x)^2$:
+  $
+    EE_F |X - X'| = integral_(-infinity)^(+infinity) ( F(x) - 2 F(x)^2 + F(x) ) dif x = 2 integral_(-infinity)^(+infinity) ( F(x) - F(x)^2 ) dif x
+  $
+  dividindo por 2:
+  $
+    1/2 EE_F|X - X'| = integral_(-infinity)^(+infinity) ( F(x) - F(x)^2 ) dif x
+  $
+  
+  Subtraindo os dois termos:
+  $
+    EE_F |X - y| - 1/2 EE_F|X - X'| &= integral_(-infinity)^(+infinity) ( F(x)^2 - 2 F(x) II{y <= x} + II{y <= x} ) dif x   \
+    
+    &= integral_(-infinity)^(+infinity) ( F(x) - II{y <= x} )^2 dif x   \
+    
+    &= "CRPS"(F, y)
   $
 ]
 
@@ -1780,4 +1915,15 @@ Além disso, como vimos, teóricamente, todo modelo $"AR"(p)$ estacionário pode
 
 Aqui utilizamos do princípio da parcimônia: *prefira o modelo mais simples que se ajuste bem aos dados*. Se um modelo $"AR"(p)$ com poucos parâmetros consegue capturar a memória temporal de uma série, não há necessidade de adicionar mais parâmetros de média móvel. O mesmo vale para o contrário.
 
+#pagebreak()
 
+#align(center+horizon)[
+  = Estimação de Critérios de Informação
+]
+
+#pagebreak()
+
+Agora precisamos estimar se nossos modelos *explicam bem os dados* sem serem complexos demais. Dado $p$, $d$, $q$, os parâmetros $phi$, $theta$, $C$ e $sigma^2$ saem por *máxima verossimilhança*.
+$
+  "AIC"
+$
