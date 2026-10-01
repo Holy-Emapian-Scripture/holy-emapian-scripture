@@ -2169,7 +2169,171 @@ Aqui utilizamos do princípio da parcimônia: *prefira o modelo mais simples que
 
 #pagebreak()
 
+== Estimação por Máxima Verossimilhança
 Agora precisamos estimar se nossos modelos *explicam bem os dados* sem serem complexos demais. Dado $p$, $d$, $q$, os parâmetros $phi$, $theta$, $C$ e $sigma^2$ saem por *máxima verossimilhança*.
+
+Diferente do modelo $"AR"(p)$ puro (cuja regressão linear possui solução em forma fechada), os erros passados $epsilon_(t-1), ..., epsilon_(t-q)$ de um modelo $"ARMA"(p,q)$ não são diretamente observáveis, tornando a equação de verossimilhança estritamente não-linear e exigindo otimização numérica.
+
+== Critérios de Informação
+Para comparar modelos sob o mesmo nível $d$ e escolher qual deles (com $p$ e $q$ diferentes) se ajusta melhor aos dados, utilizamos *critérios de informação* que penalizam a complexidade do modelo (número de parâmetros) e recompensam o ajuste (log-verossimilhança).
+
+Para comparar modelos candidatos ajustados em uma mesma amostra de $n$ observações, utilizamos da minimização do risco da perda de informação, medida pela divergência Kullback-Leibler entre o modelo estimado e o modelo verdadeiro. A divergência Kullback-Leibler é definida como:
 $
-  "AIC"
+  D_"KL" (g || f) = EE_"g" [ log(g(y)) - log(f(y|theta)) ]
 $
+o problema passa a se tratar da maximização da esperança da log verossimilhança sob o modelo verdadeiro $g(y)$:
+$
+  Q(theta) = EE_"g" [ log(f(y|theta)) ]
+$
+
+Existem alguns critérios de análise que podemos citar para comparar modelos candidatos, como o *Akaike Information Criterion (AIC)* e *Bayesian Information Criterion (BIC)*. Todos eles seguem a mesma lógica de penalizar a complexidade do modelo e recompensar o ajuste.
+
+#definition([Akaike Information Criterion (AIC)])[
+  O AIC é definido como:
+  $
+    "AIC" = -2 log(L) + 2k
+  $
+  onde $L$ é a função de verossimilhança do modelo estimado e $k$ é o número de parâmetros livres do modelo.
+]
+
+#corollary([AIC para ARIMA])[
+  Para o modelo $"ARIMA"(p,d,q)$, o AIC é dado por:
+  $
+    "AIC" = -2 log(L) + 2(p + q + K + 1)
+  $
+  onde $K=1$ se $C$ for estimado e $K=0$ se $C$ for fixado em zero.
+]
+
+#definition([AIC Corrigiro por Amostras Finitas])[
+  O AICc é definido como:
+  $
+    "AICc" = "AIC" + frac(2k(k+1), n-k-1)
+  $
+  onde $n$ é o tamanho da amostra. Esse segundo termo é um termo de correção para amostras pequenas
+]
+#corollary([AICc para ARIMA])[
+  Para o modelo $"ARIMA"(p,d,q)$, o AICc é dado por:
+  $
+    "AICc" = "AIC" + frac(2(p + q + K + 1)(p + q + K + 2), n - (p + q + K + 1) - 1)
+  $
+  onde $K=1$ se $C$ for estimado e $K=0$ se $C$ for fixado em zero.
+]
+
+#definition([Bayesian Information Criterium])[
+  O BIC é definido como:
+  $
+    "BIC" = -2 log(L) + k log(n)
+  $
+  onde $L$ é a função de verossimilhança do modelo estimado, $k$ é o número de parâmetros livres do modelo e $n$ é o tamanho da amostra.
+]
+#corollary([BIC para ARIMA])[
+  Para o modelo $"ARIMA"(p,d,q)$, o BIC é dado por:
+  $
+    "BIC" = -2 log(L) + (p + q + K + 1) log(n)
+  $
+  onde $K=1$ se $C$ for estimado e $K=0$ se $C$ for fixado em zero.
+]
+
+O AICc é o critério primário para a escolha de $p$ e $q$ (sob o mesmo $d$), de forma que $"AICc" approx "AIC"$ para amostras muito grandes. O $"BIC"$ deve ser utilizado em contextos que ter muitos parâmetros é realmente muito indesejável (parcimônia extrema). Existe uma regra prática de que, se dois modelos apresentarem uma diferença de AICc menor que $2$, eles são considerados *equivalentes* em termos de ajuste, e a escolha entre eles pode ser feita com base em outros critérios, como interpretabilidade ou simplicidade.
+
+== Incomparabilidade de Modelos com Diferentes $d$
+O AICc e o BIC são comparáveis apenas entre modelos com o mesmo nível de diferenciação $d$. Modelos com diferentes valores de $d$ não podem ser comparados diretamente
+
+#theorem([Incomparabilidade de Modelos com Diferentes $d$])[
+  Seja $Y = (y_1,...,Y_T)^T$ o vetor de observações da série temporal original ($d=0$), e seja $Y^* = (Delta y_2,...,Delta y_T)^T$ o vetor da série diferenciada ($d=1$). É matematicamente *inválido* comparar o AIC de um modelo ajustado com $d=0$ com o AIC de um modelo ajustado com $d=1$, pois os valores de log-verossimilhança derivam de funções de densidade de probabilidade integradas sobre espaços de medida de dimensões e escalas distintas.
+]
+#proof[
+  Vamos definir uma transformação linear bijetora $A$ entre o vetor original $Y$ e o vetor $Y^*$ de tal forma que $Y^* = A Y$. Sabendo que $Delta y_t = y_t - y_(t-1)$, temos que $A$ é definida como
+  $
+    A = mat(
+      -1, 1, 0, ..., 0;
+      0, -1, 1, ..., 0; 
+      dots.v, dots.v, dots.v, dots.down, dots.v;
+      0, 0,..., -1, 1
+    )
+  $
+
+  No entanto, perceba que $A in RR^(T-1 times T)$, representando uma transformação *não* bijetiva, pois o determinante *não é definido*. Como o determinante não se aplica aqui, não podemos expressar a verossimilhança de $Y$ em termos da verossimilhança de $Y^*$, e vice-versa. Portanto, os modelos com diferentes níveis de diferenciação $d$ não podem ser comparados diretamente em termos de AIC ou BIC por representarem funções de densidade de probabilidade em espaços de medida (em termos mais intuitivos, sistemas de coordenadas) distintos, tornando a comparação inválida.
+]
+
+== Teste KPSS para Determinação de $d$
+Assim como existem métodos para escolher $p$ e $q$ a partir de um $d$ fixo, existem métodos para escolher $d$ a partir da série original. A escolha de $d$ é crucial, pois ela determina se a série será estacionária ou não, e isso afeta diretamente a validade das inferências feitas a partir do modelo.
+
+O método mais básico para determinar o valor de $d$ é o teste KPSS (Kwiatkowski-Phillips-Schmidt-Shin), que testa a hipótese nula de estacionariedade contra a alternativa de uma raiz unitária. Se o teste rejeitar a hipótese nula, isso sugere que a série não é estacionária e que uma diferenciação adicional pode ser necessária.
+$
+  H_0: "A série é estacionária"    \
+  H_1: "A série possui uma raiz unitária (não estacionária)"
+$
+
+=== A Premissa
+Esse teste se baseia na premissa que uma série temporal pode ser decomposta em $2$ componentes: uma tendência estocástica e um componente de ruído fracamente estacionário.
+$
+  y_t = r_t + epsilon_t    \
+
+  r_t = r_(t-1) + u_t   \
+  
+  u_t ~ "IID"(0, sigma_u^2)
+$
+
+a estacionariedade da série depende então da *variância de $u_t$*. Se $sigma_u^2 = 0$, a série é estacionária, caso contrário, a série possui uma raiz unitária e não é estacionária. Então as hipóteses podem ser reformuladas como
+$
+  H_0: sigma_u^2 = 0    \
+  H_1: sigma_u^2 > 0
+$
+
+=== Estatística do Teste
+Sob $H_0$, a média da série é *constante* e os valores oscilam em torno dela, então estima-se os resíduos da regressão:
+$
+  e_t = y_t - overline(y)
+$
+
+Definimos então $S_t$ como a *soma acumulada dos resíduos*:
+$
+  S_t = sum_(i=1)^t e_i
+$
+
+agora vamos analisar como ela se comporta em ambos os cenários de hipóteses. Se a série for estacionária, a soma acumulada $S_t$ vai oscilar em torno de zero. Por outro lado, se a série não for estacionária, $S_t$ vai crescer mais rapidamente, refletindo a presença de uma tendência estocástica.
+
+Para avaliar o comportamento global da série, pegamos o valor da soma acumulada $S_t$ em cada dia $t$, elevamos ao quadrado (para eliminar os sinais negativos) e somamos tudo:
+$
+  sum_(t=1)^T S_t^2 = S_1^2 + S_2^2 + S_3^2 + ... + S_T^2
+$
+
+Se a série for estacionária: Como cada $S_t$ é pequeno, o somatório $sum S_t^2$ resulta em um número PEQUENO.Se a série for não-estacionária: Como os $S_t$ são gigantescos, o somatório $sum S_t^2$ resulta em um número ENORME.
+
+Não podemos usar a soma bruta $sum S_t^2$ diretamente porque ela sofre de dois problemas:
++ Depende do tamanho do banco de dados ($T$): Quanto mais dados você tem, mais termos você está somando).
++ Depende da escala dos dados: Se a série for medida em milhões de Reais vs. em gramas, a soma muda de tamanho.
+
+Para resolver isso, dividimos por dois fatores de correção:
++ Dividimos por $T^2$: Sob a hipótese de estacionariedade ($H_0$), a teoria provou estatisticamente que o crescimento da soma $sum S_t^2$ em relação ao tamanho da amostra é proporcional a $T^2$. Dividir por $T^2$ faz com que a estatística não mude se você tiver $100$ ou $10.000$ dados.
++ Dividimos pela Variância de Longo Prazo ($hat(sigma)^2$: Dividimos pela variância dos resíduos $e_t$ para "cancelar" a unidade de medida dos dados, deixando o teste puramente adimensional
+
+E no final, obtemos a estatística de teste
+$
+  "KPSS" = 1/(T^2 hat(sigma)^2) sum_(t=1)^T S_t^2
+$
+
+Essa estatística não possui uma distribuição padrão com forma analítica para o cálculo dos p-valores, então os valores críticos são obtidos por simulação Monte Carlo. A tabela de valores críticos do teste KPSS é amplamente disponível na literatura estatística e em pacotes de software, mas o padrão é que, para um nível de significância de 5%, o valor crítico é aproximadamente $0.463$. Se a estatística KPSS calculada for maior que esse valor crítico, rejeitamos a hipótese nula de estacionariedade. Como não há estacionariedade, *diferenciamos a série* e *aplicamos o teste novamente* até que a hipótese nula não seja rejeitada, determinando assim o valor apropriado de $d$ para o modelo ARIMA.
+
+== Algoritmo de Busca Automática
+Especificado todos esses métodos de testagem de parâmetros, podemos sumarizar um algoritmo para encontrar um modelo ARIMA que modele bem os dados mantendo o princípio da parcimônia:
+
+#pseudocode-list(
+  booktabs: true,
+  title: [Algoritmo de Busca Automática de Modelos ARIMA]
+)[
+  + *function* _automatic\_search_ (y) {
+    + Aplico KPSS até não rejeitar a hipótese nula $H_0$
+    + Defino $d$ como o número de diferenciações aplicadas
+    + Crio modelos candidatos $"ARIMA"$ iniciais com os parâmetros
+      + $(0,d,0),(1,d,0),(0,d,1),(2,d,2)$
+    + Escolho o modelo com menor AICc
+    + *while* (AICc do modelo atual < AICc do modelo anterior) {
+      + Crio modelos candidatos $"ARIMA"$ vizinhos com os parâmetros
+        + $(p-1,d,q),(p+1,d,q),(p,d,q-1),(p,d,q+1)$
+      + Escolho o modelo com menor AICc
+      + Repito ou até convergir ou até ficar satisfeito
+    + }
+  + }
+]
