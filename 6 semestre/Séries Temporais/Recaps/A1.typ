@@ -1757,7 +1757,7 @@ $
 $
 onde $phi(z) = 1 - phi_1 z - phi_2 z^2 - ... - phi_p z^p$ é o *Polinômio Característico* (ou de Defasagem) associado ao processo.
 
-#definition("Polinômio Característico")[
+#definition([Polinômio Característico do $"AR"(p)$])[
   Dado um processo $"AR"(p)$, o polinômio característico $phi(z)$ é definido como
   $
     phi(z) = 1 - phi_1 z - phi_2 z^2 - ... - phi_p z^p
@@ -1906,60 +1906,141 @@ Ao contrário do $"AR"(p)$, que usa valores passados de $y$, o modelo $"MA"(q)$ 
   $
 ]
 
-a propriedade fundamental desse modelo é que ele possui *memória finita*, onde após $q$ períodos, o erro $epsilon_t$ não exerce mais influência
+Assim como o $"AR"(p)$, o $"MA"(q)$ também pode ser representado em termos de polinômios característicos.
 
-#theorem([Memória do $"MA"(q)$])[
-  A Função de Autocorrelação (ACF) teórica de um modelo $"MA"(q)$ corta exatamente após o lag $q$:
+#definition([Polinômio Característico do $"MA"(q)$])[
+  Dado um processo $"MA"(q)$, o polinômio característico $theta(z)$ é definido como
   $
-    rho(h) = 0 wide forall h > q
+    theta(z) = 1 + theta_1 z + theta_2 z^2 + ... + theta_q z^q
   $
 ]
 
-== $"AR"(1)$ como $"MA"(infinity)$
-Todo processo $"AR"(p)$ estacionário pode ser reescrito como um processo $"MA"(infinity)$ de choques passados acumulados:
+Essa definição de polinômio característico é útil para reescrever o modelo em termos do operador de defasagem $B$:
+$
+  y_t &= C + epsilon_t + theta_1 epsilon_(t-1) + ... + theta_q epsilon_(t-q)    \
 
-#theorem()[
-  Se $|phi_1| < 1$, o modelo $y_t = phi_1 y_(t-1) + epsilon_t$ admite a representação:
+  &= C + epsilon_t + theta_1 B epsilon_t + theta_2 B^2 epsilon_t + ... + theta_q B^q epsilon_t    \
+
+  &= C + (1 + theta_1 B + theta_2 B^2 + ... + theta_q B^q) epsilon_t    \
+
+  &= C + theta(B) epsilon_t
+$
+
+
+== ACF do $"MA"(q)$
+A propriedade fundamental desse modelo é que ele possui *memória finita*, onde após $q$ períodos, o erro $epsilon_t$ não exerce mais influência
+
+#theorem([Memória do $"MA"(q)$])[
+  Seja $Y_t$ um processo de Média Móvel de ordem $q$, $"MA"(q)$, definido por:
   $
-    y_t = sum_(j=0)^(infinity) phi_1^j epsilon_(t-j)
+    Y_t = C + epsilon_t + theta_1 epsilon_(t-1) + theta_2 epsilon_(t-2) + ... + theta_q epsilon_(t-q), wide epsilon_t ~ "WN"(0, sigma^2)
+  $
+  onde $theta_q != 0$. A Função de Autocorrelação (ACF) teórica $rho(h)$ apresenta um corte abrupto exatamente após o lag $q$:
+  $
+    rho(h) = cases(
+      1 wide & h = 0,
+      (sum_(j=0)^(q-|h|) theta_j theta_(j+|h|))/(sum_(j=0)^(q) theta_j^2) wide & 1 <= |h| <= q "assumindo" theta_0 = 1,
+      0 wide & |h| > q
+    )
   $
 ]
 #proof[
-  Substituindo a equação de $y_(t-1)$ recursivamente em $y_t$:
+  Sem perda de generalidade, assuma que a constante $C = 0$ (processo centrado na média). Escrevemos o somatório compacto do processo para o instante $t$ definindo $theta_0 = 1$:
   $
-    y_t = phi_1(phi_1 y_(t-2) + epsilon_(t-1)) + epsilon_t = epsilon_t + phi_1 epsilon_(t-1) + phi_1^2 y_(t-2)
+    Y_t = sum_(j=0)^(q) theta_j epsilon_(t-j)
   $
-  Após $N$ substituições:
+
+  Por definição, a autocovariância no lag $h >= 0$ é dada pela esperança do produto de duas observações separadas por $h$ passos no tempo:
   $
-    y_t = sum_(j=0)^(N) phi_1^j epsilon_(t-j) + phi_1^(N+1) y_(t-N-1)
+    gamma(h) = EE[Y_(t+h) Y_t] = EE [ ( sum_(j=0)^(q) theta_j epsilon_(t+h-j) ) ( sum_(k=0)^(q) theta_k epsilon_(t-k) ) ]
   $
-  Tomando o limite $N -> infinity$, como $|phi_1| < 1$, o termo de memória inicial $phi_1^(N+1) y_(t-N-1) -> 0$, resultando em $y_t = sum_(j=0)^(infinity) phi_1^j epsilon_(t-j)$
+  Pela linearidade da esperança, podemos expandir o produto das duas somas em uma soma dupla:
+  $
+    gamma(h) = sum_(j=0)^(q) sum_(k=0)^(q) theta_j theta_k EE[epsilon_(t+h-j) epsilon_(t-k)]
+  $
+  
+  Como os ruídos $epsilon_t$ formam um ruído branco não-correlacionado ($EE[epsilon_r epsilon_s] = 0$ para $r != s$ e $EE[epsilon_r^2] = sigma^2$), a esperança $EE[epsilon_(t+h-j) epsilon_(t-k)]$ é não-nula se e somente se os índices dos ruídos forem idênticos:
+  $
+    t + h - j = t - k <=> k = j - h
+  $
+
+  Então vamos reescrever a autocovariância como uma soma simples, percorrendo apenas os índices $(j, k)$ que satisfazem a condição $h = j - k$:
+  $
+    gamma(h) = sum_(j=0)^q theta_j sum_(k=0)^q theta_k EE[epsilon_(t+h-j) epsilon_(t-k)] = sum_(j=0)^q theta_j theta_(j-h) sigma^2
+  $
+  
+  No entanto, para que $k = j - h$ seja um índice válido (i.e., $k >= 0$), precisamos que $j >= h$. Analisando o caso $h > q$, para qualquer lag $h > q$, observamos os limites do índice $j$:
+  
+  + Por definição do processo, $j <= q$
+  + Para que o choque seja o mesmo, exige-se $j >= h$
+
+  Como $h > q$, a condição exigiria que $j >= h > q$, o que contradiz $j <= q$. Logo, o conjunto de índices válidos é *vazio* — ou seja, as duas janelas temporais de $Y_(t+h)$ e $Y_t$ não compartilham nenhum choque $epsilon$ em comum. Portanto, para todo $h > q$, $gamma(h) = 0$, $forall h > q$, logo $rho(h) = 0 space forall h>q$.
+
+  Agora desenvolvendo o caso $1 <= h <= q$, temos que a soma válida de índices $j$ é limitada por $h <= j <= q$, então podemos reescrever a autocovariância como:
+  $
+    gamma(h) = sigma^2 sum_(j=h)^q theta_j theta_(j-h) = sigma^2 sum_(j=0)^(q-h) theta_(j+h) theta_j
+  $
+
+  Dividindo isso por $gamma(0)$, temos que
+  $
+    rho(h) = gamma(h)/gamma(0) = (sigma^2 sum_(j=0)^(q-h) theta_(j+h) theta_j)/(sigma^2 sum_(j=0)^q theta_j^2) = (sum_(j=0)^(q-h) theta_(j+h) theta_j)/(sum_(j=0)^q theta_j^2)
+  $
+
+  e quando $|h| = 0$, temos $rho(0) = 1$, fechando assim todos os casos da ACF do $"MA"(q)$
 ]
 
-== Invertibilidade e Representação $"AR"(infinity)$ de um $"MA"(q)$
+== Invertibilidade
 
-Podemos fazer o caminho inverso: expressar o erro $epsilon_t$ em função dos valores observados passados de $y$.
-
-Para o $"MA"(1)$: $y_t = (1 + theta_1 B)epsilon_t => epsilon_t = (1 + theta_1 B)^(-1) y_t$.
-
-Aplicando a expansão em série de Neumann $(1 + x)^(-1) = sum_(j=0)^infinity (-x)^j$:
-$
-  epsilon_t = sum_(j=0)^infinity (-theta_1)^j B^j y_t = y_t - theta_1 y_(t-1) + theta_1^2 y_(t-2) - theta_1^3 y_(t-3) + ...
-$
-
-Isolando $y_t$ para obter a representação $"AR"(infinity)$:
-$
-  y_t = sum_(j=1)^infinity -(-theta_1)^j y_(t-j) + epsilon_t
-$
-
-#theorem("Invertibilidade")[
-  Para que os pesos da recuperação do erro $(-theta_1)^j$ decaiam para zero à medida que nos afastamos no passado (garantindo que observações recentes pesem mais do que o passado remoto), exige-se a condição de Invertibilidade:
+#definition([Invertibilidade do $"MA"(q)$])[
+  Um processo $"MA"(q)$ dado por $y_t = C + theta(B) epsilon_t$ é dito *invertível* se todas as raízes complexas $z_j$ do seu polinômio característico $theta(z) = 0$ estão estritamente fora do círculo unitário no plano complexo:
   $
-    "se" z_j "tal que" theta(z_j) = 0 and theta(z) = 1+theta_1 z + dots + theta_q z^q => |z_j| > 1
+    |z_j| < 1 wide forall j in {1, ..., q}
   $
 ]
 
-== Armadilha Matemática da Não-Identificabilidade do $"MA"(1)$ não invertível
+== $"MA"(1)$ como $"AR"(infinity)$
+Conseguimos reescrever um processo $"MA"(1)$ como um processo $"AR"(infinity)$ de choques passados acumulados:
+
+#theorem[
+  Seja $y_t$ um processo $"MA"(1)$, ou seja, $y_t = C + theta_1 epsilon_(t-1) + epsilon_t$ com $|theta_1| < 1$. Então, o processo pode ser reescrito como:
+  $
+    y_t = sum_(j=1)^(infinity) phi_j y_(t-j) + epsilon_t    \
+
+    phi_j = -(-theta_1)^j
+  $
+]
+#proof[
+  Temos que
+  $
+    y_t = (1 + theta_1 B) epsilon_t
+  $
+  pela hipótese de invertibilidade, sabemos que $|theta_1| < 1$, e para qualquer $x in CC$ tal que $|x| < 1$, a função $(1-x)^(-1)$ admite uma expansão geométrica (Série de Neumann) infinita convergente
+  $
+    (1+x)^(-1) = sum_(j=0)^(infinity) (-x)^j
+  $
+
+  então temos que
+  $
+    (1+B theta_1)^(-1) = sum_(j=0)^(infinity) (-B theta_1)^j = sum_(j=0)^(infinity) (-theta_1)^j B^j
+  $
+
+  multiplicando ambos os lados da equação $y_t = (1 + theta_1 B) epsilon_t$ por $(1+B theta_1)^(-1)$:
+  $
+    epsilon_t &= (1+B theta_1)^(-1) y_t   \
+
+    epsilon_t &= sum_(j=0)^(infinity) (-theta_1)^j B^j y_t    \
+    
+    &= sum_(j=0)^(infinity) (-theta_1)^j y_(t-j)    \
+
+    &= y_t + sum_(j=1)^(infinity) (-theta_1)^j y_(t-j)    \
+
+    y_t &= - sum_(j=1)^(infinity) (-theta_1)^j y_(t-j) + epsilon_t    \
+
+    y_t &= sum_(j=1)^(infinity) phi_j y_(t-j) + epsilon_t    \
+  $
+]
+
+== Não-Identificabilidade do $"MA"(1)$ não invertível
 
 #theorem[
   Os modelos $"MA"(1)$ com parâmetro $theta_1 = theta$ e com parâmetro $theta_1 = 1/theta$ geram exatamente a mesma Função de Autocorrelação (ACF).
@@ -1977,24 +2058,26 @@ $
 
 Mas por que isso seria um problema? A amostra de dados não consegue distinguir um $"MA"(1)$ com $theta=0.5$ de um com $theta=2$ pois ambos geram a mesma ACF. Se o modelo tivesse $theta = 2$ (não-invertível), a recuperação do erro usaria pesos $(-2)^j$ que explodem no passado remoto. Para garantir identificabilidade única e uma expansão $"AR"(infinity)$ estável, todos os algoritmos de estimação impõem estritamente a restrição de invertibilidade $|theta| < 1$
 
-== PACF e ACF do $"MA"(q)$
+== $"AR"(1)$ como $"MA"(infinity)$
+Todo processo $"AR"(p)$ *estacionário* pode ser reescrito como um processo $"MA"(infinity)$ de choques passados acumulados:
 
-#theorem([Corte abrupto da ACF do $"MA"(q)$])[
-  Seja $Y_t$ um processo de Média Móvel de ordem $q$, $"MA"(q)$, definido por:
+#theorem[
+  Se $|phi_1| < 1$, o modelo $y_t = phi_1 y_(t-1) + epsilon_t$ admite a representação:
   $
-    Y_t = C + epsilon_t + theta_1 epsilon_(t-1) + theta_2 epsilon_(t-2) + ... + theta_q epsilon_(t-q), wide epsilon_t ~ "WN"(0, sigma^2)
-  $
-  onde $theta_q != 0$. A Função de Autocorrelação (ACF) teórica $rho(h)$ apresenta um corte abrupto exatamente após o lag $q$:
-  $
-    rho(h) = cases(
-      1 wide & h = 0,
-      (sum_(j=0)^(q-|h|) theta_j theta_(j+|h|))/(sum_{j=0}^(q) theta_j^2) wide & 1 <= |h| <= q "assumindo" theta_0 = 1,
-      0 wide & |h| > q
-    )
+    y_t = sum_(j=0)^(infinity) phi_1^j epsilon_(t-j)
   $
 ]
-
-Aqui vemos a relação inversa com PACF e ACF que o $"MA"(q)$ possui em relação ao "AR(p)". Enquanto o $"AR"(p)$ possui corte abrupto na PACF e decaimento exponencial na ACF, o $"MA"(q)$ possui corte abrupto na ACF e decaimento exponencial na PACF.
+#proof[
+  Substituindo a equação de $y_(t-1)$ recursivamente em $y_t$:
+  $
+    y_t = phi_1(phi_1 y_(t-2) + epsilon_(t-1)) + epsilon_t = epsilon_t + phi_1 epsilon_(t-1) + phi_1^2 y_(t-2)
+  $
+  Após $N$ substituições:
+  $
+    y_t = sum_(j=0)^(N) phi_1^j epsilon_(t-j) + phi_1^(N+1) y_(t-N-1)
+  $
+  Tomando o limite $N -> infinity$, como $|phi_1| < 1$, o termo de memória inicial $phi_1^(N+1) y_(t-N-1) -> 0$, resultando em $y_t = sum_(j=0)^(infinity) phi_1^j epsilon_(t-j)$
+]
 
 #pagebreak()
 
