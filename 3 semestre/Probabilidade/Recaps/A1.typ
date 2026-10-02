@@ -210,7 +210,7 @@ percebe que é a mesma organização, só que com outro ponto de referência? En
 
 #pagebreak()
 
-== Conjuntos
+== Conjuntos e Definição Ingênua de Probabilidade
 Toda a teoria de probabilidade é construída em cima da teoria de conjuntos, então muitos teoremas de probabilidade são apenas teoremas de conjuntos aplicados a eventos.
 
 #definition([Espaço Amostral])[
@@ -246,4 +246,85 @@ Toda a teoria de probabilidade é construída em cima da teoria de conjuntos, en
   $
     C = inter_(i=1)^(10) A_i
   $
+]
+
+#theorem("Lei de De Morgan")[
+  Dado $S$ um espaço amostral e $A,B subset.eq S$ sendo eventos em $S$, temos que
+  + $(A union B)^c = A^c inter B^c$
+  + $(A inter B)^c = A^c union B^c$
+]
+#proof[
+  Para a primeira igualdade, temos que provar que $(A union B)^c subset.eq A^c inter B^c$ e depois $A^c inter B^c subset.eq (A union B)^c$. Para a primeira parte, seja
+  $
+    x in (A union B)^c  <=> x in.not A union B
+  $
+  logo, $x in.not A$ e $x in.not B$, ou seja, $x in A^c$ e $x in B^c$, então $x in A^c inter B^c => (A union B)^c subset.eq A^c inter B^c$. Para a volta, seja $x in A^c inter B^c$, então $x in A^c$ e $x in B^c$, ou seja, $x in.not A$ e $x in.not B$, então $x in.not (A union B)$, ou seja, $A^c inter B^c subset.eq (A union B)^c$.
+
+  Para a segunda igualdade, faremos o mesmo raciocínio. Seja $x in (A inter B)^c$ então $x in.not A inter B$, ou seja, $x$ não ocorre *simultaneamente* em $A$ e $B$, logo $x in.not A$ *ou* $x in.not B$, ou seja, $x in A^c$ *ou* $x in B^c$, então $x in A^c union B^c => (A inter B)^c subset.eq A^c union B^c$. Para a volta, seja $x in A^c union B^c$, então $x in A^c$ *ou* $x in B^c$, ou seja, $x in.not A$ *ou* $x in.not B$, logo $x in.not (A inter B)$, ou seja, $A^c union B^c subset.eq (A inter B)^c$.
+]
+
+Com todas essas definições, teoremas e revisão de contagem, nós conseguimos finalmente definir de maneira *informal* o que é a probabilidade de um evento ocorrer
+
+#definition([Naive Probability Definition])[
+  Dado um espaço amostral $S$ e um evento $E subset.eq S$, a probabilidade de $E$ ocorrer é dada por
+  $
+    PP(E) = frac(|E|, |S|)
+  $
+]
+
+== Tabela Amostral e Demonstração por Interpretação
+A tabela amostral é muito útil para organizar *quais ferramentas* de contagem utilizamos sob *determinadas condições* de um *experimento*
+
+#set table(
+  stroke: (x, y) => (
+    y: 1pt,
+    left: if x == 0 and y == 0 { 0pt } else { 1pt },
+    right: if x == 0 and y == 0 { 0pt } else { 1pt},
+    top: if x == 0 and y == 0 { 0pt } else { 1pt },
+    bottom: if x == 0 and y == 0 { 0pt } else { 1pt }
+  ),
+)
+
+#figure(
+  table(
+    columns: 3,
+    rows: 3,
+    align: center+horizon,
+
+    [],[Ordem Importa],[Ordem não Importa],
+    [Reposição],[$n^k$],[$mat(n+k-1 ; k)$],
+    [Sem Reposição],[$n!/(n-k)!$],[$mat(n;k)$],
+  )
+)
+
+Antes de continuarmos e mostrarmos algumas identidades interessantes para nos ajudar a resolver alguns problemas, vamos discorrer o porquê de cada uma das fórmulas mencionadas anteriormente.
+
+=== Ordem Importa e Reposição
+Se a ordem importa, então estamos lidando com arranjos. Se há reposição, então para cada elemento escolhido, ele volta para o conjunto de elementos disponíveis, ou seja, na primeira retirada, eu tenho $n$ elementos disponíveis, na segunda, eu ainda tenho $n$ pois o anterior foi colocado de volta, e assim por diante. Logo, o número de maneiras de escolher $k$ elementos com reposição é dado por $n^k$.
+
+=== Ordem Importa e Sem Reposição
+Estamos lidando literalmente com os arranjos como já vimos antes, então será a mesma fórmula do arranjo, ou seja, $n!/(n-k)!$.
+
+=== Ordem não Importa e Sem Reposição
+É exatamente o caso da combinação padrão que discutimos anteriormente, ou seja, $mat(n;k)$.
+
+=== Ordem não Importa e Reposição
+Esse caso é um pouco mais complicado. Você saber de quantas formas possíveis você pode escolher $k$ elementos de um conjunto de $n$ elementos, mas agora você pode escolher o mesmo elemento mais de uma vez, isso é equivalente a *perguntar de quantos jeitos diferentes é possível distribuir $k$ partículas independentes em $n$ caixas diferentes*, mas por quê? Isso não parece nada intuitivo.
+
+Interprete uma associação, cada partícula é um *sorteio* e cada caixa é um *elemento do conjunto*. Quando eu falo *partícula $i$ vai ficar na caixa $p$*, isso quer dizer em termos do sorteio que, no $i$-ésimo sorteio, o elemento escolhido foi o $p$-ésimo elemento do conjunto. Então, se eu tenho $k$ partículas e $n$ caixas, isso é equivalente a dizer que eu tenho $k$ sorteios e $n$ elementos disponíveis para escolher. Como eu posso escolher um mesmo elemento mais de uma vez, isso é equivalente a dizer que eu posso colocar mais de uma partícula na mesma caixa. Para fazer o cálculo de fato, utilizamos a abordagem de pontos e traços, tenha em mente a seguinte divisão
+$
+  dot dot dot \/ dot \/ dot dot dot \/ dot \/ dot
+$
+Essa representação é o mesmo que dizer que na primeira caixa, eu tenho $3$ partículas, na segunda eu tenho $1$ e assim em diante, a quantidade de pontos entre os traços representa a quantidade de partículas em cada caixa. Como temos $k$ partículas, temos $k$ pontos, e como temos $n$ caixas, temos $n-1$ traços. Logo, o número total de maneiras de organizar esses pontos e traços vai ser o número de maneiras de escolher $k$ pontos dentre todos os $k+n-1$ elementos, ou seja, $mat(n+k-1 ; k)$.
+
+== Teoremas Úteis
+Aqui nós vamos mostrar alguns teoremas que serão muito úteis para nós na hora de resolver problemas de probabilidade. Suas demonstrações não serão algébricas, mas sim por interpretação, ou seja, vamos interpretar o que cada lado da equação significa e mostrar que eles são equivalentes.
+
+#theorem[
+  $
+    n mat(n-1 ; k-1) = k mat(n ; k)
+  $
+]
+#proof[
+  
 ]
