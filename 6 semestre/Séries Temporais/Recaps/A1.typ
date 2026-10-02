@@ -2241,7 +2241,7 @@ O AICc e o BIC são comparáveis apenas entre modelos com o mesmo nível de dife
 
 #theorem([Incomparabilidade de Modelos com Diferentes $d$])[
   Seja $Y = (y_1,...,Y_T)^T$ o vetor de observações da série temporal original ($d=0$), e seja $Y^* = (Delta y_2,...,Delta y_T)^T$ o vetor da série diferenciada ($d=1$). É matematicamente *inválido* comparar o AIC de um modelo ajustado com $d=0$ com o AIC de um modelo ajustado com $d=1$, pois os valores de log-verossimilhança derivam de funções de densidade de probabilidade integradas sobre espaços de medida de dimensões e escalas distintas.
-]
+]<different-d-invalidity>
 #proof[
   Vamos definir uma transformação linear bijetora $A$ entre o vetor original $Y$ e o vetor $Y^*$ de tal forma que $Y^* = A Y$. Sabendo que $Delta y_t = y_t - y_(t-1)$, temos que $A$ é definida como
   $
@@ -2337,3 +2337,105 @@ Especificado todos esses métodos de testagem de parâmetros, podemos sumarizar 
     + }
   + }
 ]
+
+#pagebreak()
+
+#align(center+horizon)[
+  = SARIMA
+]
+
+#pagebreak()
+
+== Motivação
+As séries temporais podem apresentar padrões que se repetem em intervalos regulares, conhecidos como *sazonalidade*. Por exemplo, vendas de sorvete tendem a aumentar no verão e diminuir no inverno. Para capturar esses padrões sazonais, o modelo ARIMA é estendido para incluir componentes sazonais, resultando no modelo SARIMA (Seasonal ARIMA).
+
+#definition([Modelo $"SARIMA"(p,d,q)(P,D,Q)_m$])[
+  O modelo $"SARIMA"(p,d,q)(P,D,Q)_m$ é uma extensão do modelo ARIMA que incorpora componentes sazonais. Ele é definido por:
+  $
+    phi_p (B) Phi_P (B^m) (1-B)^d (1-B^m)^D y_t = C + theta_q (B) Theta_Q (B^m) epsilon_t
+  $
+  onde:
+  $
+    phi_p (B) &= 1 - phi_1 B - phi_2 B^2 - ... - phi_p B^p    \
+
+    Phi_P (B^m) &= 1 - Phi_1 B^m - Phi_2 B^(2m) - ... - Phi_P B^(P m)    \
+
+    theta_q (B) &= 1 + theta_1 B + theta_2 B^2 + ... + theta_q B^q    \
+
+    Theta_Q (B^m) &= 1 + Theta_1 B^m + Theta_2 B^(2m) + ... + Theta_Q B^(Q m)   \
+
+    epsilon_t ~ "WN"(0, sigma^2)
+  $
+  e $m$ representa a sazonalidade dos dados (por exemplo, $m=4$ para dados trimestrais, $m=12$ para dados mensais)
+]
+
+A lógica aqui é que a adição dos termos sazonais permite que o modelo capture padrões que se repetem a cada $m$ períodos, enquanto os termos não sazonais continuam a capturar a dinâmica de curto prazo da série, por exemplo, se pegamos o operador $1-B^m$ e aplicamos em $y_t$, temos
+$
+  (1-B^m)y_t = y_t - y_(t-m)
+$
+e se existe um padrão sazonal, essa diferença deveria capturar justamente esse padrão sazonal e se manter estável ao longo do tempo.
+
+== Diferenciação Sazonal ($D$) v.s Regular ($d$)
+
+#figure(
+  image("images/A1/sarima-diff.png", width: 85%),
+  caption: "Série sem diferenciação sazonal e com diferenciação sazonal (D=1 e m=12)"
+)
+
+A ordenação na aplicação das diferenças é crucial para evitar distorções na estrutura estocástica da série. A prioridade deve ser primeiramente aplicar a diferenciação sazonal $1-B^m$ e depois a regular $1-B$. Se tentássemos aplicar a diferenciação regular antes da sazonal, a sazonalidade na nova série ficaria *distorcida*
+
+Após aplicarmos a diferenciação sazonal, podemos inspecionar o gráfico e utilizar do teste KPSS para decidir se é necessário aplicar a diferenciação regular.
+
+Em aplicações reais, é *muito raro* de precisarmos aplicar a diferenciação sazonal mais de uma vez ($D>1$).
+
+No SARIMA, o @different-d-invalidity se aplica tanto para a diferenciação sazonal $D$ quanto para a regular $d$. Modelos com diferentes níveis de diferenciação não podem ser comparados diretamente em termos de AIC ou BIC, pois eles representam funções de densidade de probabilidade em espaços de medida distintos. Portanto, ao comparar modelos SARIMA, é essencial que os modelos tenham os mesmos valores de $d$ e $D$.
+
+== O problema do over differencing sazonal
+Imagine que você está analisando as vendas de uma sorveteria. Todo mês de dezembro as vendas sobem exatamente $1000$ unidades devido ao verão, e todo mês de julho elas caem exatamente $500$ unidades. Essa sazonalidade é *perfeitamente fixa* e *previsível*
+$
+  S_t = S_(t-12)
+$
+
+sua venda real no mês $t$ é dada por
+$
+  y_t = S_t + epsilon_t
+$
+
+onde $epsilon_t$ é um ruído branco puro — ou seja, erros aleatórios imprevisíveis que não têm correlação nenhuma de um mês para o outro
+
+Aqui a sazonalidade já é fixa, então você *não precisa diferenciar*, mas vamos aplicar a diferenciação mesmo assim e ver o que vai acontecer
+$
+  w_t = y_t - y_(t-12) = S_t + epsilon_t - S_(t-12) - epsilon_(t-12) = epsilon_t - epsilon_(t-12)
+$
+
+Analisando $w_t$ e $w_(t-12)$, conseguimos ver que
+$
+  w_t = epsilon_t - epsilon_(t-12)    \
+
+  w_(t-12) = epsilon_(t-12) - epsilon_(t-24)
+$
+os ruídos se repetem em ambas as equações, de forma que o que deveria ser apenas ruído que interfere em um mês, agora se tornou um ruído que *se repete* em ambos os meses, criando uma correlação artificial entre $w_t$ e $w_(t-12)$.
+
+Se calcularmos a correlação entre $w_t$ e $w_(t-12)$ (o lag sazonal): A variância de $w_t$ é $VV[epsilon_t - epsilon_(t-12)) = sigma^2 + sigma^2 = 2sigma^2$. A covariância entre $w_t$ e $w_(t-12)$ vem apenas do termo compartilhado: $"Cov"(-epsilon_(t-12), epsilon_(t-12)) = -sigma^2$. A autocorrelação no lag 12 será:
+$
+  rho(12) = (-sigma^2)/(2sigma^2) = -0.5
+$
+
+Por que isso é uma armadilha? Quando você olha para o gráfico da ACF dessa série diferida, você vê um pico negativo enorme de $-0.5$ exatamente no lag $12$. O analista inexperiente pensa: _"Nossa, tem uma autocorrelação fortíssima de $-0,5$ no lag $12$! Preciso colocar mais parâmetros ou diferir de novo!"_. A realidade matemática: Essa correlação de $-0.5$ não existia nos dados originais. Foi você que a fabricou ao aplicar a diferença $(1 - B^(12))$ em algo que era apenas um ruído branco em torno de uma sazonalidade fixa. Essa estrutura $w_t = epsilon_t - 1 dot epsilon_(t-12)$ é a definição exata de um processo $"SMA"(1)_(12)$ com $Theta_1 = -1$.
+
+== Identificação Sazonal
+Após obter a série estacionária $y^*_t = (1 - B)^d (1 - B^m)^D y_t$, a identificação das ordens sazonais $(P, Q)$ é realizada inspecionando exclusivamente o comportamento dos gráficos de ACF e PACF nos lags múltiplos do período ($m, 2m, 3m, ...$)
+
+#figure(
+  image("images/A1/sarima-acf-pacf.png", width: 100%),
+  caption: "Identificação de ordens sazonais $(P, Q)$ a partir da ACF e PACF"
+)
+
+== Ordem Prática
+Na prática, podemos seguir um conjunto de passos para realizar a modelagem das séries
++ Fixar $m$ (calendário/gráfico)
++ Fixar $D$ pelo gráfico (ciclo/ACF sazonal); Decidir $d$ pelo gráfico + teste KPSS *depois* de $D$
++ ACF/PACF em $y^*$:
+  + lags $1,2,...$ para decidir $(p,q)$
+  + lags $m,2m,...$ para decidir $(P,Q)$
++ Estimação e seleção via $"AICc"$ (mesmo $d$ e $D$)
