@@ -2169,7 +2169,273 @@ Aqui utilizamos do princípio da parcimônia: *prefira o modelo mais simples que
 
 #pagebreak()
 
+== Estimação por Máxima Verossimilhança
 Agora precisamos estimar se nossos modelos *explicam bem os dados* sem serem complexos demais. Dado $p$, $d$, $q$, os parâmetros $phi$, $theta$, $C$ e $sigma^2$ saem por *máxima verossimilhança*.
+
+Diferente do modelo $"AR"(p)$ puro (cuja regressão linear possui solução em forma fechada), os erros passados $epsilon_(t-1), ..., epsilon_(t-q)$ de um modelo $"ARMA"(p,q)$ não são diretamente observáveis, tornando a equação de verossimilhança estritamente não-linear e exigindo otimização numérica.
+
+== Critérios de Informação
+Para comparar modelos sob o mesmo nível $d$ e escolher qual deles (com $p$ e $q$ diferentes) se ajusta melhor aos dados, utilizamos *critérios de informação* que penalizam a complexidade do modelo (número de parâmetros) e recompensam o ajuste (log-verossimilhança).
+
+Para comparar modelos candidatos ajustados em uma mesma amostra de $n$ observações, utilizamos da minimização do risco da perda de informação, medida pela divergência Kullback-Leibler entre o modelo estimado e o modelo verdadeiro. A divergência Kullback-Leibler é definida como:
 $
-  "AIC"
+  D_"KL" (g || f) = EE_"g" [ log(g(y)) - log(f(y|theta)) ]
 $
+o problema passa a se tratar da maximização da esperança da log verossimilhança sob o modelo verdadeiro $g(y)$:
+$
+  Q(theta) = EE_"g" [ log(f(y|theta)) ]
+$
+
+Existem alguns critérios de análise que podemos citar para comparar modelos candidatos, como o *Akaike Information Criterion (AIC)* e *Bayesian Information Criterion (BIC)*. Todos eles seguem a mesma lógica de penalizar a complexidade do modelo e recompensar o ajuste.
+
+#definition([Akaike Information Criterion (AIC)])[
+  O AIC é definido como:
+  $
+    "AIC" = -2 log(L) + 2k
+  $
+  onde $L$ é a função de verossimilhança do modelo estimado e $k$ é o número de parâmetros livres do modelo.
+]
+
+#corollary([AIC para ARIMA])[
+  Para o modelo $"ARIMA"(p,d,q)$, o AIC é dado por:
+  $
+    "AIC" = -2 log(L) + 2(p + q + K + 1)
+  $
+  onde $K=1$ se $C$ for estimado e $K=0$ se $C$ for fixado em zero.
+]
+
+#definition([AIC Corrigiro por Amostras Finitas])[
+  O AICc é definido como:
+  $
+    "AICc" = "AIC" + frac(2k(k+1), n-k-1)
+  $
+  onde $n$ é o tamanho da amostra. Esse segundo termo é um termo de correção para amostras pequenas
+]
+#corollary([AICc para ARIMA])[
+  Para o modelo $"ARIMA"(p,d,q)$, o AICc é dado por:
+  $
+    "AICc" = "AIC" + frac(2(p + q + K + 1)(p + q + K + 2), n - (p + q + K + 1) - 1)
+  $
+  onde $K=1$ se $C$ for estimado e $K=0$ se $C$ for fixado em zero.
+]
+
+#definition([Bayesian Information Criterium])[
+  O BIC é definido como:
+  $
+    "BIC" = -2 log(L) + k log(n)
+  $
+  onde $L$ é a função de verossimilhança do modelo estimado, $k$ é o número de parâmetros livres do modelo e $n$ é o tamanho da amostra.
+]
+#corollary([BIC para ARIMA])[
+  Para o modelo $"ARIMA"(p,d,q)$, o BIC é dado por:
+  $
+    "BIC" = -2 log(L) + (p + q + K + 1) log(n)
+  $
+  onde $K=1$ se $C$ for estimado e $K=0$ se $C$ for fixado em zero.
+]
+
+O AICc é o critério primário para a escolha de $p$ e $q$ (sob o mesmo $d$), de forma que $"AICc" approx "AIC"$ para amostras muito grandes. O $"BIC"$ deve ser utilizado em contextos que ter muitos parâmetros é realmente muito indesejável (parcimônia extrema). Existe uma regra prática de que, se dois modelos apresentarem uma diferença de AICc menor que $2$, eles são considerados *equivalentes* em termos de ajuste, e a escolha entre eles pode ser feita com base em outros critérios, como interpretabilidade ou simplicidade.
+
+== Incomparabilidade de Modelos com Diferentes $d$
+O AICc e o BIC são comparáveis apenas entre modelos com o mesmo nível de diferenciação $d$. Modelos com diferentes valores de $d$ não podem ser comparados diretamente
+
+#theorem([Incomparabilidade de Modelos com Diferentes $d$])[
+  Seja $Y = (y_1,...,Y_T)^T$ o vetor de observações da série temporal original ($d=0$), e seja $Y^* = (Delta y_2,...,Delta y_T)^T$ o vetor da série diferenciada ($d=1$). É matematicamente *inválido* comparar o AIC de um modelo ajustado com $d=0$ com o AIC de um modelo ajustado com $d=1$, pois os valores de log-verossimilhança derivam de funções de densidade de probabilidade integradas sobre espaços de medida de dimensões e escalas distintas.
+]<different-d-invalidity>
+#proof[
+  Vamos definir uma transformação linear bijetora $A$ entre o vetor original $Y$ e o vetor $Y^*$ de tal forma que $Y^* = A Y$. Sabendo que $Delta y_t = y_t - y_(t-1)$, temos que $A$ é definida como
+  $
+    A = mat(
+      -1, 1, 0, ..., 0;
+      0, -1, 1, ..., 0; 
+      dots.v, dots.v, dots.v, dots.down, dots.v;
+      0, 0,..., -1, 1
+    )
+  $
+
+  No entanto, perceba que $A in RR^(T-1 times T)$, representando uma transformação *não* bijetiva, pois o determinante *não é definido*. Como o determinante não se aplica aqui, não podemos expressar a verossimilhança de $Y$ em termos da verossimilhança de $Y^*$, e vice-versa. Portanto, os modelos com diferentes níveis de diferenciação $d$ não podem ser comparados diretamente em termos de AIC ou BIC por representarem funções de densidade de probabilidade em espaços de medida (em termos mais intuitivos, sistemas de coordenadas) distintos, tornando a comparação inválida.
+]
+
+== Teste KPSS para Determinação de $d$
+Assim como existem métodos para escolher $p$ e $q$ a partir de um $d$ fixo, existem métodos para escolher $d$ a partir da série original. A escolha de $d$ é crucial, pois ela determina se a série será estacionária ou não, e isso afeta diretamente a validade das inferências feitas a partir do modelo.
+
+O método mais básico para determinar o valor de $d$ é o teste KPSS (Kwiatkowski-Phillips-Schmidt-Shin), que testa a hipótese nula de estacionariedade contra a alternativa de uma raiz unitária. Se o teste rejeitar a hipótese nula, isso sugere que a série não é estacionária e que uma diferenciação adicional pode ser necessária.
+$
+  H_0: "A série é estacionária"    \
+  H_1: "A série possui uma raiz unitária (não estacionária)"
+$
+
+=== A Premissa
+Esse teste se baseia na premissa que uma série temporal pode ser decomposta em $2$ componentes: uma tendência estocástica e um componente de ruído fracamente estacionário.
+$
+  y_t = r_t + epsilon_t    \
+
+  r_t = r_(t-1) + u_t   \
+  
+  u_t ~ "IID"(0, sigma_u^2)
+$
+
+a estacionariedade da série depende então da *variância de $u_t$*. Se $sigma_u^2 = 0$, a série é estacionária, caso contrário, a série possui uma raiz unitária e não é estacionária. Então as hipóteses podem ser reformuladas como
+$
+  H_0: sigma_u^2 = 0    \
+  H_1: sigma_u^2 > 0
+$
+
+=== Estatística do Teste
+Sob $H_0$, a média da série é *constante* e os valores oscilam em torno dela, então estima-se os resíduos da regressão:
+$
+  e_t = y_t - overline(y)
+$
+
+Definimos então $S_t$ como a *soma acumulada dos resíduos*:
+$
+  S_t = sum_(i=1)^t e_i
+$
+
+agora vamos analisar como ela se comporta em ambos os cenários de hipóteses. Se a série for estacionária, a soma acumulada $S_t$ vai oscilar em torno de zero. Por outro lado, se a série não for estacionária, $S_t$ vai crescer mais rapidamente, refletindo a presença de uma tendência estocástica.
+
+Para avaliar o comportamento global da série, pegamos o valor da soma acumulada $S_t$ em cada dia $t$, elevamos ao quadrado (para eliminar os sinais negativos) e somamos tudo:
+$
+  sum_(t=1)^T S_t^2 = S_1^2 + S_2^2 + S_3^2 + ... + S_T^2
+$
+
+Se a série for estacionária: Como cada $S_t$ é pequeno, o somatório $sum S_t^2$ resulta em um número PEQUENO.Se a série for não-estacionária: Como os $S_t$ são gigantescos, o somatório $sum S_t^2$ resulta em um número ENORME.
+
+Não podemos usar a soma bruta $sum S_t^2$ diretamente porque ela sofre de dois problemas:
++ Depende do tamanho do banco de dados ($T$): Quanto mais dados você tem, mais termos você está somando).
++ Depende da escala dos dados: Se a série for medida em milhões de Reais vs. em gramas, a soma muda de tamanho.
+
+Para resolver isso, dividimos por dois fatores de correção:
++ Dividimos por $T^2$: Sob a hipótese de estacionariedade ($H_0$), a teoria provou estatisticamente que o crescimento da soma $sum S_t^2$ em relação ao tamanho da amostra é proporcional a $T^2$. Dividir por $T^2$ faz com que a estatística não mude se você tiver $100$ ou $10.000$ dados.
++ Dividimos pela Variância de Longo Prazo ($hat(sigma)^2$: Dividimos pela variância dos resíduos $e_t$ para "cancelar" a unidade de medida dos dados, deixando o teste puramente adimensional
+
+E no final, obtemos a estatística de teste
+$
+  "KPSS" = 1/(T^2 hat(sigma)^2) sum_(t=1)^T S_t^2
+$
+
+Essa estatística não possui uma distribuição padrão com forma analítica para o cálculo dos p-valores, então os valores críticos são obtidos por simulação Monte Carlo. A tabela de valores críticos do teste KPSS é amplamente disponível na literatura estatística e em pacotes de software, mas o padrão é que, para um nível de significância de 5%, o valor crítico é aproximadamente $0.463$. Se a estatística KPSS calculada for maior que esse valor crítico, rejeitamos a hipótese nula de estacionariedade. Como não há estacionariedade, *diferenciamos a série* e *aplicamos o teste novamente* até que a hipótese nula não seja rejeitada, determinando assim o valor apropriado de $d$ para o modelo ARIMA.
+
+== Algoritmo de Busca Automática
+Especificado todos esses métodos de testagem de parâmetros, podemos sumarizar um algoritmo para encontrar um modelo ARIMA que modele bem os dados mantendo o princípio da parcimônia:
+
+#pseudocode-list(
+  booktabs: true,
+  title: [Algoritmo de Busca Automática de Modelos ARIMA]
+)[
+  + *function* _automatic\_search_ (y) {
+    + Aplico KPSS até não rejeitar a hipótese nula $H_0$
+    + Defino $d$ como o número de diferenciações aplicadas
+    + Crio modelos candidatos $"ARIMA"$ iniciais com os parâmetros
+      + $(0,d,0),(1,d,0),(0,d,1),(2,d,2)$
+    + Escolho o modelo com menor AICc
+    + *while* (AICc do modelo atual < AICc do modelo anterior) {
+      + Crio modelos candidatos $"ARIMA"$ vizinhos com os parâmetros
+        + $(p-1,d,q),(p+1,d,q),(p,d,q-1),(p,d,q+1)$
+      + Escolho o modelo com menor AICc
+      + Repito ou até convergir ou até ficar satisfeito
+    + }
+  + }
+]
+
+#pagebreak()
+
+#align(center+horizon)[
+  = SARIMA
+]
+
+#pagebreak()
+
+== Motivação
+As séries temporais podem apresentar padrões que se repetem em intervalos regulares, conhecidos como *sazonalidade*. Por exemplo, vendas de sorvete tendem a aumentar no verão e diminuir no inverno. Para capturar esses padrões sazonais, o modelo ARIMA é estendido para incluir componentes sazonais, resultando no modelo SARIMA (Seasonal ARIMA).
+
+#definition([Modelo $"SARIMA"(p,d,q)(P,D,Q)_m$])[
+  O modelo $"SARIMA"(p,d,q)(P,D,Q)_m$ é uma extensão do modelo ARIMA que incorpora componentes sazonais. Ele é definido por:
+  $
+    phi_p (B) Phi_P (B^m) (1-B)^d (1-B^m)^D y_t = C + theta_q (B) Theta_Q (B^m) epsilon_t
+  $
+  onde:
+  $
+    phi_p (B) &= 1 - phi_1 B - phi_2 B^2 - ... - phi_p B^p    \
+
+    Phi_P (B^m) &= 1 - Phi_1 B^m - Phi_2 B^(2m) - ... - Phi_P B^(P m)    \
+
+    theta_q (B) &= 1 + theta_1 B + theta_2 B^2 + ... + theta_q B^q    \
+
+    Theta_Q (B^m) &= 1 + Theta_1 B^m + Theta_2 B^(2m) + ... + Theta_Q B^(Q m)   \
+
+    epsilon_t ~ "WN"(0, sigma^2)
+  $
+  e $m$ representa a sazonalidade dos dados (por exemplo, $m=4$ para dados trimestrais, $m=12$ para dados mensais)
+]
+
+A lógica aqui é que a adição dos termos sazonais permite que o modelo capture padrões que se repetem a cada $m$ períodos, enquanto os termos não sazonais continuam a capturar a dinâmica de curto prazo da série, por exemplo, se pegamos o operador $1-B^m$ e aplicamos em $y_t$, temos
+$
+  (1-B^m)y_t = y_t - y_(t-m)
+$
+e se existe um padrão sazonal, essa diferença deveria capturar justamente esse padrão sazonal e se manter estável ao longo do tempo.
+
+== Diferenciação Sazonal ($D$) v.s Regular ($d$)
+
+#figure(
+  image("images/A1/sarima-diff.png", width: 85%),
+  caption: "Série sem diferenciação sazonal e com diferenciação sazonal (D=1 e m=12)"
+)
+
+A ordenação na aplicação das diferenças é crucial para evitar distorções na estrutura estocástica da série. A prioridade deve ser primeiramente aplicar a diferenciação sazonal $1-B^m$ e depois a regular $1-B$. Se tentássemos aplicar a diferenciação regular antes da sazonal, a sazonalidade na nova série ficaria *distorcida*
+
+Após aplicarmos a diferenciação sazonal, podemos inspecionar o gráfico e utilizar do teste KPSS para decidir se é necessário aplicar a diferenciação regular.
+
+Em aplicações reais, é *muito raro* de precisarmos aplicar a diferenciação sazonal mais de uma vez ($D>1$).
+
+No SARIMA, o @different-d-invalidity se aplica tanto para a diferenciação sazonal $D$ quanto para a regular $d$. Modelos com diferentes níveis de diferenciação não podem ser comparados diretamente em termos de AIC ou BIC, pois eles representam funções de densidade de probabilidade em espaços de medida distintos. Portanto, ao comparar modelos SARIMA, é essencial que os modelos tenham os mesmos valores de $d$ e $D$.
+
+== O problema do over differencing sazonal
+Imagine que você está analisando as vendas de uma sorveteria. Todo mês de dezembro as vendas sobem exatamente $1000$ unidades devido ao verão, e todo mês de julho elas caem exatamente $500$ unidades. Essa sazonalidade é *perfeitamente fixa* e *previsível*
+$
+  S_t = S_(t-12)
+$
+
+sua venda real no mês $t$ é dada por
+$
+  y_t = S_t + epsilon_t
+$
+
+onde $epsilon_t$ é um ruído branco puro — ou seja, erros aleatórios imprevisíveis que não têm correlação nenhuma de um mês para o outro
+
+Aqui a sazonalidade já é fixa, então você *não precisa diferenciar*, mas vamos aplicar a diferenciação mesmo assim e ver o que vai acontecer
+$
+  w_t = y_t - y_(t-12) = S_t + epsilon_t - S_(t-12) - epsilon_(t-12) = epsilon_t - epsilon_(t-12)
+$
+
+Analisando $w_t$ e $w_(t-12)$, conseguimos ver que
+$
+  w_t = epsilon_t - epsilon_(t-12)    \
+
+  w_(t-12) = epsilon_(t-12) - epsilon_(t-24)
+$
+os ruídos se repetem em ambas as equações, de forma que o que deveria ser apenas ruído que interfere em um mês, agora se tornou um ruído que *se repete* em ambos os meses, criando uma correlação artificial entre $w_t$ e $w_(t-12)$.
+
+Se calcularmos a correlação entre $w_t$ e $w_(t-12)$ (o lag sazonal): A variância de $w_t$ é $VV[epsilon_t - epsilon_(t-12)) = sigma^2 + sigma^2 = 2sigma^2$. A covariância entre $w_t$ e $w_(t-12)$ vem apenas do termo compartilhado: $"Cov"(-epsilon_(t-12), epsilon_(t-12)) = -sigma^2$. A autocorrelação no lag 12 será:
+$
+  rho(12) = (-sigma^2)/(2sigma^2) = -0.5
+$
+
+Por que isso é uma armadilha? Quando você olha para o gráfico da ACF dessa série diferida, você vê um pico negativo enorme de $-0.5$ exatamente no lag $12$. O analista inexperiente pensa: _"Nossa, tem uma autocorrelação fortíssima de $-0,5$ no lag $12$! Preciso colocar mais parâmetros ou diferir de novo!"_. A realidade matemática: Essa correlação de $-0.5$ não existia nos dados originais. Foi você que a fabricou ao aplicar a diferença $(1 - B^(12))$ em algo que era apenas um ruído branco em torno de uma sazonalidade fixa. Essa estrutura $w_t = epsilon_t - 1 dot epsilon_(t-12)$ é a definição exata de um processo $"SMA"(1)_(12)$ com $Theta_1 = -1$.
+
+== Identificação Sazonal
+Após obter a série estacionária $y^*_t = (1 - B)^d (1 - B^m)^D y_t$, a identificação das ordens sazonais $(P, Q)$ é realizada inspecionando exclusivamente o comportamento dos gráficos de ACF e PACF nos lags múltiplos do período ($m, 2m, 3m, ...$)
+
+#figure(
+  image("images/A1/sarima-acf-pacf.png", width: 100%),
+  caption: "Identificação de ordens sazonais $(P, Q)$ a partir da ACF e PACF"
+)
+
+== Ordem Prática
+Na prática, podemos seguir um conjunto de passos para realizar a modelagem das séries
++ Fixar $m$ (calendário/gráfico)
++ Fixar $D$ pelo gráfico (ciclo/ACF sazonal); Decidir $d$ pelo gráfico + teste KPSS *depois* de $D$
++ ACF/PACF em $y^*$:
+  + lags $1,2,...$ para decidir $(p,q)$
+  + lags $m,2m,...$ para decidir $(P,Q)$
++ Estimação e seleção via $"AICc"$ (mesmo $d$ e $D$)
