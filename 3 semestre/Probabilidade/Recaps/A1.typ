@@ -809,7 +809,7 @@ Essa função pode não parecer super útil no momento, mas ela é muito útil p
 #pagebreak()
 
 #align(center+horizon)[
-  = Esperança e Medidas de Dispersão
+  = Esperança, Medidas de Dispersão e Quantificadores de Independência
 ]
 
 #pagebreak()
@@ -1004,4 +1004,398 @@ Conseguimos expressar a esperança em termos da função de sobrevivência, que 
 ]
 
 == Medidas de Dispersão
+Essas medidas nos ajudam a entender o quanto os valores da variável aleatória estão espalhados em torno da média. Se a esperança nos dá o valor que esperamos que a variável aleatória assuma, as medidas de dispersão nos dizem o quão _"bem comportadas"_ essas variáveis são, elas se concentram perto da média? Ou elas se espalham em vários lugares?
 
+#definition([Desvio Médio])[
+  O desvio médio de uma variável aleatória discreta $X$ é definido por
+  $
+    "DM"[X] = EE[ |X - EE[X]| ]
+  $
+]
+
+#definition([Variância])[
+  A variância de uma variável aleatória discreta $X$ é definida por
+  $
+    VV[X] = EE[ (X - EE[X])^2 ]
+  $
+]
+
+#definition([Desvio Padrão])[
+  O desvio padrão de uma variável aleatória discreta $X$ é definido por
+  $
+    sigma[X] = sqrt(VV[X])
+  $
+]
+
+=== Propriedades
+A variância e o desvio padrão são as medidas de dispersão mais utilizadas. Vamos enunciar e demonstrar algumas propriedades dessas medidas de dispersão.
+
+#theorem[
+  $
+    VV[a X + b] = a^2 VV[X]
+  $
+]
+#proof[
+  $
+    VV[a X + b] &= EE[ (a X + b - EE[a X + b])^2 ]    \
+
+    &= EE[ (a X + b - (a EE[X] + b))^2 ]    \
+
+    &= EE[ (a X - a EE[X])^2 ]    \
+
+    &= EE[ a^2 (X - EE[X])^2 ]    \
+
+    &= a^2 EE[ (X - EE[X])^2 ]    \
+
+    &= a^2 VV[X]
+  $
+]
+
+#theorem[
+  $
+    sigma[a X + b] = |a| sigma[X]
+  $
+]
+#proof[
+  Pela propriedade anterior, temos que
+  $
+    sigma[a X + b] = sqrt(VV[a X + b]) = sqrt(a^2 VV[X]) = |a| sqrt(VV[X]) = |a| sigma[X]
+  $
+]
+
+#theorem[
+  $
+    "DM"[a X + b] = |a| "DM"[X]
+  $
+]
+#proof[
+  Pela definição de desvio médio, temos que
+  $
+    "DM"[a X + b] &= EE[ |a X + b - EE[a X + b]| ]    \
+
+    &= EE[ |a X + b - (a EE[X] + b)| ]    \
+
+    &= EE[ |a X - a EE[X]| ]    \
+
+    &= EE[ |a| |X - EE[X]| ]    \
+
+    &= |a| EE[ |X - EE[X]| ]    \
+
+    &= |a| "DM"[X]
+  $
+]
+
+Intuitivamente, quando nós adicionamos uma constante $b$ em uma variável, a média vai se descolar esse exato mesmo valor, no entanto, como todos os pontos vão se mover exatamente $b$ unidades, a dispersão vai se manter a mesma. No entanto, se multiplicarmos a variável por uma constante $a$, os erros que já existiam vão se ampliar em $a$ vezes, então a dispersão vai se multiplicar por $a$ também.
+
+#theorem[
+  $
+    VV[X] = EE[X^2] - (EE[X])^2
+  $
+]
+#proof[
+  $
+    VV[X] &= EE[ (X - EE[X])^2 ]    \
+
+    &= EE[ X^2 - 2 X EE[X] + (EE[X])^2 ]    \
+
+    &= EE[X^2] - 2 EE[X] EE[X] + (EE[X])^2    \
+
+    &= EE[X^2] - (EE[X])^2
+  $
+]
+
+#theorem[
+  Se $X$ e $Y$ são variáveis aleatórias independentes, então
+  $
+    VV[X + Y] = VV[X] + VV[Y]
+  $
+]
+#proof[
+  $
+    VV[X + Y] &= EE[(X+Y)^2] - (EE[X+Y])^2    \
+
+    &= EE[X^2 + 2 X Y + Y^2] - (EE[X] + EE[Y])^2    \
+
+    &= EE[X^2] + 2 EE[X Y] + EE[Y^2] - (EE[X])^2 - 2 EE[X] EE[Y] - (EE[Y])^2    \
+
+    &= EE[X^2] + 2 EE[X] EE[Y] + EE[Y^2] - (EE[X])^2 - 2 EE[X] EE[Y] - (EE[Y])^2    \
+
+    &= EE[X^2] - (EE[X])^2 + EE[Y^2] - (EE[Y])^2    \
+
+    &= VV[X] + VV[Y]
+  $
+]
+
+=== Desigualdade de Chebyshev
+Essa desigualdade nos dá uma generalização da probabilidade estar distante de sua média. Vamos ver o teorema e sua demonstração, depois nós elaboramos mais
+
+#theorem([Desigualdade de Chebyshev])[
+  Sejam $X$ uma variável aleatória discreta com média $EE[X] = mu$ e desvio padrão $sigma = sigma[X]$. Denote $P = {x in RR | |x-mu| < k sigma}$, ou seja, $P$ é o intervalo aberto $(x - k sigma, x + k sigma)$. Então, para qualquer $k > 0$, temos que
+  $
+    PP(X in.not P) <= 1/k^2 equiv PP(|X - mu| >= k sigma) <= 1/k^2
+  $
+]
+#proof[
+  $
+    VV[X] &= EE[(X - mu)^2]   \
+    
+    &= sum_(x) (x - mu)^2 dot PP(X=x)    \
+
+    &= sum_(x in P) (x - mu)^2 dot PP(X=x) + sum_(x in.not P) (x - mu)^2 dot PP(X=x)    \
+  $
+  por conta da definição dos $x$ no intervalo $P$, temos que, para valores de $x$ que *não estão* no intervalo:
+  $
+    |x-mu| >= k sigma   \
+
+    (x-mu)^2 >= k^2 sigma^2   \
+  $
+
+  logo, como a primeira parte da soma é maior que $0$, podemos fazer:
+  $
+    VV[X] &>= sum_(x in.not P) sigma^2 k^2 dot PP(X=x)   \
+
+    sigma^2 &>= sigma^2 k^2 sum_(x in.not P) PP(X=x)   \
+
+    1 &>= k^2 PP(X in.not P)   \
+    
+    1/k^2 &>= PP(X in.not P)   \
+  $
+]
+
+Como interpretamos esse teorema então?
+- Existe no máximo $1/4$ de chance de uma variável aleatória estar a mais de $2$ desvios padrões da média
+- Existe no máximo $1/9$ de chance de uma variável aleatória estar a mais de $3$ desvios padrões da média
+- Existe no máximo $1/16$ de chance de uma variável aleatória estar a mais de $4$ desvios padrões da média
+
+E assim em diante para um $k$ qualquer. Ou seja, ele atribui uma probabilidade máxima de o quão bem comportada a variável aleatória é, ou seja, o quão concentrada ela está em torno da média. Quanto maior o $k$, mais difícil é que os valores da variável aleatória estejam distantes. Isso também mostra uma quantificação de *valores extremos*. Por exemplo, é *muito improvável* que, ao jogar uma moeda honesta $100$ vezes, eu consiga $90$ caras. A desigualdade de chebyshev nos dá justamente uma formalização da intuição de que, quanto mais distante da média, mais improvável é que o evento ocorra.
+
+== Quantificadores de Independência
+A independência de variáveis aleatórias é um conceito muito importante, mas como podemos quantificar o quão independentes duas variáveis aleatórias são?
+
+#definition([Covariância])[
+  A covariância de duas variáveis aleatórias discretas $X$ e $Y$ é definida por
+  $
+    "Cov"(X,Y) = EE[(X - EE[X])(Y - EE[Y])]
+  $
+]
+
+Sabemos que $X - EE[X]$ é a distância dos valores de $X$ até sua média. Quando isso é maior ou igual a $0$, então a maioria dos valores está acima da média. Quando multiplicamos isso por $Y - EE[Y]$, se o valor for positivo e grande, é um indicativo que, conforme $X$ está acima da média, $Y$ *também está* acima da média. Se o valor for negativo e grande, é um indicativo que, conforme $X$ está acima da média, $Y$ *está abaixo* da média. Se o valor for próximo de $0$, então não há uma relação clara entre as duas variáveis aleatórias.
+
+#theorem[
+  $
+    "Cov"(X,Y) = EE[X Y] - EE[X] dot EE[Y]
+  $
+]<covariance-equals-expectation-of-product-minus-product-of-expectations>
+#proof[
+  $
+    "Cov"(X,Y) &= EE[(X - EE[X])(Y - EE[Y])]    \
+
+    &= EE[X Y - X EE[Y] - Y EE[X] + EE[X] EE[Y]]    \
+
+    &= EE[X Y] - EE[X] EE[Y] - EE[Y] EE[X] + EE[X] EE[Y]    \
+
+    &= EE[X Y] - EE[X] dot EE[Y]
+  $
+]
+
+Temos um teorema muito importante que relaciona a covariância com a independência de variáveis aleatórias.
+
+#theorem[
+  $
+    X "e" Y "são independentes" => "Cov"(X,Y) = 0
+  $
+  a volta não vale
+]
+#proof[
+  Pelo @covariance-equals-expectation-of-product-minus-product-of-expectations, temos que
+  $
+    "Cov"(X,Y) = EE[X Y] - EE[X] dot EE[Y]
+  $
+  como sabemos que $X$ e $Y$ são independentes, então $EE[X Y] = EE[X] dot EE[Y]$, e portanto:
+  $
+    "Cov"(X,Y) = EE[X] dot EE[Y] - EE[X] dot EE[Y] = 0
+  $.
+
+  Agora se analisarmos a volta, vamos supor que $X = {1,0,-1}$ e $Y = X^2$ de forma que $PP(X=i) = 1/3$ para $i = 1,0,-1$. Conseguimos ver que $EE[X] = 0$ e $EE[X Y] = EE[X^3] = 0$, logo, temos que
+  $
+    "Cov"(X,Y) = EE[X Y] - EE[X] dot EE[Y] = 0 - 0 dot EE[Y] = 0
+  $
+  No entanto, vamos checar a condição de independência:
+  $
+    PP(X=0,Y=0) = PP(X=0) = 1/3   \
+
+    PP(X=0) dot PP(Y=0) = 1/3 dot 1/3 = 1/9
+  $
+  logo, $X$ e $Y$ *não são independentes*
+]
+
+A covariância é muito útil, mas ela tem um problema, a *escala*. Vamos ver isso na prática com alguns exemplos
+
+#example[
+  Sejam $X$ a altura de uma população e $Y$ o peso dessa população. Se $X$ é medido em _m_ e $Y$ em _kg_, poderíamos obter uma covariância de
+  $
+    "Cov"(X,Y) = 0.7 "m" dot "kg"
+  $
+  No entanto, se mudarmos a unidade de medida de $X$ para _cm_ e $Y$ para _g_, teríamos
+  $
+    "Cov"(100 dot X, 1000 dot Y) = 100 dot 1000 "Cov"(X, Y) = 70000 "cm" dot "g"
+  $
+  Essas covariâncias representam a *mesma relação*, mas os números são completamente diferentes. Enquanto o primeiro aparenta ser uma correlação baixa, o segundo aparenta ser uma correlação altíssima.
+]
+
+Para resolver esses problemas de escala e dificuldade de interpretabilidade, nós utilizamos uma outra medida, a *correlação*.
+
+#definition([Correlação])[
+  A correlação de duas variáveis aleatórias discretas $X$ e $Y$ é definida por
+  $
+    rho(X,Y) = frac("Cov"(X,Y), sigma[X] dot sigma[Y])
+  $
+]
+
+A principal vantagem da correlação é que ela é *adimensional*, ou seja, ela não depende da unidade de medida das variáveis aleatórias. Além de se situar no intervalo $[-1, 1]$. Antes de provarmos algumas de suas propriedades (juntamente com a covariância), vamos definir ambas com um pouco de *álgebra linear*. Vamos definir a covariância como um *produto interno*.
+
+#theorem([Covariância como Produto Interno])[
+  Sejam $X$ e $Y$ variáveis aleatórias discretas, então a covariância entre $X$ e $Y$ pode ser interpretada como o produto interno entre dois vetores.
+]<covariance-as-inner-product>
+#proof[
+  Sejam $X = {x_i}|_(i=1)^m$ e $Y = {y_i}|_(i=1)^n$, defina a matriz de probabilidade:
+  $
+    mat(
+      p_(1 1), p_(1 2), ..., p_(1 n);
+      p_(2 1), p_(2 2), ..., p_(2 n);
+      dots.v, dots.v, dots.down, dots.v;
+      p_(m 1), p_(m 2), ..., p_(m n)
+    )
+  $
+  de forma que $PP(X = x_i, Y = y_j) = p_(i j)$. Defina também os vetores
+  $
+    v_X &= mat(x_1, x_1, ..., x_1, x_2, x_2, ..., x_2, ..., x_m, x_m, ..., x_m)^T   \
+    v_Y &= mat(y_1, y_2, ..., y_n, y_1, y_2, ..., y_n, ..., y_1, y_2, ..., y_n)^T
+  $
+  e os vetores *resíduos*
+  $
+    r_X &= v_X - EE[X] dot bb(1)   \
+    r_Y &= v_Y - EE[Y] dot bb(1)
+  $
+  onde $bb(1)$ é o vetor coluna de números $1$ do tamanho do vetor $v_X$ e $v_Y$. Vamo definir $omega(x, y)$ como o seguinte produto interno:
+  $
+    omega(x, y) = sum_(i,j) x_i y_j p_(i j)
+  $
+  segue a demonstração que essa função é um produto interno: Para ela ser um produto interno, é necessário satisfazer:
+  $
+    omega(x, y) = omega(y, x)   \
+
+    omega(alpha x + beta y, z) = alpha omega(x , z) + beta omega(y, z)   \
+
+    omega(x, x) >= 0 quad omega(x, x) = 0 <=> x = 0
+  $
+  Para a primeira condição:
+  $
+    sum_(i,j) x_i y_j p_(i j) = sum_(j,i) y_j x_i p_(j i)
+  $
+  Para a segunda condição:
+  $
+    omega(alpha x + beta y, z) &= sum_(i,j) (alpha x_i + beta y_i) z_j p_(i j)    \
+
+    &= sum_(i,j) alpha x_i z_j p_(i j) + sum_(i,j) beta y_i z_j p_(i j)    \
+
+    &= alpha sum_(i,j) x_i z_j p_(i j) + beta sum_(i,j) y_i z_j p_(i j)    \
+
+    &= alpha omega(x , z) + beta omega(y, z)
+  $
+  Para a terceira condição: Perceba que $omega(x,y) = EE[X Y]$, logo, $omega(x, x) = EE[X^2] >= 0$ e é igual a $0$ se, e somente se, $X = 0$.
+
+  Mostrado que essa função é um produto interno, podemos ver que a covariância é justamente o produto interno entre os vetores de resíduos:
+  $
+    omega(r_X, r_Y) &= sum_(i,j) (x_i - EE[X]) (y_j - EE[Y]) p_(i j)    \
+    &= EE[(X - EE[X])(Y - EE[Y])]    \
+    &= "Cov"(X,Y)
+  $
+]
+
+Agora que sabemos que a covariância é um produto interno, podemos utilizar essa relação para mostrar outras propriedades da covariância
+
+#theorem[
+  $
+    "Cov"(X,Y) = "Cov"(Y,X)   \
+    "Cov"(X,X) = VV[X]   \
+    "Cov"(alpha X + beta Y, Z) = alpha "Cov"(X,Z) + beta "Cov"(Y,Z)   \
+  $
+]
+#proof[
+  Segue da definição de produto  interno
+]
+
+#theorem[
+  $
+    -1 <= rho(X,Y) <= 1
+  $
+]
+#proof[
+  Utilizando os vetores resíduos que definimos na demonstração do @covariance-as-inner-product, temos que
+  $
+    cos theta = omega(r_X, r_Y) / (||r_X|| ||r_Y||) = "Cov"(X,Y) / (sigma[X] dot sigma[Y]) = rho(X,Y)
+  $
+]
+
+#theorem[
+  $
+    VV(X + Y) = VV[X] + VV[Y] + 2 "Cov"(X,Y)
+  $
+]
+#proof[
+  $
+    VV[X+Y] &= EE[(X+Y)^2] - (EE[X+Y])^2    \
+    &= EE[X^2 + 2 X Y + Y^2] - (EE[X])^2 - 2 EE[X] EE[Y] - (EE[Y])^2    \
+    &= EE[X^2] + 2 EE[X Y] + EE[Y^2] - (EE[X])^2 - 2 EE[X] EE[Y] - (EE[Y])^2    \
+    &= EE[X^2] - (EE[X])^2 + EE[Y^2] - (EE[Y])^2 + 2 (EE[X Y] - EE[X] dot EE[Y])    \
+    &= VV[X] + VV[Y] + 2 "Cov"(X,Y)
+  $
+]
+
+#theorem[
+  $
+    "Cov"(a X + b, Y) = a "Cov"(X,Y)   \
+  $
+]
+#proof[
+  $
+    "Cov"(a X + b, Y) &= EE[(a X + b - EE[a X + b])(Y - EE[Y])]    \
+
+    &= EE[(a X + b - (a EE[X] + b))(Y - EE[Y])]    \
+
+    &= EE[(a X - a EE[X])(Y - EE[Y])]    \
+
+    &= a EE[(X - EE[X])(Y - EE[Y])]    \
+
+    &= a "Cov"(X,Y)
+  $
+]
+
+#theorem[
+  $
+    rho(a X + b, Y) = cases(
+      rho(X,Y) quad a > 0,
+      -rho(X,Y) quad a < 0
+    )
+  $
+]
+#proof[
+  $
+    rho(a X + b, Y) &= "Cov"(a X + b, Y) / (sigma[a X + b] dot sigma[Y])    \
+
+    &= (a "Cov"(X,Y)) / (|a| sigma[X] dot sigma[Y])
+  $
+  e temos que
+  $
+    a/(|a|) = "sign"(a)
+  $
+]
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Distribuições de Variáveis Aleatórias Discretas
+]
+
+#pagebreak()
