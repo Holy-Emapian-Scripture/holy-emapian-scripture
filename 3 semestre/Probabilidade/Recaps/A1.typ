@@ -181,6 +181,27 @@ Dado um grupo de $n$ elementos, eu quero selecionar $k$ elementos distintos, mas
 
 A lógica aqui é montarmos justamente o arranjo anterior, primeiro calculamos de quantas formas podemos organizar $k$ elementos onde a *ordem* influencia na contagem. Depois disso, queremos compensar as contagens extras que realizamos, ou seja, se eu tenho $k$ elementos, eu posso organizá-los de $k!$ formas diferentes, e todas essas formas são a mesma combinação. Então, para compensar isso, dividimos pelo fatorial de $k$.
 
+Existe uma propriedade muito interessante que podemos usar para calcular combinações, ela mostra que, se eu quero escolher um grupo de $k$ elementos de um conjunto de $n$ elementos, o número de maneiras de fazer isso é o mesmo que escolher $n-k$ elementos do mesmo conjunto. Ou seja, $C_n^k = C_n^(n-k)$.
+
+#theorem[
+  $
+    C_n^k = C_n^(n-k)
+  $
+]<combination-simetry>
+#proof[
+  Queremos mostrar que
+  $
+    mat(n ; k) = mat(n ; n-k)
+  $
+  vamos desenvolver ambos os lados
+  $
+    mat(n ; k) = (n!) / (k! (n-k)!)
+  $
+  $
+    mat(n ; n-k) = (n!) / ((n-k)! (n-(n-k))!) = (n!) / (k! (n-k)!)
+  $
+]
+
 == Permutação Circular
 De quantas formas podemos organizar $n$ elementos distintos em um círculo? Para isso usamos a permutação circular.
 
@@ -324,7 +345,7 @@ Aqui nós vamos mostrar alguns teoremas que serão muito úteis para nós na hor
   $
     n mat(n-1 ; k-1) = k mat(n ; k)
   $
-]
+]<choice-of-leader>
 #proof[
   Queremos saber de quantas formas podemos escolher $k$ pessoas de um grupo de $n$ pessoas, e dentre essas $k$ pessoas, queremos escolher uma pessoa para ser o *líder*.
 
@@ -838,7 +859,7 @@ mas isso na verdade está *corretíssimo*, acontece que a demonstração desse t
   $
     EE[g(X)] = sum_(x) g(x) dot PP(X = x)
   $
-]
+]<lotus>
 #proof[
   Pensando numa demonstração *não rigorosa*, mas intuitiva, podemos pensar que, para encontrar a probabilidade de um $z=g(x)$ ocorrer, precisamos encontrar todos os valores de $x$ que vão gerar aquele $z$. O somatório faz isso em cima dos locais corretos e soma $z p(z)$
   $
@@ -887,7 +908,7 @@ mas isso na verdade está *corretíssimo*, acontece que a demonstração desse t
   $
     EE[g(X,Y)] = sum_(x,y) g(x,y) dot PP(X=x,Y=y)
   $
-]
+]<lotus-two-variables>
 #proof[
   Fazendo uma demonstração não rigorosa, mas intuitiva, podemos pensar que, para encontrar a probabilidade de um $z=g(x,y)$ ocorrer, precisamos encontrar todos os valores de $x$ e $y$ que vão gerar aquele $z$. O somatório faz isso em cima dos locais corretos e soma $z p(z)$
   $
@@ -1342,7 +1363,7 @@ Agora que sabemos que a covariância é um produto interno, podemos utilizar ess
   $
     VV(X + Y) = VV[X] + VV[Y] + 2 "Cov"(X,Y)
   $
-]
+]<variance-of-generic-variables>
 #proof[
   $
     VV[X+Y] &= EE[(X+Y)^2] - (EE[X+Y])^2    \
@@ -1399,3 +1420,506 @@ Agora que sabemos que a covariância é um produto interno, podemos utilizar ess
 ]
 
 #pagebreak()
+
+== O que é uma distribuição?
+Até o momento, o curso apresentou problemas que requerem um certo pensamento crítico e racicínio lógico. As distribuições vem para nos dar uma forma de *automatizar* o raciocínio que fizemos até agora. Elas são funções matemáticas que descrevem o comportamento de variáveis aleatórias, ou seja, elas nos dão a probabilidade de cada valor que a variável aleatória pode assumir.
+
+== Bernoulli
+Começamos com a distribuição mais simples, a *bernoulli*.
+
+#definition([Distribuição de Bernoulli])[
+  Uma variável aleatória discreta $X$ segue uma distribuição de bernoulli com parâmetro $p in [0,1]$ quando sua função de massa de probabilidade é dada por
+  $
+    p_X (x) = cases(
+      p quad x = 1,
+      1 - p quad x = 0,
+      0 quad "otherwise"
+    )
+  $
+
+  Denotamos como
+  $
+    X ~ "Bernoulli"(p)
+  $
+]
+
+Essa distribuição é muito útil para modelar eventos que podem ter apenas dois resultados, como cara ou coroa, sucesso ou fracasso, sim ou não, etc. Ela parece até bem bobinha, mas ela é a base para muitas outras distribuições que veremos mais a frente. Essa distribuição é a que se aplica justamente no caso de uma moeda honesta, onde $p = 1/2$, basta montarmos a variável aleatória como $1$ se for cara e $0$ se for coroa.
+
+#theorem[
+  Se $X ~ "Bernoulli"(p)$, então
+  $
+    EE[X] = p   \
+    VV[X] = p (1 - p)
+  $
+]<mean-and-variance-of-bernoulli>
+#proof[
+  $
+    EE[X] &= 1 dot p + 0 dot (1 - p) = p   \
+
+    VV[X] &= EE[X^2] - (EE[X])^2 = p - p^2 = p (1 - p)
+  $
+]
+
+== Binomial
+A partir de agora, vamos definir cada distribiução a partir de uma *história*, dessa forma, não ficamos limitados apenas à função de massa daquela distribuição, mas ao que essa distribuição significa.
+
+#definition([Distribuição Binomial])[
+  Suponha que $n$ tentativas de Bernoulli independentes sejam realizadas, cada uma com a mesma probabilidade $p$ de sucesso. Seja $X$ o *número de sucessos* nessas $n$ jogadas, a distribuição de $X$ é chamada de _"binomial"_ com parâmetros $n$ e $p$. Ela é denotada por
+  $
+    X ~ "Bin"(n,p)
+  $
+]
+
+#theorem([PMF da Binomial])[
+  Se $X ~ "Bin"(n,p)$, então a função de massa de probabilidade de $X$ é dada por
+  $
+    PP(X=k) = mat(n;k) p^k (1 - p)^(n - k)
+  $
+  para $k = 0, 1, 2, ..., n$.
+]
+#proof[
+  Imagine que temos as letras _"S"_ e _"F"_ representando sucesso e fracasso, respectivamente. Para achar a pmf da binomial, dado sua história, podemos imaginar que temos $n$ espaços para formar uma sequência de _"S"_ e _"F"_ e queremos saber de quantas formas diferentes podemos fazer isso. Vamos supor que ocorreram $k$ sucessos, então temos que escolher $k$ espaços para colocar _"S"_ e os outros $n-k$ espaços serão preenchidos com _"F"_. Ou seja, aplicando o principio multiplicativo, a probabilidade seria
+  $
+    p^k (1 - p)^(n - k)
+  $
+  no entanto, existem $mat(n;k)$ formas diferentes de escolher os $k$ espaços para colocar _"S"_. Logo, a probabilidade total será
+  $
+    PP(X=k) = mat(n;k) p^k (1 - p)^(n - k)
+  $
+]
+
+#theorem([Simetria da Binomial])[
+  Se $X ~ "Bin"(n,p)$ e $q = 1-p$, então
+  $
+    n-X ~ "Bin"(n,q)
+  $
+]
+#proof[
+  Dada a história da distribuição, se $X$ é a quantidade de sucessos entre $n$ tentativas, então $n-X$ é a quantidade de fracassos entre $n$ tentativas. Como a probabilidade de fracasso é $q = 1-p$, então definindo $Y = n-X$, temos que:
+  $
+    PP(Y=k) = PP(n-X=k) = PP(X=n-k)   \
+    
+    =mat(n;n-k) p^(n-k) (1-p)^k = mat(n;k) q^k (1-q)^(n-k)
+  $
+]
+
+#theorem[
+  Se $X ~ "Bin"(n,p)$, então
+  $
+    EE[X] = n p   \
+    VV[X] = n p (1 - p)
+  $
+]
+#proof[
+  Vou demonstrar a esperança de duas formas. A primeira é a mais algébrica. Expresse a esperança de $X$ como a definição:
+  $
+    EE[X] = sum_(k=0)^n k mat(n;k) p^k (1 - p)^(n - k)
+  $
+  pelo @choice-of-leader, podemos reescrever o somatório como
+  $
+    EE[X] = sum_(k=1)^n n mat(n-1;k-1) p^k (1 - p)^(n - k)
+  $
+  se tormarmos $j=k-1$, também podemos reescrever o somatório como
+  $
+    EE[X] &= n sum_(j=0)^(n-1) mat(n-1;j) p^(j+1) (1 - p)^(n - 1 - j)   \
+
+    &= n p sum_(j=0)^(n-1) mat(n-1;j) p^j (1 - p)^(n - 1 - j)   \
+  $
+  perceba que o somatório ao lado é a soma de todas as probabilidades de uma distribuição binomial com parâmetros $n-1$ e $p$, logo, o somatório é igual a $1$. Portanto, temos que
+  $
+    EE[X] = n p
+  $
+  A forma mais intuitiva é utilizando a história da distribuição. Lembra que falamos que ela é a *realização de múltiplas bernoullis independentes*? Como a Bernoulli pode ser expressa como $0$ para fracasso e $1$ para sucesso, podemos expressar a variável aleatória $X$ como a soma de $n$ variáveis aleatórias independentes de Bernoulli, ou seja,
+  $
+    X = II_1 + II_2 + ... + II_n
+  $
+  onde $II_j ~ "Bernoulli"(p)$. Assim, a soma dessas variáveis será exatamente a quantidade de sucessos. Aplicando a linearidade da esperança, temos que
+  $
+    EE[X] = EE[II_1 + II_2 + ... + II_n] = EE[II_1] + EE[II_2] + ... + EE[II_n] = p + p + ... + p = n p
+  $
+
+  Para a variância, podemos utilizar a mesma ideia. Como as variáveis aleatórias de Bernoulli são independentes, temos que
+  $
+    VV[X] &= VV[II_1 + II_2 + ... + II_n]   \
+    
+    &= VV[II_1] + VV[II_2] + ... + VV[II_n]   \
+    
+    &= p (1 - p) + p (1 - p) + ... + p (1 - p)    \
+    
+    &= n p (1 - p)
+  $
+]
+
+== Hípergeométrica
+Essa é uma das mais confusas, pois sua história é bem longa, mas vamos simplificar ao máximo
+
+#definition([Distribuição Hípergeométrica])[
+  Suponha que tenhamos *uma urna* com $w$ *bolas brancas* e $b$ *bolas pretas*. Se tirarmos $n$ bolas da urna _com reposição_, isso nos dá uma distribuição binomial para o número de bolas brancas que tiramos. No entanto, se tirarmos $n$ bolas da urna *sem reposição*, e $X$ for a quantidade de bolas brancas retiradas, então ela segue uma distribuição hípergeométrica, denotada como
+  $
+    X ~ "HGeo"(w, b, n)
+  $
+]
+
+#theorem([PMF da Hípergeométrica])[
+  Se $X ~ "HGeo"(w, b, n)$, então a função de massa de probabilidade de $X$ é dada por
+  $
+    PP(X=k) = frac(mat(w;k) mat(b;n-k), mat(w+b;n))
+  $
+  para $k = max(0, n-b), ..., min(n, w)$.
+]
+#proof[
+  Temos no total, $w+b$ bolas, e vamos retirar $n$ no total, então nosso espaço amostral é o total de combinação que podemos fazer com $n$ bolas dentre $w+b$, ou seja, $mat(w+b;n)$. Agora, para que tenhamos exatamente $k$ bolas brancas, precisamos escolher $k$ bolas dentre as $w$ brancas e $n-k$ bolas dentre as $b$ pretas. Pelo principio multiplicativo, temos que o número de combinações possíveis é $mat(w;k) dot mat(b;n-k)$.
+]
+
+#theorem([Simetria da Hípergeométrica])[
+  As distribuições
+  $
+    X ~ "HGeo"(w, b, n)   \
+    Y ~ "HGeo"(n, w+b-n, w)
+  $
+  são idênticas
+]
+#proof[
+  Pela história da distribuição, $X$ é a quantidade de bolas brancas retiradas dentre $n$ bolas retiradas de uma urna com $w$ bolas brancas e $b$ bolas pretas. Se nós criarmos um conjunto de etiquetas, e colocarmos nas bolas, de forma que, se a bola *possui* uma etiqueta, então nós tiramos ela quando estávamos amostrando as bolas, então sabemos que de todas as $w+b$ bolas, $n$ tem a etiqueta e $w+b-n$ *não tem*. Com isso em mente, podemos afirmar que $Y$ representa a quantidade de formas possíveis de escolher $w$ e que essas $w$ bolas *tem a etiqueta*, ou seja, são as bolas que foram retiradas. Logo, a quantidade de bolas brancas retiradas é a mesma que a quantidade de bolas com etiqueta dentre as $w$ bolas brancas. Portanto, as distribuições são idênticas.
+]
+
+#theorem[
+  Se $X ~ "HGeo"(w, b, n)$, então
+  $
+    EE[X] = n w/(w+b)   \
+    VV[X] = n w/(w+b) b/(b+w) (w + b - n)/(w + b - 1)
+  $
+]
+#proof[
+  Vamos numerar as bolas brancas de $1$ até $w$, e definir
+  $
+    II_j = cases(
+      1 quad "bola branca" j "foi retirada",
+      0 quad "bola branca" j "não foi retirada"
+    )
+  $
+  definindo essa variável indicadora, podemos expressar a variável aleatória $X$ como
+  $
+    X = II_1 + II_2 + ... + II_w
+  $
+  vale ressaltar que $X$ *não é binomial*, pois as variáveis aleatórias $II_j$ *não são independentes*. No entanto, podemos utilizar a linearidade da esperança para calcular a esperança de $X$:
+  $
+    EE[X] = EE[sum_(j=1)^w II_j] = sum_(j=1)^w EE[II_j] = sum_(j=1)^w PP(I_j=1)
+  $
+  como cada bola tem a mesma probabilidade de ser retirada, temos que
+  $
+    PP(I_j=1) = n / (w + b)
+  $
+  logo
+  $
+    EE[X] = n w / (w + b)
+  $
+
+  Para a variância, aplicamos ela em $X$, mas como $II_j$ não são independentes, precisamos aplicar a correção com covariância conforme enunciado no @variance-of-generic-variables:
+  $
+    VV[X] &= VV[sum_(j=1)^w II_j]   \
+
+    &= sum_(j=1)^w VV[II_j] + 2 sum_(i<j) "Cov"(II_i, II_j)   \
+  $
+  como $II_j$ é bernoulli, pelo @mean-and-variance-of-bernoulli, temos que
+  $
+    VV[II_j] = n/(w+b) (1 - n/(w+b))
+  $
+  já para a covariância entre duas variáveis aleatórias $II_i$ e $II_j$, temos que
+  $
+    "Cov"(II_i, II_j) = EE[II_i II_j] - PP(II_i=1) dot PP(II_j=1)
+  $
+  pela definição de $II_i$ e $II_j$, $EE[II_i II_j] = 1$ apenas quando ambos são $1$, logo
+  $
+    EE[II_i II_j] = PP(II_i=1, II_j=1)
+  $
+  Para que ambas as bolas apareçam na mesma amostragem, precisamos escolher $n-2$ bolas dentre as $w+b-2$ restantes, logo
+  $
+    PP(II_i=1, II_j=1) = mat(w+b-2;n-2) / mat(w+b;n) = (n (n-1))/((w+b) (w+b-1))
+  $
+  logo
+  $
+    "Cov"(II_i, II_j) = (n (n-1))/((w+b) (w+b-1)) - n^2/(w+b)^2 = - (n (w+b-n))/((w+b)^2 (w+b-1))
+  $
+  voltando para a variância de $X$, o termo abaixo
+  $
+    2 dot sum_(i<j) "Cov"(II_i, II_j) &= 2 mat(w;2) (- (n (w+b-n))/((w+b)^2 (w+b-1)))    \
+    
+    &= - w (w-1) n (w+b-n)/((w+b)^2 (w+b-1))
+  $
+  somando tudo
+  $
+    VV[X] &= n w/(w+b) (1 - n/(w+b)) - w (w-1) n (w+b-n)/((w+b)^2 (w+b-1))    \
+
+    &= n w/(w+b) - n^2 w / (w+b)^2 - w (w-1) n (w+b-n)/((w+b)^2 (w+b-1))    \
+
+    &= (w n (w+b-n))/((w+b)^2) (1 - (w-1)/(w+b-1))    \
+
+    &= (w n (w+b-n))/((w+b)^2) (b)/(w+b-1)    \
+  $
+  reorganizando
+  $
+    VV[X] = n w/(w+b) b/(b+w) (w + b - n)/(w + b - 1)
+  $
+]
+
+== Geométrica
+
+#definition([Distribuição Geométrica])[
+  Suponha que tenhamos uma sequência de tentativas de Bernoulli independentes, cada uma com a mesma probabilidade $p$ de sucesso. Seja $X$ o número de tentativas *até o primeiro sucesso* (inclusivo, ou seja, a tentativa do sucesso em si entra na contagem), a distribuição de $X$ é chamada de _"geométrica"_ com parâmetro $p$. Ela é denotada por
+  $
+    X ~ "Geom"(p)
+  $
+]
+
+#theorem([PMF da Geométrica])[
+  Se $X ~ "Geom"(p)$, então a função de massa de probabilidade de $X$ é dada por
+  $
+    PP(X=k) = (1 - p)^(k - 1) p
+  $
+  para $k = 1, 2, 3, ...$.
+]
+#proof[
+  Cada jogada que realizarmos terá a probabilidade $1-p$ de falhar, logo, se queremos que o número de jogadas seja $k$, precisamos que as primeiras $k-1$ jogadas falhem e a última jogada seja um sucesso. Pela regra do produto, temos que a probabilidade de isso acontecer é
+  $
+    (1-p)^(k - 1) p
+  $
+]
+
+#theorem[
+  Se $X ~ "Geom"(p)$, então temos que
+  $
+    EE[X] = 1/p   \
+    VV[X] = (1-p)/p^2
+  $
+]
+#proof[
+  Sabemos que a função $f(x) = 1/(1-x)$ converge e pode ser expressa como uma série geométrica, ou seja,
+  $
+    1/(1-x) = sum_(k=0)^infinity x^k
+  $
+  com $|x| < 1$. Derivando ambos os lados, temos que
+  $
+    (dif f)/(dif x) &= 1/(1-x)^2    \
+
+    &= 1 + 2x + 3x^2 + 4x^3 + ...    \
+    
+    &= sum_(k=1)^infinity k x^(k-1)
+  $
+  e que a segunda derivada é tal que
+  $
+    (dif^2 f)/(dif x^2) &= 2/(1-x)^3    \
+
+    &= 2 + 6x + 12x^2 + 20x^3 + ...    \
+    
+    &= sum_(k=0)^infinity k (k-1) x^(k-2)
+  $
+  mas o que isso tem a ver? Veja que:
+  $
+    EE[X] &= sum_(k=1)^infinity k (1-p)^(k-1) p = p sum_(k=1)^infinity k (1-p)^(k-1)    \
+
+    &= p f'(1-p) = p / (1 - (1-p))^2    \
+    
+    &= 1/p
+  $
+
+  Para calcular a variância, vamos utilizar de um truque inteligente. Sabemos que $VV[X] = EE[X^2] - (EE[X])^2$. Vamos então calcular $EE[X(X-1)]$:
+  $
+    EE[X(X-1)] = EE[X^2 - X] = EE[X^2] - EE[X]
+  $
+  utilizando o LOTUS (@lotus-two-variables), temos que
+  $
+    EE[X(X-1)] &= sum_(k=0)^infinity k (k-1) (1-p)^(k-1) p    \
+  $
+  deixando $p$ em evidência e tirando um fator $1-p$ para fora, temos que
+  $
+    EE[X(X-1)] &= p (1-p) sum_(k=0)^infinity k (k-1) (1-p)^(k-2)    \
+
+    &= p (1-p) f''(1-p) = 2 p (1-p) / (1 - (1-p))^3   \
+    
+    &= 2 (1-p)/p^2
+  $
+  e como vimos antes
+  $
+    EE[X^2] &= EE[X(X-1)]+EE[X]   \
+
+    &= 2 (1-p)/p^2 + 1/p = (2 - p)/p^2
+  $
+  voltando para a variância, temos que
+  $
+    VV[X] &= EE[X^2] - (EE[X])^2    \
+
+    &= (2 - p)/p^2 - 1/p^2 = (1-p)/p^2
+  $
+]
+
+== Binomial Negativa
+
+#definition([Distribuição Binomial Negativa])[
+  Suponha um experimento onde eu vou realizar tentativas de Bernoulli independentes até obter $r$ *sucessos* e cada tentativa tem a mesma probabilidade $p$ de sucesso. Seja $X$ a quantidade de tentativas necessárias para obter $r$ sucessos (onde o último sucesso entra na contagem), dizemos que $X$ tem distribuição *binomial negativa* com parâmetros $r$ e $p$, denotada por
+  $
+    X ~ "NegBin"(r,p)
+  $
+]
+
+#theorem([PMF da Binomial Negativa])[
+  Se $X ~ "NegBin"(r,p)$, então a função de massa de probabilidade de $X$ é dada por
+  $
+    PP(X=k) = mat(k-1;r-1) p^r (1 - p)^(k - r)
+  $
+  para $k = r, r+1, r+2, ...$.
+]
+#proof[
+  Seja $Y$ o número de sucesso nas primeiras $k-1$ tentativas e $Z$ o número de sucessos que ocorreram na $k$-ésima tentativa ($Z in {0,1}$). O $r$-ésimo sucesso acontece no $k$-ésimo lançamento se, e somente se, $Y=r-1$ e $Z=1$, isto é
+  $
+    X=k <=> Y=r-1, Z=1
+  $
+  Como $Y$ e $Z$ são independentes, temos que
+  $
+    PP(X=k) = PP(Y=r-1, Z=1) = PP(Y=r-1) dot PP(Z=1)
+  $
+  como $Y$ é binomial com parâmetros $k-1$ e $p$ e $Z$ é bernoulli com parâmetro $p$, temos que
+  $
+    PP(X=k) = mat(k-1;r-1) p^(r-1) (1 - p)^((k-1) - (r-1)) dot p = mat(k-1;r-1) p^r (1 - p)^(k - r)
+  $
+]
+
+#theorem[
+  Se $X ~ "NegBin"(r,p)$, então temos que
+  $
+    EE[X] = r/p   \
+    VV[X] = r (1-p)/p^2
+  $
+]
+#proof[
+  Assim como a binomial, podemos subdividir essa variável aleatória em $r$ variáveis com outra distribuição. Se eu estou procurando $r$ sucessos, eu posso dividir como a quantidade de jogadas até o primeiro, depois até o segundo etc. E isso é exatamente a distribuição geométrica. Ou seja, podemos expressar $X$ como
+  $
+    X = Y_1 + Y_2 + ... + Y_r
+  $
+  com $Y_j ~ "Geom"(p)$
+
+  Dessa forma, aplicando a linearidade da esperança, temos que
+  $
+    EE[X] = EE[sum_(j=1)^r Y_j] = sum_(j=1)^r EE[Y_j] = sum_(j=1)^r 1/p = r/p
+  $
+  aplicando a mesma coisa com a variância
+  $
+    VV[X] = VV[sum_(j=1)^r Y_j] = sum_(j=1)^r VV[Y_j] = sum_(j=1)^r (1-p)/p^2 = r (1-p)/p^2
+  $
+]
+
+== Poison
+
+#definition([Distribuição de Poisson])[
+  Seja $lambda$ a *média* da quantidade de eventos que ocorrem em um intervalo de tempo fixo e $X$ é a variável aleatória que representa quantas vezes o evento ocorreu nesse mesmo intervalo de tempo, então dizemos que $X$ segue uma distribuição de Poisson com parâmetro $lambda$, denotada por
+  $
+    X ~ "Poisson"(lambda)
+  $
+]
+
+#theorem([PMF da Poisson])[
+  Se $X ~ "Poisson"(lambda)$, então a função de massa de probabilidade de $X$ é dada por
+  $
+    PP(X=k) = frac(lambda^k e^(-lambda), k!)
+  $
+  para $k = 0, 1, 2, ...$.
+]
+#proof[
+  Estamos avaliando a ocorrência de um evento dentro de um intervalo de tempo fixo. Isso significa que eu posso realizar esse evento uma quantidade $n$ de vezes, no entanto, como o intervalo de tempo não é finito, podemos assumir que $n$ pode ser extendido ao infinito (pois eu não consigo afirmar quantas tentativas podem acontecer dentro do intervalo de tempo. Uma milisegundo? Uma hora? Uma semana? $1000$ por milisegundo?). Então nós vamos pegar a distribuição binomial e vamos estender ela ao infinito. Sabemos que
+  $
+    PP(X=x) &= (n!)/((n-x)! x!) (p^x) (1-p)^(n-x)    \
+
+    &= (n!)/((n-x)! x!) dot p^x dot n^x/n^x (1-(n p)/n)^(n-x)    \
+
+    &= (n p)^x / x! dot (n!)/((n-x)! n^x) (1-(n p)/n)^(n) (1-(n p)/n)^(-x)    \
+  $
+  tendendo $n$ ao infinito, temos que
+  $
+    lim_(n->infinity) PP(X=x) &= lim_(n->infinity) (n p)^x / x! dot underbrace( (n!)/((n-x)! n^x) , "I") underbrace( (1-(n p)/n)^(n) , "II") underbrace( (1-(n p)/n)^(-x) , "III")    \
+  $
+  pelo teorema da multiplicação de limites, podemos separar o limite em três partes. Vamos analisar cada uma separadamente.
+
+  *I*:
+  $
+    lim_(n->infinity) (n!)/((n-x)! n^x) &= lim_(n->infinity) (n (n-1) (n-2) ... (n-x+1))/n^x   \
+    
+    &= lim_(n->infinity) (1 - 1/n) (1 - 2/n) ... (1 - (x-1)/n)    \
+    
+    &= 1
+  $
+
+  *II*:
+  $
+    lim_(n->infinity) (1-(n p)/n)^(n)
+  $
+  queremos fixar $EE[X] = n p = lambda$ como fixo
+  $
+    lim_(n->infinity) (1-(n p)/n)^(n) = lim_(n->infinity) (1-lambda/n)^(n) = e^(-lambda)
+  $
+
+  *III*:
+  $
+    lim_(n->infinity) (1-(n p)/n)^(-x) = lim_(n->infinity) (1-lambda/n)^(-x) = 1
+  $
+
+  logo, voltando para a fórmula original, temos que
+  $
+    lim_(n->infinity) PP(X=x) = lambda^x e^(-lambda)/x!
+  $
+]
+
+#theorem[
+  Se $X ~ "Poisson"(lambda)$, então temos que
+  $
+    EE[X] = lambda    \
+    VV[X] = lambda
+  $
+]
+#proof[
+  $
+    EE[X] &= sum_(k=0)^infinity k e^(-lambda) lambda^k / k!   \
+
+    &= e^(-lambda) sum_(k=0)^infinity lambda^k / (k-1)!   \
+  $
+  sabemos pela definição de $e^x$ que
+  $
+    e^x = sum_(k=0)^infinity x^k / k!
+  $
+  e tirando a derivada, que
+  $
+    e^x = sum_(k=0)^infinity k x^(k-1) / k!
+  $
+  note que ao multiplicarmos por $lambda$, temos
+  $
+    lambda e^lambda = sum_(k=0)^infinity k lambda^k / k!
+  $
+  logo
+  $
+    EE[X] = e^(-lambda) lambda e^lambda = lambda
+  $
+
+  Já para a variância, podemos utilizar o mesmo truque
+  $
+    VV[X] = EE[X^2] - (EE[X])^2
+  $
+  analisando $EE[X^2]$
+  $
+    EE[X^2] &= sum_(k=0)^infinity k^2 e^(-lambda) lambda^k / k!   \
+  $
+  vimos a derivada da função $e^x$ e podemos tirar a segunda derivada, que é
+  $
+    e^x = sum_(k=0)^infinity k (k-1) x^(k-2) / k!
+  $
+  ou seja, temos que
+  $
+    lambda^2 e^lambda = sum_(k=0)^infinity k (k-1) lambda^k / k!
+  $
+  logo
+  $
+    EE[X^2] = e^(-lambda) (lambda^2 e^lambda + lambda e^lambda) = lambda^2 + lambda
+  $
+  então
+  $
+    VV[X] = EE[X^2] - (EE[X])^2 = lambda^2 + lambda - lambda^2 = lambda
+  $
+]
