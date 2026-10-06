@@ -104,10 +104,8 @@
 
 #pagebreak()
 
-Antes de passarmos para os conteúdos mais complexos de probabilidade (que na minha opinião são mais fáceis que combinatória), vamos revisar alguns conceitos de probabilidade do ensino médio (eu não tive isso no ensino médio, mas me disseram que se vê lá né)
-
 == Contagem
-No tópico de contagem, duas coisas vão ser muito importantes para nós, o princípio fundamental da contagem e a estratégia de abordagem de problemas.
+A probabilidade é muito derivada do conceito de contar todas as saídas possíveis de um experimento/teste, por conta disso, é *fundamental* que fiquemos *craques* em contagem. A contagem é uma ferramenta que nos permite organizar e estruturar as possibilidades de um experimento, e assim, calcular a probabilidade de um evento ocorrer (depois vemos como fazer isso). O importante agora é entendermos os principais princípios dessa área da matemática.
 
 #theorem("Princípio Fundamental da Contagem")[
   Dada uma decisão $D_1$ com $x$ escolhas, e uma decisão *consecutiva* $D_2$ com $y$ escolhas, de forma que cada decisão $x$ tomada tem $y$ opções disponíveis, o número total de maneiras de realizar ambas as decisões é $x dot y$.
@@ -308,6 +306,9 @@ Mesmo com as ferramentas de contagem que vimos antes, existem diversas situaçõ
   Eu quero escolher $k$ pessoas de um grupo de $m+n$ pessoas. Eu posso dividir esse grupo em dois subgrupos, um com $m$ pessoas e outro com $n$ pessoas. Depois disso, posso dividir em duas etapas, primeiro eu escolho $j$ pessoas do grupo de $m$ pessoas, e depois eu escolho $k-j$ pessoas do grupo de $n$ pessoas, assim completo um grupo de $k$ pessoas. Como $j$ pode variar de $0$ até $k$, eu somo todas as possibilidades, e assim obtenho a *Identidade de Vandermonde*.
 ]
 
+== Contagem do Complementar
+Essa técnica parece até boba, mas muitas vezes deixamos passar situações que são mais fáceis de serem resolvidas quando pensamos no *complementar* do que queremos. Essa estratégia consiste em, se eu não sei como calcular o total de possibilidades de uma situação específica, eu posso tentar calcular o da situação *oposta*. Por exemplo, eu quero saber de quantas formas possíveis, dentro de uma sala com $n$ pessoas, existem pelo menos $2$ pessoas com o mesmo aniversário. Calcular isso diretamente é bem difícil, no entanto, o complementar é muito fácil, que é *de quantas formas eu garanto que todos tem um dia diferente de aniversário*, que se resume a aplicar uma combinação de $n$ nos $365$ dias do ano. Dessa forma, calcular de quantas formas eu posso garantir que pelo menos $2$ pessoas tem o mesmo aniversário é muito mais fácil, pois é só fazer $365^n - mat(365 ; n)$
+
 
 #pagebreak()
 
@@ -428,11 +429,11 @@ Agora podemos enunciar as propriedades e suas  demonstrações
   $
 ]
 
-#theorem[
+#theorem([Princípio da Inclusão-Exclusão])[
   $
     PP(A union B) = PP(A) + PP(B) - PP(A inter B)
   $
-]
+]<inclusion-exclusion>
 #proof[
   Montamos $A union B$ como $A union (B inter A^c)$, se montarmos dessa forma, $A$ e $(B inter A^c)$ são disjuntos.
 
@@ -466,18 +467,39 @@ Agora podemos enunciar as propriedades e suas  demonstrações
     + &PP(A inter B inter C)
   $
 ]
+#proof[
+  Derivado direto da outra propriedade. Defina
+  $
+    D = A union B
+  $
+  então pelo @inclusion-exclusion, temos que
+  $
+    PP(A union B union C) = PP(D union C) = PP(D) + PP(C) - PP(D inter C)
+  $
+  substituindo $PP(D)$ e $PP(D inter C)$, temos que
+  $
+    PP(A union B union C) = &PP(A) + PP(B) - PP(A inter B)   \ + &PP(C) - PP(A inter C) - PP(B inter C)   \
+    + &PP(A inter B inter C)
+  $
+]
+
+A ideia desses teoremas é que, quando contamos os eventos, podemos acabar contando *duas vezes* os eventos que estão em comum, então precisamos subtrair esses eventos que estão em comum. Só que conforme adicionamos mais e mais eventos, podemos acabar subtraindo *demais* os eventos que estão em comum, então precisamos adicionar de volta esses eventos. E assim por diante, até que tenhamos contado todos os eventos corretamente.
 
 == Eventos Independentes
 Dois eventos $A$ e $B$ são independentes se a ocorrência de um não afeta a probabilidade do outro. De imediato, não vamos ver a definição formal de independência, que é fácil, mas vamos nos manter na *intuição*. A independência de dois eventos é perceptível quando *a ocorrência de um evento não influencia na saída de outro*. Por exemplo, se eu jogar um dado e uma moeda, a saída do dado não influencia na saída da moeda, logo, os eventos são independentes. Agora vamos supor que eu estou lançando *dois dados*, no entanto, a saída do segundo é somada à saída do primeiro. Nesse caso, a saída do segundo dado *depende* da saída do primeiro, logo, os eventos *não são* independentes.
 
 == Problema do Aniversário
-Que tal resolvermos um problema bem paradoxal para estimular nosso pensamento *probabilistico*? O problema do aniversário é o seguinte: qual a probabilidade de, em um grupo de $n$ pessoas, *pelo menos* duas delas fazerem aniversário no mesmo dia? Parece que para que isso aconteça, o grupo precisa ser grande, mas não é bem assim. Antes de resolvermos o problema, vou enunciar um teorema que será útil para provar o caso mais óbvio.
+Que tal resolvermos um problema bem paradoxal para estimular nosso pensamento *probabilistico*? O problema do aniversário é o seguinte: qual a probabilidade de, em um grupo de $k$ pessoas, *pelo menos* duas delas fazerem aniversário no mesmo dia? Parece que para que isso aconteça, o grupo precisa ser grande, mas não é bem assim. Antes de resolvermos o problema, vou enunciar um teorema que será útil para provar o caso mais óbvio.
 
 #theorem([Princípio da Casa dos Pombos])[
   Se $n$ pombos são colocados em $m$ casas, e $n > m$, então *pelo menos* uma casa terá mais de um pombo.
-]
+]<pidgeon-hole-principle>
 
-Agora podemos enunciar as etapas da resolução do problema! Primeira coisa que fazemos é *remover as restrições*. Uma delas é o dia $29$ de fevereiro, que só ocorre em anos bissextos, então vamos *desconsiderar* esse dia. Outro ponto é que *cada dia* tem a *mesma chance* de ocorrer e são eventos *independentes*. Nessa situação, o mais fácil é calcular a probabilidade do evento *contrário*, ou seja, a probabilidade de que *todos do grupo tem aniversários diferentes*.
+Agora podemos enunciar as etapas da resolução do problema! Primeira coisa que fazemos é *remover as restrições*. Uma delas é o dia $29$ de fevereiro, que só ocorre em anos bissextos, então vamos *desconsiderar* esse dia. Outro ponto é que *cada dia* tem a *mesma chance* de ocorrer e são eventos *independentes*.
+
+Para o caso de termos mais pessoas que dis do ano, pelo @pidgeon-hole-principle, sabemos que *pelo menos* duas pessoas vão fazer aniversário no mesmo dia, logo a probabilidade será $1$.
+
+Agora vamos analisar o caso geral para $k <= 365$. Nessa situação, o mais fácil é calcular a probabilidade do evento *contrário*, ou seja, a probabilidade de que *todos do grupo tem aniversários diferentes*.
 $
   PP("todos diferentes") = 365 / 365 dot 364 / 365 dot 363 / 365 ... dot (365-k+1) / 365 = frac(365! / (365-k)!, 365^k)
 $
@@ -498,10 +520,10 @@ Quando $k = 23$, a probabilidade de que *pelo menos* duas pessoas façam anivers
 #pagebreak()
 
 == Como o Conhecimento influencia na Probabilidade
-Em probabilidade, conseguimos utilizar conhecimento prévio para atualizar as nossas previsões, por exemplo, se eu sei que nas últimas 10 jogadas de um dado, o número 6 saiu 8 vezes, então a *dependendo* das minhas *premissas* (por exemplo, eu não tenho garantia que o dado é justo), eu posso atualizar a minha previsão e dizer que eu tenho uma change grande de cair $6$ novamente.
+Em probabilidade, conseguimos utilizar conhecimento do que aconteceu agora no nosso experimento para entender as chances dos eventos que estão para acontecer.
 
 #example[
-  Ao jogarmos um dado justo $2$ vezes, dado que eu sei que a soma de ambos os valores que caíram é $6$, qual é a probabilidade de que o primeiro valor seja $2$? Sabemos que a soma de ambos os valores que caíram é $6$, então o espaço amostral é reduzido para
+  Ao jogarmos um dado justo $2$ vezes, dado que eu sei que a soma de ambos os valores que caíram é $6$, mas não sei qual o valor de cada lançamento, qual é a probabilidade de que o primeiro valor seja $2$? Sabemos que a soma de ambos os valores que caíram é $6$, então o espaço amostral é reduzido para
   $
     (1,5), (2,4), (3,3), (4,2), (5,1)
   $
@@ -509,6 +531,10 @@ Em probabilidade, conseguimos utilizar conhecimento prévio para atualizar as no
   $
     PP("primeiro valor é 2" | "soma é 6") = frac(1,5)
   $
+]
+
+#example[
+  Jogamos uma moeda $100$ vezes, mas não sabemos se ela é viciada ou não. Sabemos que, se a moeda for justa, nós deveríamos observar uma proporção de $1\/2$ para o número de caras e coroas. No entanto, suponha que nós observamos $70$ caras e $30$ coroas. Isso faz parecer que essa moeda *está viciada* de alguma forma. Essa informação passada me faz crer que a chance do meu lançamento agora, não é mais $1\/2$.
 ]
 
 #definition([Probabilidade Condicional])[
@@ -678,6 +704,29 @@ Com esse teorema, podemos expandir a lei da probabilidade total
 
 Esse teorema nos permite utilizar a lei da probabilidade total em problemas mais complexos e com mais restrições.
 
+#example([A Moeda Viciada])[
+  Considere duas urnas diferentes
+  $
+    A_1 = "3 bolas vermelhas e 1 azul"    \
+
+    A_2 = "1 bola vermelha e 3 azuis"
+  $
+  Uma das urnas é escolhida ao acaso, e uma bola é retirada da urna escolhida com
+  $
+    PP(A_1) = PP(A_2) = 0.5
+  $
+  em seguida, retiramos duas bolas da urna escolhida *sem reposição*. Queremos saber então qual é a *probabilidade* de que do valor da segunda bola dado o da primeira. Por exemplo
+  $
+    V_1 = "primeira bola é vermelha"    \
+    V_2 = "segunda bola é vermelha"
+  $
+  quero saber então
+  $
+    PP(V_2 | V_1) = PP(V_2 | V_1, A_1) dot PP(A_1 | V_1) + PP(V_2 | V_1, A_2) dot PP(A_2 | V_1)
+  $
+  calcular apenas $PP(V_2 | V_1)$ é difícil, mas se condicionarmos em *qual urna nós tiramos a bola*, conseguimos calcular facilmente.
+]
+
 == O Teorema de Bayes
 Suponha que esteja acontecendo a suspeita de um possível *futuro* surto de malária no Rio de Janeiro, e que o governo está preocupado com a situação. Para isso, eles vão realizar um teste de malária em toda a população da cidade, mas o teste não é perfeito! Acontece que meu resultado deu positivo, isso quer dizer que tenho malária? Será que agora eu vou morrer? A verdade é bem mais tranquilizante, e o *teorema de bayes* no mostra essa relação.
 
@@ -772,6 +821,9 @@ Dentro de um experimento qualquer, estamos a todo momento medindo quantidades, c
 O nome de *aleatório* não vem do número em si, mas vem da *naturaza do experimento* conter aleatoriedade
 
 == Função de Massa
+Precisamos definir uma forma de associar cada valor que a variável aleatória pode assumir com a probabilidade que aquele valor ocorra no meu experimento, é aí que entra a *função de massa*.
+
+=== Probabilidade Marginal
 É a função que descreve a probabilidade de cada valor que a variável aleatória discreta pode assumir. Por exemplo, se eu jogo uma moeda honesta $3$ vezes, a variável aleatória $X$ que mede o número de caras pode assumir os valores $0$, $1$, $2$ e $3$. A função de massa de probabilidade vai me dizer qual a probabilidade de cada um desses valores ocorrer.
 
 #definition([Função de Massa de Probabilidade (PMF)])[
@@ -782,9 +834,12 @@ O nome de *aleatório* não vem do número em si, mas vem da *naturaza do experi
   para todo $x in RR$. A função de massa de probabilidade satisfaz as seguintes propriedades:
   + $p_X (x) >= 0$ para todo $x in RR$
   + $sum_(x in "Im"(X)) p_X(x) = 1$
+
+  Essa função também é chamada de *Probabilidade Marginal de $X$*.
 ]
 
-Outra função de massa muito importante é a que descreve o comportamento de múltiplas variáveis aleatórias conjuntamente
+=== Probabilidade Conjunta
+Outra função de massa muito importante é a que descreve o comportamento de múltiplas variáveis aleatórias conjuntamente, associando como um conjunto de valores que as variáveis aleatórias podem assumir, e qual a probabilidade de cada conjunto ocorrer.
 
 #definition([Função de Massa Conjunta])[
   Sejam $X_1,...,X_n$ variáveis aleatórias discretas, a função de massa conjunta é uma função $p_(X_1,...,X_n): RR^n -> [0,1]$ definida por
@@ -804,17 +859,25 @@ Ela descreve a probabilidade de cada combinação de valores que as variáveis a
 $
   X = "número de caras" quad Y = "número de coroas"
 $
-e eu gostaria de saber $PP(X=2,Y=0)$. A função de massa me retornaria $0$, afinal, eu não posso ter $3$ caras e $0$ coroas ao mesmo tempo. Já se eu quisesse saber $PP(X=2,Y=1)$, a função de massa me retornaria $3\/8$, afinal, existem $3$ maneiras de ter $2$ caras e $1$ coroa em $3$ jogadas, e o total de possibilidades é $8$.
+e eu gostaria de saber $PP(X=2,Y=0)$. A função de massa me retornaria $0$, afinal, eu não posso ter $2$ caras e $0$ coroas ao mesmo tempo. Já se eu quisesse saber $PP(X=2,Y=1)$, a função de massa me retornaria $3\/8$, afinal, existem $3$ maneiras de ter $2$ caras e $1$ coroa em $3$ jogadas, e o total de possibilidades é $8$.
 
-Perceba que ao saber o valor de $Y$ no exemplo acima, isso me da algum tipo de informação sobre o valor de $X$! Isso me é um indicativo que $X$ e $Y$ *não são independentes*. Será que a função de massa pode nos ajudar a descobrir se duas variáveis aleatórias são independentes?
+=== Relação entre as funções de massa
+Perceba que ao saber o valor de $Y$ no exemplo acima, isso me da algum tipo de informação sobre o valor de $X$! Na verdade, conseguimos obter múltiplas relações entre as funções de massa, como *independência* e *obter a marginal de $X$ a partir da conjunta*, vamos ver como isso funciona.
+
+==== Independência
+No exemplo anterior, vimos que, se eu sei o valor de $X$, eu consigo informações sobre os possíveis valores de $Y$. Isso me é um indicativo que $X$ e $Y$ *não são independentes*. Será que a função de massa pode nos ajudar a descobrir se duas variáveis aleatórias são independentes? Na verdade sim! Lembra que definimos que dois eventos $A$ e $B$ são independentes quando $PP(A,B)=PP(A) dot PP(B)$? Na verdade, perceba que $X=x$ e $Y=y$ *também são eventos*, então podemos aplicar a definição de independência para variáveis aleatórias.
 
 #definition([Independência de Variáveis Aleatórias])[
-  Duas variáveis aleatórias $X$ e $Y$ são independentes se, e somente se, a função de massa conjunta for igual ao produto das funções de massa marginais:
+  Duas variáveis aleatórias $X$ e $Y$ são independentes quando a função de massa conjunta for igual ao produto das funções de massa marginais:
   $
-    p_(X,Y)(x,y) = p_X (x) dot p_Y (y)
+    p_(X,Y)(x,y) = p_X (x) dot p_Y (y)    \
+
+    PP(X=x,Y=y) = PP(X=x) dot PP(Y=y)    \
   $
   para todos $x$ e $y$.
 ]
+
+E assim como na parte de conjuntos, conseguimos extender isso para a formalização que o conhecimento de variáveis independentes não afeta a probabilidade entre elas
 
 #corollary([Independência por Condicionalidade])[
   $
@@ -822,7 +885,24 @@ Perceba que ao saber o valor de $Y$ no exemplo acima, isso me da algum tipo de i
   $
 ]
 
-Por que uma definição e não um teorema? Isso vem diretamente da teoria dos conjuntos e definições de probabilidade em conjuntos que vimos anteriormente! Inclusive, muitos teoremas se extendem para cá!
+#example[
+  Voltando no exemplo do dado com soma $6$, vamos separar o problema em dois eventos para aplicar a definição de independência. Seja $X$ o evento de que o primeiro valor seja $2$, e seja $Y$ o evento de que a soma dos valores seja $6$. Então, temos que
+  $
+    PP(Y) = 5/36 quad PP(X inter Y) = 1/36
+  $
+  então aplicando a definição:
+  $
+    PP(X | Y) = PP(X inter Y) / PP(Y) = (1/36) / (5/36) = 1/5
+  $
+  e como $PP(X) = 1/6$, temos que
+  $
+    PP(X | Y) != PP(X)
+  $
+  logo, os eventos não são independentes.
+]
+
+==== Marginalização
+Lembra que o @law-of-total-probability indica como obter a probabilidade de um evento $B$ em função de outros eventos disjuntos? Na verdade, conseguimos aplicar o mesmo raciocínio para variáveis aleatórias, e isso é chamado de *marginalização*. A marginalização nos permite obter a função de massa marginal de uma variável aleatória a partir da função de massa conjunta, para obter o @lotp-for-discrete-random-variables, basta definir o evento $B$ como $X=x$ e os eventos $A_j$ como $Y=y_j$
 
 #theorem([Lei da Probabilidade Total])[
   $
@@ -830,7 +910,7 @@ Por que uma definição e não um teorema? Isso vem diretamente da teoria dos co
 
     &= sum_(y) PP(X=x, Y=y)
   $
-]
+]<lotp-for-discrete-random-variables>
 
 == Transformações sobre as variáveis
 Esse tema é bem profundo, mas agora no inicio, nós vamos ver algumas transformaçẽos básicas que podem ser aplicadas em variáveis aleatórias e *como* elas influenciam nas probabilidades dos eventos. Para os casos abaixo, considere $X$ e $Y$ variáveis aleatórias.
@@ -849,7 +929,7 @@ Esse tema é bem profundo, mas agora no inicio, nós vamos ver algumas transform
 
 - $X + Y$: Se a imagem de $X$ é $x_1,...,x_n$ e a imagem de $Y$ é $y_1,...,y_m$, então a imagem de $X + Y$ é $x_1 + y_1,...,x_n + y_m$. A função de massa de probabilidade de $X + Y$ pode ser calculada analíticamente, no entanto, não será o foco nesse momento. Como os problemas nessa etapa são simples, podemos calcular o novo espaço amostral de $X+Y$ manualmente e calcular as probabilidades com base nas probabilidades de $X$ e $Y$. Esse raciocínio se aplica a qualquer função $g(X,Y)$
 
-== Função Acumulada
+== Função Acumulada e de Sobrevivência
 A função de distribuição acumulada (CDF) calcula a probabilidade do valor mostrado pela variável ser menor que um $x$.
 
 #definition([Função de Distribuição Acumulada (CDF)])[
@@ -861,7 +941,19 @@ A função de distribuição acumulada (CDF) calcula a probabilidade do valor mo
   + $F_X (x)$ é não decrescente
   + $lim_(x->-infinity) F_X (x) = 0$
   + $lim_(x->infinity) F_X (x) = 1$
-]
+]<cdf-discrete-random-variable>
+
+#definition([Função de Sobrevivência])[
+  A função de sobrevivência de uma variável aleatória discreta $X$ é uma função $G_X: RR -> [0,1]$ definida por
+  $
+    G_X (x) = PP(X > x)
+  $
+  para todo $x in RR$. A função de sobrevivência satisfaz as seguintes propriedades:
+  + $G_X (x)$ é não crescente
+  + $lim_(x->-infinity) G_X (x) = 1$
+  + $lim_(x->infinity) G_X (x) = 0$
+]<survival-function-discrete-random-variable>
+
 
 Essa função pode não parecer super útil no momento, mas ela é muito útil para calcular probabilidades de intervalos, por exemplo, se eu quero saber a probabilidade de $X$ estar entre $a$ e $b$!
 
@@ -871,14 +963,16 @@ Essa função pode não parecer super útil no momento, mas ela é muito útil p
   $
 ]
 
+Ela também vai nos ajudar muito no futuro quando começarmos a falar sobre variáveis *contínuas*.
 
 #pagebreak()
 
 #align(center+horizon)[
-  = Esperança, Medidas de Dispersão e Quantificadores de Independência
+  = Esperança
 ]
 
 #pagebreak()
+Esse capítulo terá bastante conceitos importantes, no entanto, também existirão muitos teoremas e demonstrações, principalmente de *propriedades* dos conceitos. Se você preferir, pode pular as demonstrações e ir direto para os conceitos, mas se possível, tente se aprofundar nas demonstrações posteriormente, pois elas vão te ajudar a entender melhor os conceitos.
 
 == O Valor Médio
 Em problemas cotidianos, muitas vezes gostamos de fazer a pergunta _"Quanto eu ganho em média?"_, _"Quanto eu perco em média?"_, _"Quantos pontos eu consigo em média?"_, ... A esperança matemática é justamente a resposta para essa pergunta, ela nos dá o valor médio esperado de uma variável aleatória, que intuitivamente seria o valor que, se eu fosse chutar que cairía, seria o valor que eu chutaria. Por exemplo, se eu tenho uma contagem de caras e coroas em $n$ jogadas, eu com certeza chutaria que cairiam $n\/2$ caras e $n\/2$ coroas, afinal, a moeda é honesta.
@@ -892,7 +986,7 @@ Em problemas cotidianos, muitas vezes gostamos de fazer a pergunta _"Quanto eu g
 
 A esperança existe desde que a soma esteja bem definida (existem casos que ela pode divergir e não existe um valor de esperança).
 
-=== Law of the Unconscious Statistician
+== Law of the Unconscious Statistician
 Esse teorema é nomeado de forma a tirar sarro de estatísticos. Acontece que, se você tem uma variável aleatória $X$ e uma função $g$, ao fazer $g(X)$, você pode pensar de forma inocente, que
 $
   EE[g(X)] = sum_(x) g(x) dot PP(X = x)
@@ -967,7 +1061,7 @@ mas isso na verdade está *corretíssimo*, acontece que a demonstração desse t
   $
 ]
 
-=== Esperança e Independência
+== Esperança e Independência
 A esperança também pode ser afetada pela independência de variáveis aleatórias.
 
 #theorem([Esperança de Variáveis Aleatórias Independentes])[
@@ -1008,7 +1102,44 @@ A esperança também pode ser afetada pela independência de variáveis aleatór
   pois $X dot Y$ é sempre $1$
 ]
 
-=== Monotonicidade da Esperança
+Acontece que, se duas variáveis são independentes, ao fazer $X Y$, os valores de $X$ não influenciam nos valores de $Y$, logo, todos os valores de $X Y$ são _"igualmente"_ prováveis, não no sentido que cada um tem $1\/(|S|)$ de probabilidade, mas num sentido que, se eu pegar um valor de $X$ e um valor de $Y$, a probabilidade de que eles se encontrem é a mesma, e isso é justamente o que a definição de independência nos diz. Já se eles não forem independentes, como o valor de $X$ incluencia no de $Y$, pode acontecer de existirem valores de $X Y$ mais prováveis de aparecer do que outros.
+
+#example([Caso de Independência])[
+  Suponha que eu jogo dois dados justos, e defino as variáveis aleatórias
+  $
+    X = "valor do dado 1" quad Y = "valor do dado 2"
+  $
+  Então, $X$ e $Y$ são independentes, e temos que
+  $
+    EE[X] = EE[Y] = 3.5
+  $
+  então
+  $
+    EE[X Y] = EE[X] dot EE[Y] = 3.5 dot 3.5 = 12.25
+  $
+]
+
+#example([Caso de Dependência])[
+  Suponha que eu jogo *um* dado justo, e defino as variáveis aleatórias
+  $
+    X = "valor do dado" quad Y = "valor do dado"
+  $
+  aqui é *dependência total*, então
+  $
+    X = Y
+  $
+  logo, se eu fizesse
+  $
+    X Y
+  $
+  saber o valor de $X$ *automaticamente me da o valor de $Y$*, então
+  $
+    EE[X] EE[Y] != EE[X Y]
+  $
+]
+
+== Monotonicidade da Esperança
+A esperança também é uma função *monótona*, ou seja, se uma variável aleatória é maior que outra, a esperança dela também será maior.
 
 #theorem([Monotonicidade da Esperança])[
   Sejam $X$ e $Y$ variáveis aleatórias discretas, se $X >= Y$, então
@@ -1023,19 +1154,8 @@ A esperança também pode ser afetada pela independência de variáveis aleatór
   $
 ]
 
-=== Função de Sobrevivência
-Conseguimos expressar a esperança em termos da função de sobrevivência, que é a função que nos dá a probabilidade de uma variável aleatória ser maior que um certo valor.
-
-#definition([Função de Sobrevivência])[
-  A função de sobrevivência de uma variável aleatória discreta $X$ é uma função $G_X: RR -> [0,1]$ definida por
-  $
-    G_X (x) = PP(X > x)
-  $
-  para todo $x in RR$. A função de sobrevivência satisfaz as seguintes propriedades:
-  + $G_X (x)$ é não crescente
-  + $lim_(x->-infinity) G_X (x) = 1$
-  + $lim_(x->infinity) G_X (x) = 0$
-]
+== Função de Sobrevivência
+Conseguimos expressar a esperança em termos da função de sobrevivência (@survival-function-discrete-random-variable).
 
 #theorem([Esperança em termos da Função de Sobrevivência])[
   Sejam $X$ uma variável aleatória discreta não negativa, então
@@ -1069,8 +1189,17 @@ Conseguimos expressar a esperança em termos da função de sobrevivência, que 
   $
 ]
 
-== Medidas de Dispersão
-Essas medidas nos ajudam a entender o quanto os valores da variável aleatória estão espalhados em torno da média. Se a esperança nos dá o valor que esperamos que a variável aleatória assuma, as medidas de dispersão nos dizem o quão _"bem comportadas"_ essas variáveis são, elas se concentram perto da média? Ou elas se espalham em vários lugares?
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Medidas de Dispersão
+]
+
+#pagebreak()
+
+== Introdução
+Essas medidas nos ajudam a entender o *quanto* os valores da variável aleatória estão espalhados em torno da média. Se a esperança nos dá o valor que esperamos que a variável aleatória assuma, as medidas de dispersão nos dizem o quão _"bem comportadas"_ essas variáveis são, elas se concentram perto da média? Ou elas se espalham em vários lugares? Para uma visualização visual do que essas medidas representam, acesse esse vídeo: #link("_", "[PREENCHER]")
 
 #definition([Desvio Médio])[
   O desvio médio de uma variável aleatória discreta $X$ é definido por
@@ -1093,7 +1222,7 @@ Essas medidas nos ajudam a entender o quanto os valores da variável aleatória 
   $
 ]
 
-=== Propriedades
+== Propriedades
 A variância e o desvio padrão são as medidas de dispersão mais utilizadas. Vamos enunciar e demonstrar algumas propriedades dessas medidas de dispersão.
 
 #theorem[
@@ -1153,7 +1282,7 @@ A variância e o desvio padrão são as medidas de dispersão mais utilizadas. V
 
 Intuitivamente, quando nós adicionamos uma constante $b$ em uma variável, a média vai se descolar esse exato mesmo valor, no entanto, como todos os pontos vão se mover exatamente $b$ unidades, a dispersão vai se manter a mesma. No entanto, se multiplicarmos a variável por uma constante $a$, os erros que já existiam vão se ampliar em $a$ vezes, então a dispersão vai se multiplicar por $a$ também.
 
-#theorem[
+#theorem([Variância em função de Esperanças])[
   $
     VV[X] = EE[X^2] - (EE[X])^2
   $
@@ -1169,6 +1298,8 @@ Intuitivamente, quando nós adicionamos uma constante $b$ em uma variável, a m�
     &= EE[X^2] - (EE[X])^2
   $
 ]
+
+Existe também a variância da soma de variáveis aleatórias! No entanto, vale ressaltar que o teorema abaixo é um *caso específico* do @variance-of-generic-variables
 
 #theorem[
   Se $X$ e $Y$ são variáveis aleatórias independentes, então
@@ -1192,7 +1323,7 @@ Intuitivamente, quando nós adicionamos uma constante $b$ em uma variável, a m�
   $
 ]
 
-=== Desigualdade de Chebyshev
+== Desigualdade de Chebyshev
 Essa desigualdade nos dá uma generalização da probabilidade estar distante de sua média. Vamos ver o teorema e sua demonstração, depois nós elaboramos mais
 
 #theorem([Desigualdade de Chebyshev])[
@@ -1235,8 +1366,17 @@ Como interpretamos esse teorema então?
 
 E assim em diante para um $k$ qualquer. Ou seja, ele atribui uma probabilidade máxima de o quão bem comportada a variável aleatória é, ou seja, o quão concentrada ela está em torno da média. Quanto maior o $k$, mais difícil é que os valores da variável aleatória estejam distantes. Isso também mostra uma quantificação de *valores extremos*. Por exemplo, é *muito improvável* que, ao jogar uma moeda honesta $100$ vezes, eu consiga $90$ caras. A desigualdade de chebyshev nos dá justamente uma formalização da intuição de que, quanto mais distante da média, mais improvável é que o evento ocorra.
 
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Quantificadores de Independência
+]
+
+#pagebreak()
+
 == Quantificadores de Independência
-A independência de variáveis aleatórias é um conceito muito importante, mas como podemos quantificar o quão independentes duas variáveis aleatórias são?
+A independência de variáveis aleatórias é um conceito muito importante, mas como podemos quantificar o quão independentes duas variáveis aleatórias são? Dizer se elas são independentes com uma tabelinha de probabilidades bonitinha é muito fácil, mas e se não temos essa informação? E se nossas probabilidades são *estimadas*? E se temos uma quantidade enorme de variáveis aleatórias e queremos saber quais são independentes entre si?
 
 #definition([Covariância])[
   A covariância de duas variáveis aleatórias discretas $X$ e $Y$ é definida por
@@ -1245,9 +1385,9 @@ A independência de variáveis aleatórias é um conceito muito importante, mas 
   $
 ]
 
-Sabemos que $X - EE[X]$ é a distância dos valores de $X$ até sua média. Quando isso é maior ou igual a $0$, então a maioria dos valores está acima da média. Quando multiplicamos isso por $Y - EE[Y]$, se o valor for positivo e grande, é um indicativo que, conforme $X$ está acima da média, $Y$ *também está* acima da média. Se o valor for negativo e grande, é um indicativo que, conforme $X$ está acima da média, $Y$ *está abaixo* da média. Se o valor for próximo de $0$, então não há uma relação clara entre as duas variáveis aleatórias.
+Como essa medida indica independência? Sabemos que $X - EE[X]$ é a distância dos valores de $X$ até sua média. Quando isso é maior ou igual a $0$, então a maioria dos valores está acima da média. Quando multiplicamos isso por $Y - EE[Y]$, se o valor for positivo e grande, é um indicativo que, conforme $X$ está acima da média, $Y$ *também está* acima da média. Se o valor for negativo e grande, é um indicativo que, conforme $X$ está acima da média, $Y$ *está abaixo* da média. Se o valor for próximo de $0$, então não há uma relação clara entre as duas variáveis aleatórias. Mas vale ressaltar que a covariância mede a independência *linear* de variáveis. O fato de ela ser $0$ *não significa* que as variáveis são $100%$ independentes. Antes de mostrar isso, vamos mostrar uma forma mais prática de calcular a covariância.
 
-#theorem[
+#theorem([Covariância em função de Esperanças])[
   $
     "Cov"(X,Y) = EE[X Y] - EE[X] dot EE[Y]
   $
@@ -1264,7 +1404,7 @@ Sabemos que $X - EE[X]$ é a distância dos valores de $X$ até sua média. Quan
   $
 ]
 
-Temos um teorema muito importante que relaciona a covariância com a independência de variáveis aleatórias.
+Agora sim podemos mostrar que correlação $0$ *não implica independência*, mas o contrário vale.
 
 #theorem[
   $
@@ -1295,6 +1435,7 @@ Temos um teorema muito importante que relaciona a covariância com a independên
   logo, $X$ e $Y$ *não são independentes*
 ]
 
+== O Problema de Escala da Covariância
 A covariância é muito útil, mas ela tem um problema, a *escala*. Vamos ver isso na prática com alguns exemplos
 
 #example[
@@ -1318,7 +1459,10 @@ Para resolver esses problemas de escala e dificuldade de interpretabilidade, nó
   $
 ]
 
-A principal vantagem da correlação é que ela é *adimensional*, ou seja, ela não depende da unidade de medida das variáveis aleatórias. Além de se situar no intervalo $[-1, 1]$. Antes de provarmos algumas de suas propriedades (juntamente com a covariância), vamos definir ambas com um pouco de *álgebra linear*. Vamos definir a covariância como um *produto interno*.
+A principal vantagem da correlação é que ela é *adimensional*, ou seja, ela não depende da unidade de medida das variáveis aleatórias. Além de se situar no intervalo $[-1, 1]$.
+
+== Aprofundamento: Covariância como Produto Interno
+Esse tópico é um aprofundamento e preparação para futuras demonstrações dentro desse capítulo, se necessário, pode pular esse tópico na primeira leitura. Antes de provarmos algumas das propriedades da correlação (juntamente com a covariância), vamos definir ambas com um pouco de *álgebra linear*. Vamos definir a covariância como um *produto interno*.
 
 #theorem([Covariância como Produto Interno])[
   Sejam $X$ e $Y$ variáveis aleatórias discretas, então a covariância entre $X$ e $Y$ pode ser interpretada como o produto interno entre dois vetores.
@@ -1379,7 +1523,8 @@ A principal vantagem da correlação é que ela é *adimensional*, ou seja, ela 
   $
 ]
 
-Agora que sabemos que a covariância é um produto interno, podemos utilizar essa relação para mostrar outras propriedades da covariância
+== Propriedades
+Agora que sabemos que a covariância é um produto interno, podemos utilizar essa relação para demonstrar outras propriedades da covariância. Nem todas as propriedades aqui enunciadas utilizam dessa definição, mas já preparamos o terreno para não dividir em vários tópicos de propriedade.
 
 #theorem[
   $
@@ -1470,7 +1615,7 @@ Agora que sabemos que a covariância é um produto interno, podemos utilizar ess
 Até o momento, o curso apresentou problemas que requerem um certo pensamento crítico e racicínio lógico. As distribuições vem para nos dar uma forma de *automatizar* o raciocínio que fizemos até agora. Elas são funções matemáticas que descrevem o comportamento de variáveis aleatórias, ou seja, elas nos dão a probabilidade de cada valor que a variável aleatória pode assumir.
 
 == Bernoulli
-Começamos com a distribuição mais simples, a *bernoulli*.
+Começamos com a distribuição mais simples, a *bernoulli*. Sempre que você encontrar situações que a variável assume apenas dois valores possíveis (_sim_ e _não_, _cara_ e _coroa_, _sucesso_ e _fracasso_), você pode modelar isso com uma distribuição de bernoulli. A distribuição de bernoulli é a base para muitas outras distribuições, como a binomial, a geométrica, a hipergeométrica, entre outras.
 
 #definition([Distribuição de Bernoulli])[
   Uma variável aleatória discreta $X$ segue uma distribuição de bernoulli com parâmetro $p in [0,1]$ quando sua função de massa de probabilidade é dada por
@@ -1506,7 +1651,7 @@ Essa distribuição é muito útil para modelar eventos que podem ter apenas doi
 ]
 
 == Binomial
-A partir de agora, vamos definir cada distribiução a partir de uma *história*, dessa forma, não ficamos limitados apenas à função de massa daquela distribuição, mas ao que essa distribuição significa.
+A partir de agora, vamos definir cada distribiução a partir de uma *história*, dessa forma, não ficamos limitados apenas à função de massa daquela distribuição, mas ao que essa distribuição significa. Sempre que um problema indicar que ele quer contar *de quantas formas* um evento pode ocorrer, ou *quantas vezes* um evento ocorre, provavelmente ele está pedindo para modelar o problema com uma distribuição binomial.
 
 #definition([Distribuição Binomial])[
   Suponha que $n$ tentativas de Bernoulli independentes sejam realizadas, cada uma com a mesma probabilidade $p$ de sucesso. Seja $X$ o *número de sucessos* nessas $n$ jogadas, a distribuição de $X$ é chamada de _"binomial"_ com parâmetros $n$ e $p$. Ela é denotada por
@@ -1596,7 +1741,7 @@ A partir de agora, vamos definir cada distribiução a partir de uma *história*
 ]
 
 == Hípergeométrica
-Essa é uma das mais confusas, pois sua história é bem longa, mas vamos simplificar ao máximo
+Essa é uma das mais confusas, pois sua história é bem longa, mas vamos simplificar ao máximo. Quando você conseguir associar um problema com retirar elementos de *dois grupos diferentes* (sem reposição), então você está diante de uma distribuição hípergeométrica.
 
 #definition([Distribuição Hípergeométrica])[
   Suponha que tenhamos *uma urna* com $w$ *bolas brancas* e $b$ *bolas pretas*. Se tirarmos $n$ bolas da urna _com reposição_, isso nos dá uma distribuição binomial para o número de bolas brancas que tiramos. No entanto, se tirarmos $n$ bolas da urna *sem reposição*, e $X$ for a quantidade de bolas brancas retiradas, então ela segue uma distribuição hípergeométrica, denotada como
@@ -1709,6 +1854,7 @@ Essa é uma das mais confusas, pois sua história é bem longa, mas vamos simpli
 ]
 
 == Geométrica
+Sempre que o seu problema puder ser associado com uma quantidade de tentativas até que um evento ocorra, você pode modelar o problema com uma distribuição geométrica. Ela é muito útil para modelar problemas de confiabilidade, como a quantidade de tentativas até que um equipamento falhe, ou a quantidade de tentativas até que um paciente se recupere.
 
 #definition([Distribuição Geométrica])[
   Suponha que tenhamos uma sequência de tentativas de Bernoulli independentes, cada uma com a mesma probabilidade $p$ de sucesso. Seja $X$ o número de tentativas *até o primeiro sucesso* (inclusivo, ou seja, a tentativa do sucesso em si entra na contagem), a distribuição de $X$ é chamada de _"geométrica"_ com parâmetro $p$. Ela é denotada por
@@ -1799,6 +1945,7 @@ Essa é uma das mais confusas, pois sua história é bem longa, mas vamos simpli
 ]
 
 == Binomial Negativa
+Muito parecida com a geométrica, no entanto, é quando o problema pode ser modelado como a quantidade de tentativas até que múltiplos eventos ocorram. Por exemplo, a quantidade de tentativas até que um paciente se recupere *duas vezes*, ou a quantidade de tentativas até que um equipamento falhe *três vezes*.
 
 #definition([Distribuição Binomial Negativa])[
   Suponha um experimento onde eu vou realizar tentativas de Bernoulli independentes até obter $r$ *sucessos* e cada tentativa tem a mesma probabilidade $p$ de sucesso. Seja $X$ a quantidade de tentativas necessárias para obter $r$ sucessos (onde o último sucesso entra na contagem), dizemos que $X$ tem distribuição *binomial negativa* com parâmetros $r$ e $p$, denotada por
@@ -1854,6 +2001,7 @@ Essa é uma das mais confusas, pois sua história é bem longa, mas vamos simpli
 ]
 
 == Poison
+Essa é um pouco mais complexa. A poisson representa a quantidade de vezes que um evento ocorre em um intervalo de tempo fixo, mas sabendo quantas vezes ele ocorre em média. Por exemplo, fixando uma janela de $6$ segundos, sabemos que em uma avenida passam em média $10$ carros, mas não sabemos quantos carros vão passar em cada janela de $6$ segundos, podem ser $10$, $100$ num dia de pico, ou até mais se acontecer algo inesperado, então não há limite para a quantidade real de contagem. Outro exemplo é, dentro de um intervalo fixo, quantas gotas de chuva vão cair em um lago? É literalmente impossível você *limitar* a quantidade de gotas, então a distribuição de poisson é perfeita para modelar esse tipo de problema.
 
 #definition([Distribuição de Poisson])[
   Seja $lambda$ a *média* da quantidade de eventos que ocorrem em um intervalo de tempo fixo e $X$ é a variável aleatória que representa quantas vezes o evento ocorreu nesse mesmo intervalo de tempo, então dizemos que $X$ segue uma distribuição de Poisson com parâmetro $lambda$, denotada por
