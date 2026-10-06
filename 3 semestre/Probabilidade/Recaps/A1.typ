@@ -222,6 +222,92 @@ $
 $
 percebe que é a mesma organização, só que com outro ponto de referência? Então, para cada permutação linear de $n$ elementos, existem $n$ permutações circulares equivalentes. Por isso, para calcular a permutação circular, dividimos a permutação linear por $n$, ou seja, $P_n^"circ" = frac(P_n, n) = frac(n!, n) = (n-1)!$.
 
+== Ferramentas de Contagem
+Daqui a pouco, vamos definir melhor uma definição ingênua sobre probabilidade, mas de antemão, ela envolve *a contagem de todas as possibilidades que um experimento pode ter*. no mundo real, é impossível contar todas as saídas possíveis de um experimento na mão, mas isso não é um problema! Mesmo quando as saídas de um *experimento* são *numerosas* e *complexas de se contar na mão*, ainda podemos utilizar algumas ferramentas na área da contagem para nos ajudar a calcular as possibilidades!
+
+=== Tabela Amostral
+A tabela amostral é muito útil para organizar *quais ferramentas* de contagem utilizamos sob *determinadas condições* de um *experimento*. 
+
+#set table(
+  stroke: (x, y) => (
+    y: 1pt,
+    left: if x == 0 and y == 0 { 0pt } else { 1pt },
+    right: if x == 0 and y == 0 { 0pt } else { 1pt},
+    top: if x == 0 and y == 0 { 0pt } else { 1pt },
+    bottom: if x == 0 and y == 0 { 0pt } else { 1pt }
+  ),
+)
+
+#figure(
+  table(
+    columns: 3,
+    rows: 3,
+    align: center+horizon,
+
+    [],[Ordem Importa],[Ordem não Importa],
+    [Reposição],[$n^k$],[$mat(n+k-1 ; k)$],
+    [Sem Reposição],[$n!/(n-k)!$],[$mat(n;k)$],
+  )
+)
+
+Antes de explicar a origem de cada fórmula, vou enunciar as *restrições* associadas à cada fórmula
+- *Ordem Importa*: A ordem dos elementos escolhidos influencia na contagem, ou seja, se eu escolher os elementos $a$ e $b$, a sequência $(a,b)$ é diferente da sequência $(b,a)$.
+- *Ordem não Importa*: A ordem dos elementos escolhidos não influencia na contagem, ou seja, se eu escolher os elementos $a$ e $b$, a sequência $(a,b)$ é igual à sequência $(b,a)$.
+
+- *Reposição*: Cada elemento escolhido volta para o conjunto de elementos disponíveis, ou seja, posso escolher o mesmo elemento mais de uma vez.
+- *Sem Reposição*: Cada elemento escolhido não volta para o conjunto de elementos disponíveis, ou seja, não posso escolher o mesmo elemento mais de uma vez.
+
+==== Ordem Importa e Reposição
+Se a ordem importa, então estamos lidando com arranjos. Se há reposição, então para cada elemento escolhido, ele volta para o conjunto de elementos disponíveis, ou seja, na primeira retirada, eu tenho $n$ elementos disponíveis, na segunda, eu ainda tenho $n$ pois o anterior foi colocado de volta, e assim por diante. Logo, o número de maneiras de escolher $k$ elementos com reposição é dado por $n^k$.
+
+==== Ordem Importa e Sem Reposição
+Estamos lidando literalmente com os arranjos como já vimos antes, então será a mesma fórmula do arranjo, ou seja, $n!/(n-k)!$.
+
+==== Ordem não Importa e Sem Reposição
+É exatamente o caso da combinação padrão que discutimos anteriormente, ou seja, $mat(n;k)$.
+
+==== Ordem não Importa e Reposição
+Esse caso é um pouco mais complicado. Você saber de quantas formas possíveis você pode escolher $k$ elementos de um conjunto de $n$ elementos, mas agora você pode escolher o mesmo elemento mais de uma vez, isso é equivalente a *perguntar de quantos jeitos diferentes é possível distribuir $k$ partículas independentes em $n$ caixas diferentes*, mas por quê? Isso não parece nada intuitivo.
+
+Interprete uma associação, cada partícula é um *sorteio* e cada caixa é um *elemento do conjunto*. Quando eu falo *partícula $i$ vai ficar na caixa $p$*, isso quer dizer em termos do sorteio que, no $i$-ésimo sorteio, o elemento escolhido foi o $p$-ésimo elemento do conjunto. Então, se eu tenho $k$ partículas e $n$ caixas, isso é equivalente a dizer que eu tenho $k$ sorteios e $n$ elementos disponíveis para escolher. Como eu posso escolher um mesmo elemento mais de uma vez, isso é equivalente a dizer que eu posso colocar mais de uma partícula na mesma caixa. Para fazer o cálculo de fato, utilizamos a abordagem de pontos e traços, tenha em mente a seguinte divisão
+$
+  dot dot dot \/ dot \/ dot dot dot \/ dot \/ dot
+$
+Essa representação é o mesmo que dizer que na primeira caixa, eu tenho $3$ partículas, na segunda eu tenho $1$ e assim em diante, a quantidade de pontos entre os traços representa a quantidade de partículas em cada caixa. Como temos $k$ partículas, temos $k$ pontos, e como temos $n$ caixas, temos $n-1$ traços. Logo, o número total de maneiras de organizar esses pontos e traços vai ser o número de maneiras de escolher $k$ pontos dentre todos os $k+n-1$ elementos, ou seja, $mat(n+k-1 ; k)$.
+
+=== Identidades Úteis
+Mesmo com as ferramentas de contagem que vimos antes, existem diversas situações complexas na área que ainda exigem certas *sacadas*. As identidades que vamos mostrar são *justamente essas sacadas*.
+
+#theorem[
+  $
+    n mat(n-1 ; k-1) = k mat(n ; k)
+  $
+]<choice-of-leader>
+#proof[
+  Queremos saber de quantas formas podemos escolher $k$ pessoas de um grupo de $n$ pessoas, e dentre essas $k$ pessoas, queremos escolher uma pessoa para ser o *líder*.
+
+  No lado direito da igualdade, quando fazemos
+  $
+    k mat(n ; k)
+  $
+  primeiro fazemos a contagem de quantas formas podemos escolher $k$ pessoas de um grupo de $n$ pessoas (combinação) e, dentro dessas $k$, quantas podem ser o *líder*.
+
+  Já no lado esquerdo, quando fazemos
+  $
+    n mat(n-1 ; k-1)
+  $
+  primeiro eu vou escolher o *líder* do grupo dentre as $n$ pessoas, e das $n-1$ que sobraram, eu vou montar um grupo de $k-1$ para completar $k$ com o líder que eu escolhi.
+]
+
+#theorem([Identidade de Vandermonde])[
+  $
+    mat(m + n ; k) = sum_(j=0)^k mat(m ; j) mat(n ; k-j)
+  $
+]
+#proof[
+  Eu quero escolher $k$ pessoas de um grupo de $m+n$ pessoas. Eu posso dividir esse grupo em dois subgrupos, um com $m$ pessoas e outro com $n$ pessoas. Depois disso, posso dividir em duas etapas, primeiro eu escolho $j$ pessoas do grupo de $m$ pessoas, e depois eu escolho $k-j$ pessoas do grupo de $n$ pessoas, assim completo um grupo de $k$ pessoas. Como $j$ pode variar de $0$ até $k$, eu somo todas as possibilidades, e assim obtenho a *Identidade de Vandermonde*.
+]
+
 
 #pagebreak()
 
@@ -231,16 +317,34 @@ percebe que é a mesma organização, só que com outro ponto de referência? En
 
 #pagebreak()
 
-== Conjuntos e Definição Ingênua de Probabilidade
-Toda a teoria de probabilidade é construída em cima da teoria de conjuntos, então muitos teoremas de probabilidade são apenas teoremas de conjuntos aplicados a eventos.
+== Fundamentos
+=== Naive Definition
+Antes de vermos propriedades teoremas e definições difíceis, vamos começar com uma definição *super simples* do que é uma probabilidade. Intuitivamente, a probabilidade é a chance de um evento ocorrer. Se eu repetir um experimento $x$ vezes, quantas dessas $x$ vezes o evento ocorreu? Com essa noção mais prática de probabilidade, podemos fazer a seguinte definição
+
+#definition([Naive Probability Definition])[
+  Seja $S$ o conjunto de *todas* as possíveis saídas de um experimento, e $E$ é um possível *acontecimento* dentro do experimento, então a probabilidade de $E$ ocorrer é
+  $
+    PP(E) = frac(|E|, |S|)
+  $
+]
+
+Essa definição mostra a probabilidade do evento ocorrer como uma fração, onde o numerador são *todas as formas que o evento pode ocorrer* sobre *todos os eventos possíveis de ocorrer*. Por exemplo, se eu jogar um dado justo, todos os valores possíveis são $S={1,2,3,4,5,6}$, a chance de sair evento _"caiu $2$"_ seria $E={2}$, então a probabilidade de cair $2$ seria
+$
+  PP(E) = frac(|E|, |S|) = frac(1,6)
+$
+
+=== Conjuntos
+Dada essa definição ingênua de probabilidade, podemos começar a pensar em como formalizar isso utilizando a ideia de *conjuntos*! Na verdade essa é a formalização mais básica de probabilidade. Vamos enunciar algumas definições então.
 
 #definition([Espaço Amostral])[
-  O espaço amostral $S$ é o conjunto de todos os resultados possíveis de um experimento aleatório.
+  O espaço amostral $S$ é o conjunto de *todos os resultados possíveis* de um experimento aleatório.
 ]
 
 #definition([Evento])[
   Um evento $E$ é um subconjunto do espaço amostral $S$, ou seja, $E subset.eq S$.
 ]
+
+Essa definição de $E$ parece bem simples, mas se pararmos para pensar, um evento nada mais é que um conjunto de resultados possíveis de um experimento aleatório. Voltando ao exemplo do dado, se o meu espaço amostral é $S = {1, 2, 3, 4, 5, 6}$, faz sentido afirmar que _"cair $3$"_ é um evento. Porém, falar _"cair o número $7$"_ não faz sentido, pois $7$ não está no espaço amostral, logo, não é um *evento*.
 
 #corollary()[
   Dado $S$ um espaço amostral e $A,B subset.eq S$ sendo eventos em $S$, temos que
@@ -284,112 +388,6 @@ Toda a teoria de probabilidade é construída em cima da teoria de conjuntos, en
   Para a segunda igualdade, faremos o mesmo raciocínio. Seja $x in (A inter B)^c$ então $x in.not A inter B$, ou seja, $x$ não ocorre *simultaneamente* em $A$ e $B$, logo $x in.not A$ *ou* $x in.not B$, ou seja, $x in A^c$ *ou* $x in B^c$, então $x in A^c union B^c => (A inter B)^c subset.eq A^c union B^c$. Para a volta, seja $x in A^c union B^c$, então $x in A^c$ *ou* $x in B^c$, ou seja, $x in.not A$ *ou* $x in.not B$, logo $x in.not (A inter B)$, ou seja, $A^c union B^c subset.eq (A inter B)^c$.
 ]
 
-Com todas essas definições, teoremas e revisão de contagem, nós conseguimos finalmente definir de maneira *informal* o que é a probabilidade de um evento ocorrer
-
-#definition([Naive Probability Definition])[
-  Dado um espaço amostral $S$ e um evento $E subset.eq S$, a probabilidade de $E$ ocorrer é dada por
-  $
-    PP(E) = frac(|E|, |S|)
-  $
-]
-
-== Tabela Amostral e Demonstração por Interpretação
-A tabela amostral é muito útil para organizar *quais ferramentas* de contagem utilizamos sob *determinadas condições* de um *experimento*
-
-#set table(
-  stroke: (x, y) => (
-    y: 1pt,
-    left: if x == 0 and y == 0 { 0pt } else { 1pt },
-    right: if x == 0 and y == 0 { 0pt } else { 1pt},
-    top: if x == 0 and y == 0 { 0pt } else { 1pt },
-    bottom: if x == 0 and y == 0 { 0pt } else { 1pt }
-  ),
-)
-
-#figure(
-  table(
-    columns: 3,
-    rows: 3,
-    align: center+horizon,
-
-    [],[Ordem Importa],[Ordem não Importa],
-    [Reposição],[$n^k$],[$mat(n+k-1 ; k)$],
-    [Sem Reposição],[$n!/(n-k)!$],[$mat(n;k)$],
-  )
-)
-
-Antes de continuarmos e mostrarmos algumas identidades interessantes para nos ajudar a resolver alguns problemas, vamos discorrer o porquê de cada uma das fórmulas mencionadas anteriormente.
-
-=== Ordem Importa e Reposição
-Se a ordem importa, então estamos lidando com arranjos. Se há reposição, então para cada elemento escolhido, ele volta para o conjunto de elementos disponíveis, ou seja, na primeira retirada, eu tenho $n$ elementos disponíveis, na segunda, eu ainda tenho $n$ pois o anterior foi colocado de volta, e assim por diante. Logo, o número de maneiras de escolher $k$ elementos com reposição é dado por $n^k$.
-
-=== Ordem Importa e Sem Reposição
-Estamos lidando literalmente com os arranjos como já vimos antes, então será a mesma fórmula do arranjo, ou seja, $n!/(n-k)!$.
-
-=== Ordem não Importa e Sem Reposição
-É exatamente o caso da combinação padrão que discutimos anteriormente, ou seja, $mat(n;k)$.
-
-=== Ordem não Importa e Reposição
-Esse caso é um pouco mais complicado. Você saber de quantas formas possíveis você pode escolher $k$ elementos de um conjunto de $n$ elementos, mas agora você pode escolher o mesmo elemento mais de uma vez, isso é equivalente a *perguntar de quantos jeitos diferentes é possível distribuir $k$ partículas independentes em $n$ caixas diferentes*, mas por quê? Isso não parece nada intuitivo.
-
-Interprete uma associação, cada partícula é um *sorteio* e cada caixa é um *elemento do conjunto*. Quando eu falo *partícula $i$ vai ficar na caixa $p$*, isso quer dizer em termos do sorteio que, no $i$-ésimo sorteio, o elemento escolhido foi o $p$-ésimo elemento do conjunto. Então, se eu tenho $k$ partículas e $n$ caixas, isso é equivalente a dizer que eu tenho $k$ sorteios e $n$ elementos disponíveis para escolher. Como eu posso escolher um mesmo elemento mais de uma vez, isso é equivalente a dizer que eu posso colocar mais de uma partícula na mesma caixa. Para fazer o cálculo de fato, utilizamos a abordagem de pontos e traços, tenha em mente a seguinte divisão
-$
-  dot dot dot \/ dot \/ dot dot dot \/ dot \/ dot
-$
-Essa representação é o mesmo que dizer que na primeira caixa, eu tenho $3$ partículas, na segunda eu tenho $1$ e assim em diante, a quantidade de pontos entre os traços representa a quantidade de partículas em cada caixa. Como temos $k$ partículas, temos $k$ pontos, e como temos $n$ caixas, temos $n-1$ traços. Logo, o número total de maneiras de organizar esses pontos e traços vai ser o número de maneiras de escolher $k$ pontos dentre todos os $k+n-1$ elementos, ou seja, $mat(n+k-1 ; k)$.
-
-== Teoremas Úteis
-Aqui nós vamos mostrar alguns teoremas que serão muito úteis para nós na hora de resolver problemas de probabilidade. Suas demonstrações não serão algébricas, mas sim por interpretação, ou seja, vamos interpretar o que cada lado da equação significa e mostrar que eles são equivalentes.
-
-#theorem[
-  $
-    n mat(n-1 ; k-1) = k mat(n ; k)
-  $
-]<choice-of-leader>
-#proof[
-  Queremos saber de quantas formas podemos escolher $k$ pessoas de um grupo de $n$ pessoas, e dentre essas $k$ pessoas, queremos escolher uma pessoa para ser o *líder*.
-
-  No lado direito da igualdade, quando fazemos
-  $
-    k mat(n ; k)
-  $
-  primeiro fazemos a contagem de quantas formas podemos escolher $k$ pessoas de um grupo de $n$ pessoas (combinação) e, dentro dessas $k$, quantas podem ser o *líder*.
-
-  Já no lado esquerdo, quando fazemos
-  $
-    n mat(n-1 ; k-1)
-  $
-  primeiro eu vou escolher o *líder* do grupo dentre as $n$ pessoas, e das $n-1$ que sobraram, eu vou montar um grupo de $k-1$ para completar $k$ com o líder que eu escolhi.
-]
-
-#theorem([Identidade de Vandermonde])[
-  $
-    mat(m + n ; k) = sum_(j=0)^k mat(m ; j) mat(n ; k-j)
-  $
-]
-#proof[
-  Eu quero escolher $k$ pessoas de um grupo de $m+n$ pessoas. Eu posso dividir esse grupo em dois subgrupos, um com $m$ pessoas e outro com $n$ pessoas. Depois disso, posso dividir em duas etapas, primeiro eu escolho $j$ pessoas do grupo de $m$ pessoas, e depois eu escolho $k-j$ pessoas do grupo de $n$ pessoas, assim completo um grupo de $k$ pessoas. Como $j$ pode variar de $0$ até $k$, eu somo todas as possibilidades, e assim obtenho a *Identidade de Vandermonde*.
-]
-
-== Problema do Aniversário
-Que tal resolvermos um problema bem paradoxal para estimular nosso pensamento *probabilistico*? O problema do aniversário é o seguinte: qual a probabilidade de, em um grupo de $n$ pessoas, *pelo menos* duas delas fazerem aniversário no mesmo dia? Parece que para que isso aconteça, o grupo precisa ser grande, mas não é bem assim. Antes de resolvermos o problema, vou enunciar um teorema que será útil para provar o caso mais óbvio.
-
-#theorem([Princípio da Casa dos Pombos])[
-  Se $n$ pombos são colocados em $m$ casas, e $n > m$, então *pelo menos* uma casa terá mais de um pombo.
-]
-
-Agora podemos enunciar as etapas da resolução do problema! Primeira coisa que fazemos é *remover as restrições*. Uma delas é o dia $29$ de fevereiro, que só ocorre em anos bissextos, então vamos *desconsiderar* esse dia. Outro ponto é que *cada dia* tem a *mesma chance* de ocorrer e são eventos *independentes*. Nessa situação, o mais fácil é calcular a probabilidade do evento *contrário*, ou seja, a probabilidade de que *todos do grupo tem aniversários diferentes*.
-$
-  PP("todos diferentes") = 365 / 365 dot 364 / 365 dot 363 / 365 ... dot (365-k+1) / 365 = frac(365! / (365-k)!, 365^k)
-$
-
-Aqui, nós vamos no racicínio que o primeiro aniversariante tem $365$ opções, o segundo tem $364$ opções, o terceiro tem $363$ opções e assim por diante, até que o último aniversariante tenha $365-k+1$ opções. Como cada pessoa tem $365$ opções, então o número total de possibilidades é $365^k$. Logo, a probabilidade de *pelo menos* duas pessoas fazerem aniversário no mesmo dia é
-$
-  PP("pelo menos dois iguais") = 1 - PP("todos diferentes") = 1 - frac(365! / (365-k)!, 365^k)
-$
-
-Quando $k = 23$, a probabilidade de que *pelo menos* duas pessoas façam aniversário no mesmo dia é de aproximadamente $50%$.
-
 == Propriedades da Probabilidade
 Dado toda a introdução que fizemos, podemos agora enunciar algumas propriedades da probabilidade que serão muito úteis. Antes, precisamos saber dos seguintes axiomas:
 $
@@ -398,7 +396,7 @@ $
   PP(union.big_(n=1)^infinity A_n) = sum_(n=1)^infinity PP(A_n) wide -> A_i inter A_j = emptyset quad forall i != j
 $
 
-Agora podemos enunciar as propriedades e suas demonstrações
+Agora podemos enunciar as propriedades e suas  demonstrações
 
 #theorem[
   $
@@ -470,16 +468,26 @@ Agora podemos enunciar as propriedades e suas demonstrações
 ]
 
 == Eventos Independentes
-Dois eventos $A$ e $B$ são independentes se a ocorrência de um não afeta a probabilidade do outro.
+Dois eventos $A$ e $B$ são independentes se a ocorrência de um não afeta a probabilidade do outro. De imediato, não vamos ver a definição formal de independência, que é fácil, mas vamos nos manter na *intuição*. A independência de dois eventos é perceptível quando *a ocorrência de um evento não influencia na saída de outro*. Por exemplo, se eu jogar um dado e uma moeda, a saída do dado não influencia na saída da moeda, logo, os eventos são independentes. Agora vamos supor que eu estou lançando *dois dados*, no entanto, a saída do segundo é somada à saída do primeiro. Nesse caso, a saída do segundo dado *depende* da saída do primeiro, logo, os eventos *não são* independentes.
 
-#definition([Eventos Independentes])[
-  Dois eventos $A$ e $B$ são independentes quando
-  $
-    PP(A inter B) = PP(A) dot PP(B)
-  $
+== Problema do Aniversário
+Que tal resolvermos um problema bem paradoxal para estimular nosso pensamento *probabilistico*? O problema do aniversário é o seguinte: qual a probabilidade de, em um grupo de $n$ pessoas, *pelo menos* duas delas fazerem aniversário no mesmo dia? Parece que para que isso aconteça, o grupo precisa ser grande, mas não é bem assim. Antes de resolvermos o problema, vou enunciar um teorema que será útil para provar o caso mais óbvio.
+
+#theorem([Princípio da Casa dos Pombos])[
+  Se $n$ pombos são colocados em $m$ casas, e $n > m$, então *pelo menos* uma casa terá mais de um pombo.
 ]
 
-muitas vezes é difícil achar uma formulação rigorosa para mostrar que dois eventos são independentes sem uma tabela registrada das probabilidades, mas a *intuição* é um grande aliado nesses casos. Por exemplo, se eu jogo uma moeda e um dado, a ocorrência de *cara* na moeda não afeta a probabilidade de sair $6$ no dado (desde que ambos sejam justos), então esses dois eventos são *independentes*.
+Agora podemos enunciar as etapas da resolução do problema! Primeira coisa que fazemos é *remover as restrições*. Uma delas é o dia $29$ de fevereiro, que só ocorre em anos bissextos, então vamos *desconsiderar* esse dia. Outro ponto é que *cada dia* tem a *mesma chance* de ocorrer e são eventos *independentes*. Nessa situação, o mais fácil é calcular a probabilidade do evento *contrário*, ou seja, a probabilidade de que *todos do grupo tem aniversários diferentes*.
+$
+  PP("todos diferentes") = 365 / 365 dot 364 / 365 dot 363 / 365 ... dot (365-k+1) / 365 = frac(365! / (365-k)!, 365^k)
+$
+
+Aqui, nós vamos no racicínio que o primeiro aniversariante tem $365$ opções, o segundo tem $364$ opções, o terceiro tem $363$ opções e assim por diante, até que o último aniversariante tenha $365-k+1$ opções. Como cada pessoa tem $365$ opções, então o número total de possibilidades é $365^k$. Logo, a probabilidade de *pelo menos* duas pessoas fazerem aniversário no mesmo dia é
+$
+  PP("pelo menos dois iguais") = 1 - PP("todos diferentes") = 1 - frac(365! / (365-k)!, 365^k)
+$
+
+Quando $k = 23$, a probabilidade de que *pelo menos* duas pessoas façam aniversário no mesmo dia é de aproximadamente $50%$.
 
 #pagebreak()
 
@@ -510,6 +518,29 @@ Em probabilidade, conseguimos utilizar conhecimento prévio para atualizar as no
   $
 ]
 
+#example[
+  Voltando no exemplo do dado com soma $6$, vamos separar o problema em dois eventos para aplicar a definição de probabilidade condicional. Seja $A$ o evento de que o primeiro valor seja $2$, e seja $B$ o evento de que a soma dos valores seja $6$. Então, temos que
+  $
+    PP(B) = 5/36 quad PP(A inter B) = 1/36
+  $
+  então aplicando a definição:
+  $
+    PP(A | B) = PP(A inter B) / PP(B) = (1/36) / (5/36) = 1/5
+  $
+]
+
+== Independência
+Agora que enunciamos o conceito de condicionamento e como *saber* de um evento influencia na probabilidade de outro, podemos formalizar melhor a definição de independência. Quando dizemos que um evento não influencia na probabilidade de outro, isso nos indica que, *se eu sei do resultado do evento $A$*, isso não me dá *nenhuma informação* sobre o resultado do evento $B$. Ou seja, a probabilidade de $B$ ocorrer *não muda* se eu sei que $A$ ocorreu. Formalizando isso, temos a seguinte definição.
+
+#definition([Eventos Independentes])[
+  Dois eventos $A$ e $B$ são independentes quando
+  $
+    PP(A inter B) = PP(A) dot PP(B)
+  $
+]
+
+Ué, a definição que eu falei não parece ter muito a ver com o que eu acabei de escrever, mas na verdade, ela tem sim!
+
 #theorem[
   Se $A$ e $B$ são independentes, então
   $
@@ -527,20 +558,11 @@ Em probabilidade, conseguimos utilizar conhecimento prévio para atualizar as no
   $
 ]
 
-#example[
-  Voltando no exemplo do dado com soma $6$, vamos separar o problema em dois eventos para aplicar a definição de probabilidade condicional. Seja $A$ o evento de que o primeiro valor seja $2$, e seja $B$ o evento de que a soma dos valores seja $6$. Então, temos que
-  $
-    PP(B) = 5/36 quad PP(A inter B) = 1/36
-  $
-  então aplicando a definição:
-  $
-    PP(A | B) = PP(A inter B) / PP(B) = (1/36) / (5/36) = 1/5
-  $
-]
+Assim, conseguimos formalizar a ideia de *não fornecimento de informação* de um evento sobre outro.
 
+Outro conceito importante que podemos formalizar é que a probabilidade de *dois eventos ocorrerem* simultaneamente é a mesma que a probabilidade de *um evento ocorrer dado que o outro ocorreu* multiplicado pela probabilidade do *outro evento ocorrer*.
 
-== O Teorema de Bayes
-#theorem[
+#theorem()[
   $
     PP(A inter B) = PP(A | B) dot PP(B) = PP(B | A) dot PP(A)
   $
@@ -550,77 +572,26 @@ Em probabilidade, conseguimos utilizar conhecimento prévio para atualizar as no
   $
     PP(A|B) = PP(A inter B) / PP(B) <=> PP(A inter B) = PP(A | B) dot PP(B)
   $
-  e
+  da mesma forma:
   $
     PP(B|A) = PP(B inter A) / PP(A) <=> PP(B inter A) = PP(B | A) dot PP(A)
   $
 ]
 
-#theorem([Teorema de Bayes])[
-  Sejam $A$ e $B$ dois eventos, então temos que
-  $
-    PP(A | B) = frac(PP(B | A) dot PP(A), PP(B))
-  $
-]<bayes-theorem>
-#proof[
-  Aplicando o @intersection-and-conditional-equality, temos que
-  $
-    PP(A|B) = frac(PP(A inter B), PP(B)) = frac(PP(B | A) dot PP(A), PP(B))
-  $
-]
-
-Pode não parecer, mas esse é um dos teoremas *mais importantes* da probabilidade, mas também um dos que gera *mais confusão*. Vamos considerar, por exemplo, um exame que vai me dizer se *tenho malária*. Vamos supor também que
-- Apenas $1%$ da população tem malária
-- O teste acerta $99%$ dos doentes
-- O teste acerta $99%$ dos saudáveis
-
-Analisando rapidamente, se o teste der positivo, isso parece falar que *a chance de eu ter malária é de $99%$*, mas isso *não é verdade*. Nós queremos calular
+É o que mermão? Qual que é a lógica disso? Imagine que nós *sabemos* que um evento $A$ ocorreu, se sabemos que $A$ ocorreu, qual seria a probabilidade que, dentro do universo de $A$, o evento $B$ ocorra também? No entanto, para que isso aconteça, precisamos que $A$ ocorra também, logo, pelo princípio da multiplicação, precisamos múltiplicar ambas as probabilidades (queremos que as representar a chance dos *dois* eventos ocorrerem), ambas que são dadas justamente por
 $
-  PP("Doente"|"Positivo")
+  PP(B | A) dot PP(A)
 $
-pelo @bayes-theorem, temos que
-$
-  PP("Doente"|"Positivo") = frac(PP("Positivo"|"Doente") dot PP("Doente"), PP("Positivo")) = frac(0.99 dot 0.01, PP("Positivo"))
-$
-para calcular $PP("Positivo")$, vamos usar a lei da probabilidade total (vamos enunciar ela mais formalmente depois), mas ela diz que podemos expressar essa probabilidade como
-$
-  PP("Positivo") &= PP("Positivo"|"Doente") dot PP("Doente") + PP("Positivo"|"Saudável") dot PP("Saudável")   \
-  
-  &= 0.99 dot 0.01 + 0.01 dot 0.99 = 0.0198
-$
-voltando para a fórmula anterior
-$
-  PP("Doente"|"Positivo") = frac(0.99 dot 0.01, 0.0198) = 0.5
-$
-então se eu sei que meu teste deu positivo, na verdade, a chance de eu ter malária é de apenas $50%$, e não $99%$ como parecia inicialmente. Isso é um exemplo clássico de como o Teorema de Bayes nos ajuda a atualizar nossas previsões com base em informações novas.
-
-=== Falácia do Promotor
-Um caso muito famoso onde essa confusão teve consequências graves, foi o caso de _Sally Clark_. Em $1999$, ela estava sendo julgada pelo assassinato de seus dois bebês, que morreram de _Síndrome da Morte Súbita Infantil_.
-
-#figure(
-  image("images/A1/sally.png"),
-  caption: [Sally Clark]
-)
-
-O promotor do caso alegou que a probabilidade de duas crianças morrerem de _Síndrome da Morte Súbita Infantil_ na mesma família era de $1$ em $73$ milhões, e que isso provava que ela era culpada. No entanto, essa alegação foi baseada em uma falácia estatística, pois não considerou outros fatores, como histórico familiar, condições de saúde e outros fatores de risco. Resumidamente, ele confundiu
-$
-  PP("Evidência"|"Inocência")
-$
-com
-$
-  PP("Inocência"|"Evidência")
-$
-Anos depois a condenação foi anulada. Diversos estatísticos apontaram que houve uso incorreto de probabilidade no julgamento.
 
 == Lei da Probabilidade Total
-A lei da probabilidade total dita como as probabilidades condicionais de eventos conhecidos se combinam para formar a probabilidade de um evento desconhecido. Vamos enunciar o teorema e depois vamos mostrar um exemplo.
+A lei da probabilidade total mostra como podemos representar a probabilidade de um evento $B$ ocorrer em função da sua chance de acontecer sob a perspectiva da ocorrência de outros eventos disjuntos no *mesmo espaço amostral*.
 
 #theorem("Lei da Probabilidade Total")[
   Sejam $A_1, A_2, ..., A_n$ eventos disjuntos $2$ a $2$, ou seja, $A_i inter A_j = emptyset$ para $i != j$ e $union.big_(i=1)^n A_i = S$ onde $S$ é o espaço amostral, então para qualquer evento $B$, desde que $PP(A_i)$ e $PP(B|A_i)$ existam e sejam conhecidos, temos que
   $
     PP(B) = sum_(i=1)^n PP(B | A_i) dot PP(A_i)
   $
-]
+]<law-of-total-probability>
 #proof[
   $
     PP(B) &= PP(B inter S)    \
@@ -635,7 +606,18 @@ A lei da probabilidade total dita como as probabilidades condicionais de eventos
   $
 ]
 
-Esse evento é muito útil quando temos informações sobre outros eventos, mas não temos sobre o evento objetivo que gostaríamos de conhecer. Como vimos no exemplo da malária, nós tínhamos informações sobre a probabilidade de um teste dar positivo dado que a pessoa estava doente, mas não tínhamos informações sobre a probabilidade total do teste dar positivo, e para calcular isso, usamos a lei da probabilidade total.
+Como podemos ver isso de forma intuitiva? Para uma explicação intuitiva, acesse esse vídeo: #link("_", "[PREENCHER]")
+
+Esse teorema é muito útil quando temos informações sobre outros eventos, mas não temos sobre o evento objetivo que gostaríamos de conhecer.
+
+#example[
+  Suponha que eu queira saber a probabilidade de uma pessoa ter câncer, mas eu não tenho essa informação. No entanto, eu sei que a pessoa é fumante, e que a probabilidade de uma pessoa ter câncer *dado* que ela é fumante é $0.1$, e que a probabilidade de uma pessoa ter câncer dado que ela não é fumante é $0.01$. Além disso, eu sei que a probabilidade de uma pessoa ser fumante é $0.2$. Então, podemos calcular a probabilidade de uma pessoa ter câncer utilizando a lei da probabilidade total:
+  $
+    PP("câncer") = PP("câncer" | "fumante") dot PP("fumante") + PP("câncer" | "não fumante") dot PP("não fumante")    \
+
+    = 0.1 dot 0.2 + 0.01 dot 0.8 = 0.02 + 0.008 = 0.028
+  $
+]
 
 Conseguimos expandir esse teorema para o caso de múltiplas condições, mas antes de fazer isso, vamos enunciar um teorema que vai nos ajudar a fazer isso.
 
@@ -695,6 +677,69 @@ Com esse teorema, podemos expandir a lei da probabilidade total
 ]
 
 Esse teorema nos permite utilizar a lei da probabilidade total em problemas mais complexos e com mais restrições.
+
+== O Teorema de Bayes
+Suponha que esteja acontecendo a suspeita de um possível *futuro* surto de malária no Rio de Janeiro, e que o governo está preocupado com a situação. Para isso, eles vão realizar um teste de malária em toda a população da cidade, mas o teste não é perfeito! Acontece que meu resultado deu positivo, isso quer dizer que tenho malária? Será que agora eu vou morrer? A verdade é bem mais tranquilizante, e o *teorema de bayes* no mostra essa relação.
+
+#theorem([Teorema de Bayes])[
+  Sejam $A$ e $B$ dois eventos, então temos que
+  $
+    PP(A | B) = frac(PP(B | A) dot PP(A), PP(B))
+  $
+]<bayes-theorem>
+#proof[
+  Aplicando o @intersection-and-conditional-equality, temos que
+  $
+    PP(A|B) = frac(PP(A inter B), PP(B)) = frac(PP(B | A) dot PP(A), PP(B))
+  $
+]
+
+Vamos considerar, no contexto do nosso problema, que
+- Apenas $1%$ da população tem malária
+- O teste acerta $99%$ dos doentes
+- O teste acerta $99%$ dos saudáveis
+
+Analisando rapidamente, se o teste der positivo, isso parece falar que *a chance de eu ter malária é de $99%$*, mas isso *não é verdade*. A minha primeira fala se refere à seguinte probabilidade:
+$
+  PP("Positivo"|"Doente") = 0.99
+$
+No entanto, meu exame deu positivo e eu não sei se estou mesmo doente ou não, logo, a probabilidade que eu quero saber é
+$
+  PP("Doente"|"Positivo")
+$
+pelo @bayes-theorem, temos que
+$
+  PP("Doente"|"Positivo") = frac(PP("Positivo"|"Doente") dot PP("Doente"), PP("Positivo")) = frac(0.99 dot 0.01, PP("Positivo"))
+$
+para calcular $PP("Positivo")$, usamos o @law-of-total-probability, mas ela diz que podemos expressar essa probabilidade como
+$
+  PP("Positivo") &= PP("Positivo"|"Doente") dot PP("Doente") + PP("Positivo"|"Saudável") dot PP("Saudável")   \
+  
+  &= 0.99 dot 0.01 + 0.01 dot 0.99 = 0.0198
+$
+voltando para a fórmula anterior
+$
+  PP("Doente"|"Positivo") = frac(0.99 dot 0.01, 0.0198) = 0.5
+$
+então se eu sei que meu teste deu positivo, na verdade, a chance de eu ter malária é de apenas $50%$, e não $99%$ como parecia inicialmente. Isso é um exemplo clássico de como o Teorema de Bayes nos ajuda a atualizar nossas previsões com base em informações novas.
+
+=== Falácia do Promotor
+Um caso muito famoso onde essa confusão teve consequências graves, foi o caso de _Sally Clark_. Em $1999$, ela estava sendo julgada pelo assassinato de seus dois bebês, que morreram de _Síndrome da Morte Súbita Infantil_.
+
+#figure(
+  image("images/A1/sally.png"),
+  caption: [Sally Clark]
+)
+
+O promotor do caso alegou que a probabilidade de duas crianças morrerem de _Síndrome da Morte Súbita Infantil_ na mesma família era de $1$ em $73$ milhões, e que isso provava que ela era culpada. No entanto, essa alegação foi baseada em uma falácia estatística, pois não considerou outros fatores, como histórico familiar, condições de saúde e outros fatores de risco. Resumidamente, ele confundiu
+$
+  PP("Evidência"|"Inocência")
+$
+com
+$
+  PP("Inocência"|"Evidência")
+$
+Anos depois a condenação foi anulada. Diversos estatísticos apontaram que houve uso incorreto de probabilidade no julgamento.
 
 #pagebreak()
 
