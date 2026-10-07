@@ -390,14 +390,24 @@ Essa definição de $E$ parece bem simples, mas se pararmos para pensar, um even
 ]
 
 == Propriedades da Probabilidade
-Dado toda a introdução que fizemos, podemos agora enunciar algumas propriedades da probabilidade que serão muito úteis. Antes, precisamos saber dos seguintes axiomas:
+A definição ingênua é útil, mas ela tem suas limitações. Definir uma probabilidade como
+$
+  PP(E) = frac(|E|, |S|)
+$
+exige que *duas* condições sejam satisfeitas:
++ O espaço amostral $S$ deve ser *finito*.
++ Todos os elementos do espaço amostral $S$ devem ser *equiprováveis*, ou seja, todos os elementos do espaço amostral devem ter a mesma chance de ocorrer.
+
+Ambas as condições são muito restritivas, e é fácil pensar em situações onde essas condições não são satisfeitas. Por exemplo, se eu jogar uma moeda *viciada*, onde a chance de sair cara é $0.7$ e a chance de sair coroa é $0.3$, então o espaço amostral é $S={"cara", "coroa"}$, mas os elementos do espaço amostral não são equiprováveis, logo, a definição ingênua não se aplica. Outro exemplo é se meu experimento for a quantidade de vezes que jogo uma moeda até cair cara, nesse caso, o espaço amostral é infinito, logo, a definição ingênua não se aplica.
+
+A saída é mudar a pergunta. Em vez de dizer *como* calcular uma probabilidade, enunciamos *regras* que *toda e qualquer probabilidade razoável segue*.
 $
   PP(emptyset) = 0 wide PP(S) = 1 wide PP(A) >= 0   \
 
   PP(union.big_(n=1)^infinity A_n) = sum_(n=1)^infinity PP(A_n) wide -> A_i inter A_j = emptyset quad forall i != j
 $
 
-Agora podemos enunciar as propriedades e suas  demonstrações
+Com essas regras em mentes, conseguimos derivar as principais propriedades da probabilidade.
 
 #theorem[
   $
@@ -704,7 +714,7 @@ Com esse teorema, podemos expandir a lei da probabilidade total
 
 Esse teorema nos permite utilizar a lei da probabilidade total em problemas mais complexos e com mais restrições.
 
-#example([A Moeda Viciada])[
+#example([Qual a chance de vir vermelha?])[
   Considere duas urnas diferentes
   $
     A_1 = "3 bolas vermelhas e 1 azul"    \
@@ -724,7 +734,18 @@ Esse teorema nos permite utilizar a lei da probabilidade total em problemas mais
   $
     PP(V_2 | V_1) = PP(V_2 | V_1, A_1) dot PP(A_1 | V_1) + PP(V_2 | V_1, A_2) dot PP(A_2 | V_1)
   $
-  calcular apenas $PP(V_2 | V_1)$ é difícil, mas se condicionarmos em *qual urna nós tiramos a bola*, conseguimos calcular facilmente.
+  calcular apenas $PP(V_2 | V_1)$ é difícil, mas se condicionarmos em *qual urna nós tiramos a bola*, conseguimos calcular facilmente. Vamos calcular as probabilidades termo a termo.
+  $
+    PP(V_2 | V_1, A_1) = frac(2,3) quad PP(V_2 | V_1, A_2) = frac(0,1)
+  $
+  o primeiro pois, se estamos na primeira urna, e já tiramos uma bola vermelha, restam $2$ bolas vermelhas e $1$ azul, logo a chance de tirar uma vermelha é de $2/3$. Já na segunda urna, se já tiramos a única bola vermelha, não há mais bolas vermelhas, logo a chance de tirar uma vermelha é de $0$. Como a segunda deu $0$, nem precisamos calcular $PP(A_2 | V_1)$. Agora, vamos calcular $PP(A_1 | V_1)$, para isso, vamos usar o @bayes-theorem:
+  $
+    PP(A_1 | V_1) = (PP(V_1 | A_1) dot PP(A_1)) / (PP(V_1 | A_1) dot PP(A_1) + PP(V_1 | A_2) dot PP(A_2)) = (3/4 dot 0.5) / (3/4 dot 0.5 + 1/4 dot 0.5) = 3/4
+  $
+  logo, temos que
+  $
+    PP(V_2 | V_1) = 2/3 dot 3/4 + 0 dot 1/4 = 1/2
+  $
 ]
 
 == O Teorema de Bayes
@@ -789,6 +810,9 @@ $
   PP("Inocência"|"Evidência")
 $
 Anos depois a condenação foi anulada. Diversos estatísticos apontaram que houve uso incorreto de probabilidade no julgamento.
+
+== Armadilhas
+
 
 #pagebreak()
 
@@ -1162,7 +1186,7 @@ Conseguimos expressar a esperança em termos da função de sobrevivência (@sur
   $
     EE[X] = sum_(x=0)^infinity G_X (x)
   $
-]
+]<mean-survival-function>
 #proof[
   Seja $I_j$ a variável aleatória definida como:
   $
@@ -1885,62 +1909,59 @@ Sempre que o seu problema puder ser associado com uma quantidade de tentativas a
   $
 ]
 #proof[
-  Sabemos que a função $f(x) = 1/(1-x)$ converge e pode ser expressa como uma série geométrica, ou seja,
+  Lembra que, pelo @mean-survival-function, podemos escrever a esperança de $X$ como
   $
-    1/(1-x) = sum_(k=0)^infinity x^k
+    EE[X] = sum_(k=0)^infinity G_X (x)
   $
-  com $|x| < 1$. Derivando ambos os lados, temos que
+  onde $x$ é a função de sobrevivência de $X$. Para a distribuição geométrica, como $PP(X=k) = (1 - p)^(k - 1) p$, temos que, para que $X > k$, precisamos que as primeiras $k$ tentativas falhem, logo, a função de sobrevivência é
   $
-    (dif f)/(dif x) &= 1/(1-x)^2    \
+    G_X (k) = (1 - p)^k
+  $
+  escrevemos então
+  $
+    EE[X] = sum_(k=0)^infinity (1 - p)^k = 1/p
+  $
+  pois sabemos que
+  $
+    sum_(k=0)^infinity x^k = 1/(1-x)
+  $
+  para $|x| < 1$.
 
-    &= 1 + 2x + 3x^2 + 4x^3 + ...    \
-    
-    &= sum_(k=1)^infinity k x^(k-1)
+  Para achar a variância, vamos utilizar a mesma ideia. Para tal, vamos utilizar da seguinte igualdade:
   $
-  e que a segunda derivada é tal que
+    n^2 = sum_(k=0)^(n) (2 k - 1)
   $
-    (dif^2 f)/(dif x^2) &= 2/(1-x)^3    \
-
-    &= 2 + 6x + 12x^2 + 20x^3 + ...    \
-    
-    &= sum_(k=0)^infinity k (k-1) x^(k-2)
+  Assim, podemos escrever $X^2$ como
   $
-  mas o que isso tem a ver? Veja que:
+    X^2 = sum_(k=0)^(X) (2 k - 1)
   $
-    EE[X] &= sum_(k=1)^infinity k (1-p)^(k-1) p = p sum_(k=1)^infinity k (1-p)^(k-1)    \
-
-    &= p f'(1-p) = p / (1 - (1-p))^2    \
-    
-    &= 1/p
+  porém, para ficar com soma infinita, vamos inserir uma variável indicadora $II(X>=k)$ que é $1$ se $X>=k$ e $0$ caso contrário. Assim, podemos escrever
   $
-
-  Para calcular a variância, vamos utilizar de um truque inteligente. Sabemos que $VV[X] = EE[X^2] - (EE[X])^2$. Vamos então calcular $EE[X(X-1)]$:
+    X^2 = sum_(k=0)^(infinity) (2 k - 1) II(X>=k)
   $
-    EE[X(X-1)] = EE[X^2 - X] = EE[X^2] - EE[X]
+  então tirando a esperança
   $
-  utilizando o LOTUS (@lotus-two-variables), temos que
+    EE[X^2] = sum_(k=0)^(infinity) (2 k - 1) PP(X>=k) = sum_(k=0)^(infinity) (2 k - 1) (1 - p)^k
   $
-    EE[X(X-1)] &= sum_(k=0)^infinity k (k-1) (1-p)^(k-1) p    \
+  podemos separar a soma em duas partes
   $
-  deixando $p$ em evidência e tirando um fator $1-p$ para fora, temos que
+    EE[X^2] = 2 dot sum_(k=0)^(infinity) k (1 - p)^(k-1) - sum_(k=0)^(infinity) (1 - p)^(k-1)
   $
-    EE[X(X-1)] &= p (1-p) sum_(k=0)^infinity k (k-1) (1-p)^(k-2)    \
-
-    &= p (1-p) f''(1-p) = 2 p (1-p) / (1 - (1-p))^3   \
-    
-    &= 2 (1-p)/p^2
+  a segunda sabemos para onde converge, a primeira nem tanto. No entanto, como enunciado antes, sabemos que
   $
-  e como vimos antes
+    sum_(k=0)^(infinity) x^k = 1/(1-x)
   $
-    EE[X^2] &= EE[X(X-1)]+EE[X]   \
-
-    &= 2 (1-p)/p^2 + 1/p = (2 - p)/p^2
+  vamos tirar a derivada em ambos os lados
   $
-  voltando para a variância, temos que
+    sum_(k=0)^(infinity) k x^(k-1) = 1/(1-x)^2
   $
-    VV[X] &= EE[X^2] - (EE[X])^2    \
-
-    &= (2 - p)/p^2 - 1/p^2 = (1-p)/p^2
+  logo, sabemos que
+  $
+    EE[X^2] = 2/(1-(1-p))^2 - 1/(1-(1-p)) = 2/p^2 - 1/p = (2-p)/p^2
+  $
+  voltando para a fórmula da variância
+  $
+    VV[X] = EE[X^2] - (EE[X])^2 = (2-p)/p^2 - 1/p^2 = (1-p)/p^2
   $
 ]
 
