@@ -216,3 +216,74 @@ $
 $
 
 enquanto o termo de regularização mede o quão próximo a distribuição $q_phi (z|x)$ está da distribuição $p(z)$, que é a distribuição latente que assumimos. Para isso, podemos utilizar a divergência de Kullback-Leibler:
+$
+  cal(L)_"reg" (phi) = D_"KL" (q_phi (z|x) || p(z))
+$
+onde normalmente definimos $p(z)$ como uma distribuição normal multivariada padrão, ou seja, $p(z) = N(0, I)$. Essa regularização é importante pois o espaço latente deve ter duas características principais:
++ Continuidade: pequenas mudanças em $z$ devem resultar em pequenas mudanças em $x$.
++ Completude: qualquer ponto no espaço latente deve gerar uma amostra válida e com significado.
+
+$
+  D_"KL" (q_phi (z|x) || p(z)) = 1/2 sum_(j=1)^J (1 + log(sigma_j^2) - mu_j^2 - sigma_j^2)
+$
+
+Utilizar a distribuição normal encoraja o encoder a distribuir os pontos no centro do espaço latente e penaliza pontos que se formam em clusters longe do centro.
+
+=== Treinamento
+Agora o ponto principal, como fazemos para treinar um VAE? De início parece fácil. Temos nossa loss, basta fazer um backpropagation pelas suas camadas. No entanto, quando chegamos na camada de amostragem, temos um problema.
+
+#figure(
+  image("images/A2/vae-training.png"),
+  caption: [Ilustração do problema de backpropagation em VAE]
+)
+
+O problema é que, como dito antes, nós precisamos amostrar da distribuição $q_phi (z|x)$, mas a amostragem não é diferenciável, então não conseguimos fazer backpropagation. A solução para isso é o *reparametrization trick*, onde ao invés de amostrar diretamente de $q_phi (z|x)$, nós amostramos de uma distribuição normal padrão e depois aplicamos uma transformação linear para obtermos a amostra desejada.
+
+#figure(
+  image("images/A2/reparametrization-trick.png"),
+  caption: [Exemplo de reparametrization trick]
+)
+
+Acontece que, se amostrarmos $epsilon ~ N(0, 1)$, a variável latente $z$ pode ser reparametrizada como:
+$
+  z = mu + "diag"(Sigma) dot epsilon
+$
+de forma que isso é igual a amostrar $z$ diretamente de uma $N(mu, Sigma)$ com a vantagem de podermos diferenciar com relação aos parâmetros.
+
+=== Geradores de Clima
+Uma aplicação interessante de VAE é a geração de imagens de clima. Queremos gerar *Weather Fields*, que é uma representação multidimensional (espaço + tempo) de variáveis meteorológicas, como vento, temperatura, pressão, etc. sobre uma região.
+
+#figure(
+  image("images/A2/weather-fields.png", width: 60%),
+  caption: [Exemplo de Weather Fields]
+)
+
+Meu objetivo é, de alguma forma, ter um controle sobre o tipo de clima que eu gostaria de gerar em uma região. É aí que entra a sacada. Com os VAE, já que eu forço a distribuição latente a ser uma distribuição normal multivariada, o VAE consegue concentrar os climas comuns no centro do espaço latente e os climas extremos (e raros) nas caudas da distribuição.
+
+#figure(
+  image("images/A2/weather-fields-latent-space.png", width: 75%),
+  caption: [Exemplo de distribuição de climas no espaço latente]
+)
+
+Dessa forma, se eu quiser simular eventos comuns naquela região, eu posso amostrar do centro da distribuição, enquanto se eu quiser simular eventos extremos, eu posso amostrar das caudas da distribuição. Isso é bom também pois não precisamos definir exatamente o que significa ser raro, o próprio VAE aprende isso a partir da distribuição latente.
+
+Utilizando de gráficos QQ, os cientistas conseguiram mostrar que as imagens geradas pelo VAE dos eventos extremos se aproximavam muito com os dados reais observados.
+
+=== Realismo
+Para melhorar o realismo das imagens, conseguimos fazer uma mistura de conceitos que já vimos, usando GANs em conjunto com VAE. A ideia é que o GERADOR do GAN é o DECODER do VAE e o DISCRIMINADOR do GAN é um classificador que tenta diferenciar imagens reais de imagens geradas pelo DECODER. Dessa forma, o DECODER é forçado a gerar imagens mais realistas para enganar o DISCRIMINADOR.
+
+#figure(
+  image("images/A2/vae-gan.png", width: 100%),
+  caption: [Exemplo de VAE-GAN]
+)
+
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Aprendizado de Similaridade
+]
+
+#pagebreak()
+
+
