@@ -286,4 +286,146 @@ Para melhorar o realismo das imagens, conseguimos fazer uma mistura de conceitos
 
 #pagebreak()
 
+== Limitações de Classificadores
+Tipicamente, quando a classificação envolve fitar o modelo em um conjunto de dados. No entanto, o modelo costuma pegar os padrões estruturais presentes naqueles dados. Por exemplo, se ele identifica imagens de animais, ele pode aprender que animais possuem olhos, patas, cauda, etc. No entanto, se ele for apresentado uma imagem do mesmo animal em posições diferentes, ele pode ter dificuldades de classificar corretamente.
+
+#figure(
+  image("images/A2/limitacao-classificadores.png", width:100%),
+  caption: [Exemplo de limitação de classificadores]
+)
+
+Outra limitação que podemos citar é o retreino desnecessário. Se temos um banco de dados e queremos adicionar novas imagens ou uma nova classe para enriquecer meu modelo, será necessário *treiná-lo do zero* novamente.
+
+== One-Shot Learning
+Esse ramo de classificação tenta resolver o problema anterior. Nele, você tenta comparar duas imagens nunca vistas antes e determinar se elas são da mesma classe ou não. Ou seja, você não precisa fitar o modelo em um conjunto de dados, mas sim aprender a *comparar imagens*. Uma aplicação bem comum desse tipo de aprendizado é em Biometrias, como reconhecimento facial, onde você quer comparar a imagem de uma pessoa com a imagem que você tem no banco de dados para determinar se é a mesma pessoa ou não.
+
+Uma forma mais simplificada utilizada em tarefas de visão computacional é tentar criar bijeções entre as imagens a partir de pontos específicos. A imagem a seguir exemplifica esse processo
+
+#figure(
+  image("images/A2/one-shot-learning.png", width: 65%),
+  caption: [Exemplo de One-Shot Learning]
+)
+
+Em diante, vamos utilizar o problema de *reconhecimento facial* como exemplo para explicar os conceitos do resto desse capítulo
+
+== Similarity Learning
+Para contornar o problema da verificação, podemos trocar a estrutura do classificador! Podemos criar uma DNN que recebe duas imagens e retorna um valor entre 0 e 1, onde 0 significa que as imagens são diferentes e 1 significa que as imagens são iguais e utilizamos a loss da *Binary Cross Entropy* para treinar o modelo.
+
+#figure(
+  image("images/A2/similarity-learning.png", width: 100%),
+  caption: [Exemplo de Similarity Learning]
+)
+
+Mas essa abordagem não faz com que a rede aprenda a *medir o quão parecidas as imagens são*. Para esse objetivo, entramos em dois pontos que esses modelos de similaridade devem atingir:
+
++ *Aprender Métrica de Distância*: Dependendo do problema, precisamos de uma métrica de distância diferente. Por exemplo, para reconhecimento facial, a distância euclidiana é suficiente, mas para reconhecimento de imagens médicas, a distância de Mahalanobis pode ser mais interessante. Esse é um tópico de pesquisa ativo, onde o objetivo é aprender a métrica de distância mais adequada para o problema. O ponto é que precisamos de uma função que assinale pontuações altas/baixas para imagens parecidas/diferentes.
++ *Aprender Representações*: A rede precisa aprender a extrair features das imagens que sejam importantes e se encaixem nas características da métrica abordada. Isso é, atualmente, razoavelmente fácil de se fazer com redes profundas, pois elas próprias conseguem aprender as features importantes de acordo com a tarefa.
+
+Podemos resumir o aprendizado de similaridade em uma frase: *Aprender um espaço de embeddings $RR^k$ onde imagens de pessoas parecidas estão próximas e imagens de pessoas diferentes estão distantes*.
+
+#figure(
+  image("images/A2/embedding-space.png", width: 100%),
+  caption: [Exemplo de espaço de embeddings]
+)
+
+Com isso em mente, podemos separar o processo de aprendizado em alguns passos
+
++ Precisamos encontrar um mapeamento $f: RR^n -> RR^k$ que mapeia as imagens de entrada do $RR^n$ para o espaço de embeddings $RR^k$. Precisamos aprender um mapeamento que satisfaça a característica de agrupamento citada anteriormente.
+  #figure(
+    image("images/A2/embedding-mapping.png", width: 100%),
+    caption: [Exemplo de mapeamento para o espaço de embeddings]
+  )
+
++ Agora é necessário escolher uma função de distância $d: RR^k x RR^k -> RR$ que mede a distância entre os embeddings. Essa função precisa ser escolhida de acordo com o problema, como citado anteriormente.
+  #figure(
+    image("images/A2/embedding-distance.png", width: 90%),
+    caption: [Exemplo de função de distância no espaço de embeddings]
+  )
+
++ Agora precisamos definir um *threshold* $tau$ que determina se duas imagens são da mesma classe ou não. Ou seja, se a distância entre os embeddings for menor que o threshold, as imagens são da mesma classe, caso contrário, são de classes diferentes.
+  #figure(
+    image("images/A2/embedding-threshold.png", width: 100%),
+    caption: [Exemplo de threshold no espaço de embeddings]
+  )
+
+== Redes Siamesas
+Redes siamesas é uma arquitetura de rede neural composta de duas redes *idênticas* que compartilham os mesmos pesos e parâmetros. O objetivo é que ambas as redes recebam uma imagem/entrada cada e realizem o mapeamento de $RR^n -> RR^k$. Depois que ambas fazem o mapeamento, tentamos medir o quão similares são os embeddings gerados. A ideia é que, se as imagens forem da mesma classe, os embeddings devem estar próximos, caso contrário, devem estar distantes.
+
+#figure(
+  image("images/A2/siamese-network.png", width: 100%),
+  caption: [Exemplo de Rede Siamês]
+)
+
+Cada imagem vai gerar um gradiente diferente nos parâmetros da rede. Para que ambas fiquem idênticas. Nós calculamos ambos os gradientes separadamente e depois fazemos uma média deles para atualizar os pesos da rede. Dessa forma, ambas as redes ficam idênticas.
+
+=== Constrastive Loss
+A loss utilizada para treinar redes siamesas é a *Contrastive Loss*. Vamos construí-la aos poucos.
+
+Se $A$ e $B$ forem a mesma pessoa, gostaríamos que a loss gerasse um valor baixo, ou seja, que a distância entre os embeddings fosse pequena.
+
+#figure(
+  image("images/A2/contrastive-loss-same.png", width: 100%),
+  caption: [Exemplo de Contrastive Loss para imagens da mesma classe]
+)
+
+Se $A$ e $B$ forem pessoas diferentes, gostaríamos que a loss gerasse um valor alto, ou seja, que a distância entre os embeddings fosse grande. No entanto, não é interessante que a loss seja muito grande, pois isso faria com que o modelo tentasse aprender a identificar características muito distintas. Intuitivamente, é como se ambas as imagens fossem tão diferentes, que não faz sentido o modelo tentar aprender todas as diferenças, não contribuem para o aprendizado. Então definimos um *margin* $m$ que determina o quão distante os embeddings devem estar. Ou seja, se a distância entre os embeddings for maior que o margin, a loss não precisa aumentar mais.
+
+#figure(
+  image("images/A2/contrastive-loss-different.png", width: 100%),
+  caption: [Exemplo de Contrastive Loss para imagens de classes diferentes]
+)
+
+Então dado que $t$ é uma variável indicadora que vale $1$ se as imagens forem da mesma classe e $0$ caso contrário, a loss final é definida como:
+$
+  cal(L) = t dot d^2 + (1 - t) dot max(0, m^2 - d)^2
+$
+onde $d$ é a distância entre os embeddings e $m$ é o margin. No problema de reconhecimento facial, $d$ costuma ser a distância euclidiana.
+
+=== Weighted Double Margin Contrastive (WDMC) Loss
+Muito parecida com a contrastive loss. No entanto, adicionamos a lógica anterior de pares diferentes em pares iguais também. A lógica é que, se as duas imagens forem *muito* parecidas, não faz sentido fazer com que o modelo perca tempo aprendendo diferenças mínimas. Então definimos duas margens, $m$ e $M$, uma para pares diferentes e outra para pares iguais.
+
+#figure(
+  image("images/A2/wdmc-loss-same.png", width: 100%),
+  caption: [Exemplo de WDMC Loss]
+)
+
+Dessa forma, a loss final é definida, para um batch ${x_i^((1)), x_i^((2))}_(i=1)^N$, como:
+$
+  cal(L) = sum_(i) w_1 t_i max(0, d(x_i^((1)), x_i^((2))) - m^2) + w_2 (1 - t_i) max(0, M^2 - d(x_i^((1)), x_i^((2))))
+$
+
+=== Loss Tripla
+Em vez de treinarmos em pares de imagens, podemos treinar em *trios* de imagens. Temos uma imagem de referência (Anchor $A$), uma imagem da mesma classe (Positive $P$) e uma imagem de classe diferente (Negative $N$). A ideia é que a distância entre o Anchor e o Positive seja menor que a distância entre o Anchor e o Negative. Ou seja, queremos que:
+$
+  d(A, P) < d(A, N)
+$
+logo, deixando mais restrito para uma margem $m$, queremos
+$
+  d(A,P) - d(A,N) < -m
+$
+então temos que
+$
+  cal(L) = max(0, d(A,P) - d(A,N) + m)
+$
+
+Para um batch ${A_i, P_i, N_i}_(i=1)^N$, a loss final é definida como:
+$
+  cal(L) = sum_(i) max(0, d(A_i,P_i) - d(A_i,N_i) + m)
+$
+
+A arquitetura vira um conjunto de 3 redes siamesas, uma para cada imagem, que compartilham os mesmos pesos e parâmetros. A loss é calculada a partir das distâncias entre os embeddings gerados pelas redes.
+
+#figure(
+  image("images/A2/triplet-loss.png", width: 100%),
+  caption: [Exemplo de arquitetura para a Triplet Loss]
+)
+
+E para a fase de *testes*, utilizamos a estrutura com apenas duas redes siamesas, uma para a imagem de referência e outra para a imagem a ser comparada.
+
+#figure(
+  image("images/A2/triplet-loss-test.png", width: 80%),
+  caption: [Exemplo de arquitetura para a Triplet Loss na fase de teste]
+)
+
+== Improving Similarity Learning
 
