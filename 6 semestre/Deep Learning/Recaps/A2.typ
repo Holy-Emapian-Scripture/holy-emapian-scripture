@@ -428,4 +428,151 @@ E para a fase de *testes*, utilizamos a estrutura com apenas duas redes siamesas
 )
 
 == Improving Similarity Learning
+Existem alguma forma de melhorar o aprendizado por similaridade. Alguns pontos que vamos abordar são:
++ *Melhorar a Loss*
++ *Melhorar a Amostragem*
++ *Ensenble Methods*
+
+A parte de melhoria da loss nós já comentamos com as abordagens de diferentes loss anteriormente (mesmo que ainda existem falhas que vão ser apontadas)! Então vamos focar nos outros pontos.
+
+=== Melhorar a Amostragem
+Vamos nesse momento, dar um pouco de foco na forma de abordagem usando *triplas* de imagens. O problema de trabalhar com triplas, é que o número total de combinações possíveis em um conjunto com $n$ dados é da ordem de $n^3$. Ou seja, tanto você sintetizar todos esses trios, quanto você *treinar* com eles vai demorar bastante. Ainda existe o fato que, utilizando da triplet loss, *nem todos eles são úteis para o aprendizado*. Lembrando que para uma tripla específica:
+$
+  cal(L)(A,P,N) = max(0, d(A,P) - d(A,N) + m)
+$
+então o gradiente dessa função fica
+$
+  (dif max)/(dif x) = cases(
+    0 &quad x <= 0,
+    1 &quad x > 0
+  )
+$
+
+ou seja, para triplas onde a seguinte condição é verdade:
+$
+  d(A,P) - d(A,N) + m <= 0
+$
+não vão contribuir para o aprendizado, pois o gradiente é zero!
+
+#figure(
+  image("images/A2/triplet-loss-gradient.png", width: 100%),
+  caption: [Exemplo de gradiente da Triplet Loss]
+)
+
+Pela ilustração da imagem, queremos pegar exemplos *difíceis* ou *semi-difíceis*, pois eles geram os gradientes mais fortes para as losses. Um exemplo ingênuo de seleção de triplas, seria algo como:
+
+#pseudocode-list[
+  + selecionar triplas iniciais ${A_i, P_i, N_i}$
+  + *enquanto* $"condição de parada" = "false"$ {
+    + Treina por algumas épocas
+    + Escolhe triplas difíceis ${A_j, P_j, N_j}$
+  + }
+]
+
+As triplas podem ser selecionadas de forma offline (manualmente) ou online (automaticamente). Vamos tentar pensar em algum método pra seleção de triplas online.
+
+A ideia é termos uma *árvore* de classes. Essa árvore vai servir como um *GPS* do dataset, agrupando as imagens por similaridade visual. Em vez de testar tudo contra tudo, a rede vai consultar essa árvore pra responder duas perguntas:
++ _Como garanto que o batch tenha classes variadas e não fique viciado em poucas classes repetidas?_
++ _Para cada imagem de *âncora*, onde estão os negativos que são difíceis de verdade, mas sem pegar ruído?_
+
+#figure(
+  image("images/A2/tree.png"),
+  caption: [Exemplo de árvore de classes para seleção de triplas]
+)
+
+Vamos definir o processo de escolha na árvore antes de estabelecermos como ela deve ser construída. O algoritmo consiste em $3$ passos. O básico de conhecimento prévio que necessitamos é que, para cada *folha* da árvore, elas representam uma *classe*; e para cada *nó* da árvore, ele representa um *grupo de classes*.
+
+#figure(
+  pseudocode-list[
+    + *function* select_triplets(tree, batch_size) {
+      + seleciona $l'$ classes aleatórias da árvore (folhas)
+      + *for each* âncora $A$ {
+        + pego o positivo *mais longe* do âncora $A$ (dentro da mesma classe)
+        + utilizo a árvore para achar as $k$ classes vizinhas mais próximas da classe do âncora $A$ e sorteio $t$ negativos
+      + }
+      + *return* batch montado $B in RR^(l' times k times t)$
+    + }
+  ],
+
+  supplement: "Algoritmo",
+  caption: [Exemplo de algoritmo para seleção de triplas na árvore]
+)
+
+Agora que entendemos como e o porquê utilizamos a árvore, podemos compreender sua construção.
+
+O primeiro passo para a construção da árvore, é a definição dos nó folha, onde cada um consiste em uma classe diferente do dataset. Depois, temos que definir a *between class distance*, que é a distância entre duas classes. Podemos utilizar, por exemplo:
+$
+  d(p,q) = 1/(n_p n_q) sum_(i in p) sum_(j in q) ||r_i - r_j||^2
+$
+onde $r_k$ é o embedding da imagem $k$ gerada pela rede neural.
+
+Perfeito, agora precisamos definir uma medida de distância entre as imagens dentro da *mesma classe*, que chamaremos de *within class distance*. Podemos utilizar, por exemplo:
+$
+  d_0 = 1/C sum_(c=1)^C (1/(n_c^2 - n_c) sum_(i,j in c) ||r_i - r_j||^2)
+$
+onde $C$ é o número de classes e $n_c$ é o número de imagens da classe $c$.
+
+Agora, vamos fazer, recursivamente do nível $l=0$ até $l=L$, uma *fusão* dos nós, de forma que os nós que satisfazerem um critério específico, vão ser unidos. Mas qual critério utilizamos?
+$
+  d_l = (l(4-d_0))/L + d_0
+$
+utilizamos dessa distância e, se duas classes possuem suas distâncias menores que $d_l$, elas são unidas. Esse processo se repete até o nível $l=L$.
+
+=== Melhorar a Loss
+Relembrando a nossa loss tripla, temos que:
+$
+  cal(L) = sum_(i) max(0, d(A_i,P_i) - d(A_i,N_i) + m)
+$
+
+O problema que temos nessa loss é que, por conta que a margem é fixa, muitas vezes, o modelo ignora triplas que podem ser de alguma forma úteis, seja por que a diferença da margem seja mínima, seja para exemplos mais difíceis mas que poderiam ajudar o modelo a compreender diferentes graus de parentesco entre as imagens ou variabilidade interna
+
+#figure(
+  image("images/A2/margin.png", width: 80%),
+  caption: [Exemplo da margem excluindo triplas úteis]
+)
+
+A ideia é modificar a loss para que a margem fique dependente da distância entre a âncora e os exemplos negativos calculados na árvore hierárquica. Dessa forma, a loss final fica:
+$
+  cal(L) = sum_(i) max(0, d(A_i,P_i) - d(A_i,N_i) + m_i)
+$
+
+As distâncias mudam conforme o treino progride, logo, a árvore deve ser recalibrada a cada $k$ épocas.
+
+=== Ensemble Methods (Divide and Conquer)
+Estamos trabalhando com um problema de redes neurais gerarem funções de um espaço $RR^n$ para um latente $RR^d$, de forma que, no espaço latente, os objetos parecidos fiquem próximos e os diferentes fiquem distantes. No entanto, a noção de parecido e diferente é *multifacetada*. Considere o caso dos rostos humanos, por exemplo, temos *cor de pele*, *formato do rosto*, *cor dos olhos*, *formato do nariz*, *formato da boca*, etc. Fazer com que *um único modelo* aprenda todas essas características pode sobrecarregar ele e atrapalhar seu aprendizado. A ideia do *dividir e conquistar* é que, em vez de uma única rede, combinamos múltiplos *learners* que juntam suas soluções em um espaço latente unificado.
+
+#figure(
+  image("images/A2/ensemble-multiple-learners.png", width: 100%),
+  caption: [Exemplo de Multiple Learners]
+)
+
+A primeira coisa que é feita é passar a imagem de entrada em uma CNN backbone *comum à todos os learners* (mesmos parâmetros em todos) que extrai as features brutas da imagem para que cada learner possa processar separadamente. Dos meus $K$ learners, cada um tem sua própria camada linear que projeta a saída dessa backbone em um subespaço latente de dimensão $d\/K$.
+
+O algoritmo é dividido em duas fases, a *divisão* e a *conquista*. Na fase de divisão, temos $4$ passos principais:
+
++ *Agrupamento (K-means)*: tilizando o espaço de embedding atual, as amostras do dataset são divididas em $K$ clusters por meio do algoritmo $K$-Means. Cada cluster agrupa dados que compartilham noções de similaridade mais homogêneas (por exemplo, um cluster para picapes, outro para sedans, outro para SUVs)
+
++ *Definição dos $K$ Learners*: Criam-se $K$ learners, onde cada learner $k$ é composto pela CNN compartilhada $phi$ seguida pela sua projeção $f_k$ para dimensão $d/K$
+
++ *Treinamento Alternado*: Os aprendizes são treinados alternadamente:
+  - O aprendiz $k$ é alimentado apenas com amostras do seu respectivo $k$-ésimo cluster.
+  - Em cada retropropagação (backward pass), o gradiente atualiza os pesos da CNN compartilhada $phi$ e os pesos da camada linear local $f_k$.
+
++ *Reagrupamento Periódico*: Como a representação de $phi$ evolui com o treinamento, a cada $T$ épocas todos os dados são re-clusterizados no espaço de embedding global atualizado
+
+Já na fase de *conquista*, temos $2$ passos principais:
+
++ *Fusão dos Aprendizes*: Após a convergência dos $K$ aprendizes, as representações parciais (de dimensão $d/K$) são unidas/concatenadas para recompor o espaço de embedding completo de dimensão $d$
+
++ *Ajuste Fino Global (Fine-Tuning)*: Realiza-se um *fine-tuning* da camada de embedding em todo o conjunto de dados para garantir a *consistência mútua* entre as representações geradas individualmente por cada aprendiz
+
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Aprendendo em Dados Não-Rotulados
+]
+
+#pagebreak()
+
 
