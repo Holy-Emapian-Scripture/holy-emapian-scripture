@@ -72,7 +72,7 @@
 #align(center + top)[
   FGV EMAp
 
-  Thalis Ambrosim Falqueto
+  Thalis Ambrosim Falqueto e João Pedro Jerônimo
 ]
 
 #align(horizon + center)[
@@ -81,7 +81,7 @@
   ]
 
   #text(14pt)[
-    Holy emapian
+    Revisão para A1
   ]
 ]
 
@@ -98,7 +98,11 @@
 
 #pagebreak()
 
-= Aula 1 - Documentação, Contratos e SRP
+#align(center+horizon)[
+    = Documentação, Contratos e SRP
+]
+
+#pagebreak()
 
 A aula usa dois exemplos: a "Cacto" é simplesmente uma loja de cactos com um método de quase $90$ linhas que faz de tudo (aparentemente feito por algum aluno de LP), sem nenhuma documentação, e a "Loja" é o exercício de correção, que isola só a fatia de "calcular o frete" desse mesmo problema pra refatorar passo a passo, do jeito errado até o SRP resolvido.
 
@@ -402,9 +406,13 @@ print(loja2.processar(cliente, valor, peso_kg, 'Manaus'))
 - *SRP (Princípio de Responsabilidade Única)* — cada componente deve ter um único motivo pra mudar; o S do SOLID.
 
 
-= Aula 2 - Simple Factory, Factory Method e OCP
+#pagebreak()
 
-#v(0.9cm)
+#align(center+horizon)[
+    = Simple Factory, Factory Method e OCP
+]
+
+#pagebreak()
 
 A solução da `Loja2` (@cod-aula1) resolveu o SRP, mas o `if centro == ...` continua dentro de `processar`, decidindo qual `Frete` instanciar ainda hardcoded, ainda fazendo verificação de string, o que ainda é problema mesmo depois do SRP resolvido (Professor disse que deixar essas verificações em string é um crime, mas não vem ao caso). Some a isso uma regra de negócio nova: a loja quer simular o frete antes da compra, não só calculá-lo depois que o cliente já decidiu comprar, e passa a atender mais centros de distribuição. Dessa forma, agora, vários lugares diferentes vão precisar da mesma lógica de "qual frete usar para este centro", e ela está presa dentro de `Loja2`.
 
@@ -533,7 +541,13 @@ Comparado ao Simple Factory, adicionar um centro de distribuição novo passa a 
 - *OCP (Open/Closed Principle)* — uma classe deve estar fechada para modificação e aberta para extensão; o O do SOLID.
 
 
-= Aula 3 - Builder e Singleton
+#pagebreak()
+
+#align(center+horizon)[
+    = Builder e Singleton
+]
+
+#pagebreak()
 
 == Builder
 
@@ -738,7 +752,13 @@ O problema aqui é de outra natureza: `get_instance` deveria receber tudo que o 
 - *Freevar (variável livre)* — variável usada dentro de uma função mas definida fora dela, capturada pela closure.
 
 
-= Aula 4 - Abstract Factory
+#pagebreak()
+
+#align(center+horizon)[
+    = Abstract Factory
+]
+
+#pagebreak()
 
 A aula parte da ideia um app com widget de calendário e de clima, que precisa se comportar diferente dependendo do sistema (iPadOS ou iOS).
 
