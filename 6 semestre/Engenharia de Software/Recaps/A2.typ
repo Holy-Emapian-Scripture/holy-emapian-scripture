@@ -484,6 +484,97 @@ Nessa lógica, cada um dos handlers verifica se consegue processar o problema. C
 
 #pagebreak()
 
+== O Problema
+Vamos voltar ao problema da criação de um sistema de pedidos na minha empresa. No entanto, vamos supor que agora estamos trabalhando na área de *cálculo do frete do pedido*. A empresa possui diferentes tipos de frete. São três: Frete Normal, Frete Expresso e Frete Grátis.
+
+#codly.new(
+
+```python
+@dataclass
+class Pedido:
+  cliente: Cliente
+  peso_kg: float
+  valor: float
+
+
+class CalculadoraFrete:
+  def calcular_frete(self, pedido: Pedido, frete_tipo: str) -> float:
+    if frete_tipo == "normal":
+      return 10 + pedido.peso_kg * 2  # Exemplo de cálculo para frete normal
+    elif frete_tipo == "expresso":
+      return 25 + pedido.peso_kg * 4  # Exemplo de cálculo para frete expresso
+    elif frete_tipo == "gratis":
+      return 0.0  # Frete grátis
+    else:
+      raise ValueError("Tipo de frete inválido.")
+```
+
+)
+
+Dado todas as conversas que tivemos durante o documento, você já consegue ver como esse código que fizemos chega a dar calafrios. Ele viola o _S_ pois a responsabilidade de calcular o frete está na classe `CalculadoraFrete`, e ele viola o _O_ pois, se eu quiser adicionar um novo tipo de frete, vou ter que modificar a classe `CalculadoraFrete`. Então vamos corrigir isso com o Strategy Pattern.
+
+== A Solução
+No Strategy Pattern, nós criamos uma classe separada para *cada tipo de frete*, cada uma dessas classes é chamada de *estratégia*, pois elas falam a forma específica que o problema de *calcular o frete* é dividido e atacado. Dessa forma, cada estratégia é responsável por uma única forma de calcular o frete, e a responsabilidade de escolher qual estratégia utilizar é delegada para a classe `CalculadoraFrete`, que vai receber a estratégia como parâmetro
+
+#codly.new(
+
+```python
+class EstrategiaFrete(ABC):
+  @abstractmethod
+  def calcular(self, pedido: Pedido) -> float:
+      ...
+
+
+class FreteNormal(EstrategiaFrete):
+  def calcular(self, pedido: Pedido) -> float:
+      return 10 + pedido.peso_kg * 2
+
+
+class FreteExpresso(EstrategiaFrete):
+  def calcular(self, pedido: Pedido) -> float:
+      return 25 + pedido.peso_kg * 4
+
+
+class FreteGratis(EstrategiaFrete):
+  def calcular(self, pedido: Pedido) -> float:
+      return 0.0
+
+
+class CalculadoraFrete:
+  """Contexto: depende só da abstração, recebida por injeção."""
+
+  def __init__(self, estrategia: EstrategiaFrete) -> None:
+      self._estrategia = estrategia
+
+  def set_estrategia(self, estrategia: EstrategiaFrete) -> None:
+      self._estrategia = estrategia
+
+  def calcular(self, pedido: Pedido) -> float:
+      return self._estrategia.calcular(pedido)
+```
+
+)
+
+E aqui está um exemplo de como ficaria a utilização do Strategy Pattern para calcular o frete de um pedido:
+
+#codly.new(
+
+```python
+pedido = Pedido("Carlinho", peso_kg=3, valor=200)
+
+calc = CalculadoraFrete(FreteNormal())
+print(f"Normal:   R$ {calc.calcular(pedido):.2f}")   # 16.00
+
+calc.set_estrategia(FreteExpresso())
+print(f"Expresso: R$ {calc.calcular(pedido):.2f}")   # 37.00
+
+calc.set_estrategia(FreteGratis())
+print(f"Grátis:   R$ {calc.calcular(pedido):.2f}")   # 0.00
+```
+
+)
+
+Se esse exemplo ainda deixou uma pulga na sua orelha. Imagine que você quer ir de um ponto A até um ponto B, por exemplo, quer sair da Praia de Copacabana e ir até o Cristo Redentor. Existem várias formas de fazer isso, você pode ir de carro, de ônibus, de metrô, de bicicleta, a pé... Cada uma dessas formas é uma estratégia diferente para *realizar um mesmo objetivo*, que é sair de onde você está e ir até seu lugar de interesse. O Strategy Pattern é exatamente isso, ele define uma família de algoritmos, encapsula cada um deles e os torna intercambiáveis. Dessa forma, o algoritmo pode variar independentemente dos clientes que o utilizam.
 
 #pagebreak()
 
