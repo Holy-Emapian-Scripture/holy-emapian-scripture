@@ -584,6 +584,164 @@ Se esse exemplo ainda deixou uma pulga na sua orelha. Imagine que você quer ir 
 
 #pagebreak()
 
+== O Problema
+Imagine que estamos fazendo um editor de documentos, e queremos implementar algumas funcionalidades como escrever, apagar, etc. No entanto, queremos que o usuário tenha a possibilidade de desfazer e refazer as ações que ele realizou. Para isso, vamos criar uma classe `Documento` que representa o documento que o usuário está editando, e uma classe `Editor` que representa o editor de documentos. A classe de `Documento` não vai ter uma implementação concreta para que possamos focar na implementação do Command Pattern.
+
+#codly.new(
+
+```python
+class Editor:
+    def __init__(self, doc: Documento) -> None:
+        self.doc = doc
+        # Cada alteração vira uma tupla (acao, dado) com o necessário para desfazê-la.
+        self.historico: list[tuple[str, str]] = []
+        self.historico_refazer: list[tuple[str, str]] = []
+
+    def escrever(self, trecho: str) -> None:
+        self.doc.escrever(trecho)
+        self.historico.append(("escrever", trecho))
+
+    def apagar(self, n: int) -> None:
+        apagado = self.doc.apagar(n)
+        self.historico.append(("apagar", apagado))
+
+    def salvar(self) -> None:
+        self.doc.salvar()
+
+    def desfazer(self) -> None:
+        if not self.historico:
+            return
+        acao, dado = self.historico.pop()
+        if acao == "escrever":
+            self.doc.apagar(len(dado))
+        elif acao == "apagar":
+            self.doc.escrever(dado)
+        self.historico_refazer.append((acao, dado))
+
+    def refazer(self) -> None:
+        if not self.historico_refazer:
+            return
+        acao, dado = self.historico_refazer.pop()
+        if acao == "escrever":
+            self.doc.escrever(dado)
+        elif acao == "apagar":
+            self.doc.apagar(len(dado))
+```
+
+)
+
+Novamente, temos uma classe *repleta* de problemas. Ela viola o _S_ pois a classe do editor possui múltiplas responsabilidades, como escrever no documento, apagar, refazer, desfazer, gerenciar o histórico e assim por diante. Ela também viola o _O_ pois, se eu quiser adicionar uma nova ação, como copiar e colar, vou ter que modificar a classe `Editor`. Para corrigir essas problemáticas, utilizamos do Command Pattern.
+
+== A Solução
+O Command Pattern encapsula cada comando como um objeto próprio, permitindo que você parametrize os comandos do editor de forma que cada comando fique responsável por uma única ação e por conhecer *como ele mesmo deve ser desfeito*. Dessa forma, o editor não precisa conhecer os detalhes de cada comando, ele apenas executa o comando e adiciona ele ao histórico.
+
+Antes de entrarmos na implementação em si, vamos adicionar mais um tipo de comando, os comandos *que não podem ser desfeitos*. Para simplificar, vamos implementar apenas um, que é o *comando de salvar o documento*. O comando de salvar não pode ser desfeito, pois uma vez que o documento é salvo, não há como voltar atrás. Então vamos implementar a estrutura do Command Pattern para o nosso editor de documentos.
+
+Além disso, também vamos implementar uma classe própria para o gerenciamento do histórico de comandos, que vai ser responsável por armazenar os comandos executados e permitir que o usuário desfaça e refaça as ações realizadas.
+
+#codly.new(
+
+file: "commands.py",
+
+```python
+class Comando(ABC):
+  @abstractmethod
+  def executar(self) -> None:
+    ...
+
+class ComandoReversível(Comando):
+  @abstractmethod
+  def desfazer(self) -> None:
+    ...
+
+class EscreverComando(ComandoReversível):
+  def __init__(self, doc: Documento, trecho: str) -> None:
+    self.doc = doc
+    self.trecho = trecho
+    
+  def executar(self) -> None:
+    self.doc.escrever(self.trecho)
+    
+  def desfazer(self) -> None:
+    self.doc.apagar(len(self.trecho))
+
+class ApagarComando(ComandoReversível):
+  def __init__(self, doc: Documento, quantidade: int) -> None:
+    self.doc = doc
+    self.quantidade = quantidade
+    self.apagado = ""
+    
+  def executar(self) -> None:
+    self.apagado = self.doc.apagar(self.quantidade)
+  
+  def desfazer(self) -> None:
+    self.doc.escrever(self.apagado)
+
+class SalvarComando(Comando):
+  def __init__(self, doc: Documento) -> None:
+    self.doc = doc
+  
+  def executar(self) -> None:
+    self.doc.salvar()
+```
+
+)
+
+Agora que definimos toda a estrutura de como nossos comandos funcionam, vamos implementar a classe própria para gerenciar o histórico de comandos.
+
+#codly.new(
+
+file: "history.py",
+
+```python
+class Historico:
+  def __init__(self) -> None:
+    self.feitos: list[ComandoDesfazivel] = []
+    self.desfeitos: list[ComandoDesfazivel] = []
+
+  def registrar(self, cmd: ComandoDesfazivel) -> None:
+    self.feitos.append(cmd)
+    self.desfeitos.clear()
+      
+  def desfazer(self) -> None:
+    if self.feitos:
+      cmd = self.feitos.pop()
+      cmd.desfazer()
+      self.desfeitos.append(cmd)
+
+  def refazer(self) -> None:
+    if self.desfeitos:
+      cmd = self.desfeitos.pop()
+      cmd.executar()
+      self.feitos.append(cmd)
+```
+
+)
+
+#codly.new(
+
+file: "editor.py",
+
+```python
+class Editor:
+  def __init__(self) -> None:
+    self.historico = Historico()
+        
+  def executar(self, cmd: Comando) -> None:
+    cmd.executar()
+    if isinstance(cmd, ComandoDesfazivel):
+        self.historico.registrar(cmd)
+        
+  def desfazer(self) -> None:
+    self.historico.desfazer()
+        
+  def refazer(self) -> None:
+    self.historico.refazer()
+```
+
+)
+
+Esse código ainda possui alguns problemas principalmente na *forma que os comandos lidam com o documento*, no entanto, eles não vão ser abordados nesse documento, pois o foco é apenas a implementação do Command Pattern. O que importa é que agora cada comando é responsável por uma única ação e por conhecer como ele mesmo deve ser desfeito, e o editor não precisa conhecer os detalhes de cada comando, ele apenas executa o comando e adiciona ele ao histórico. Para adicionar um novo comando, basta criar uma nova classe que herde de `Comando` ou `ComandoReversível`, sem precisar modificar a classe `Editor`. Dessa forma, o código está mais organizado e fácil de manter.
 
 #pagebreak()
 
@@ -592,3 +750,139 @@ Se esse exemplo ainda deixou uma pulga na sua orelha. Imagine que você quer ir 
 ]
 
 #pagebreak()
+
+== O Problema
+Em muitas aplicações, pode surgir que, dentro de uma mesma classe, múltiplos comportamentos podem ser implementados, e isso é uma decisão de negócio válida. Por um exemplo, um documento pode ter comportamentos diferentes de acordo em *qual etapa de publicação* ele está na minha rede social. O State Pattern entra como modelar esse problema de estados distintos de forma a manter a estrutura SOLID que tanto desejamos. Podemos imaginar os problemas que ele aborda como *máquinas de estado finito*, onde representamos os estados possíveis como nós e as setas que ligam esses nós indicam as transições possíveis entre os estados.
+
+#figure(
+  image("images/A2/finite-state-machine.png", width: 50%),
+  caption: [Diagrama de máquina de estados finita]
+)
+
+A ideia principal é que, em qualquer dado momento, há um número finito de estados que um programa possa estar. Dentro de qualquer estado único, o programa se comporta de forma diferente, e o programa pode ser trocado de um estado para outro instantaneamente. Contudo, dependendo do estado atual, o programa pode ou não trocar para outros estados. Essas regras de troca, chamadas transições, também são finitas e pré determinadas.
+
+Poderíamos colocar toda essa gestão em uma única classe, mas provavelmente teríamos if statements *gigantescos* (eu já fiz isso no meu último emprego) e garanto como isso gera uma *dor de cabeça a longo prazo*
+
+Vamos trabalhar em cima do cenário do documento e que ele pode estar em três estados distintos: `Rascunho`, `Revisao` e `Publicado`. Cada estado tem comportamentos diferentes, e o documento pode transitar entre esses estados de acordo com regras de negócio específicas. As regras são as seguintes:
+- Um documento em `Rascunho` pode ser enviado para `Revisao`.
+- Um documento em `Revisao` pode ser enviado para `Publicado` ou voltar para `Rascunho`.
+- Um documento em `Publicado` não pode voltar para nenhum outro estado
+- Um documento em `Rascunho` *não pode* ser enviado diretamente para `Publicado`.
+
+E para não perder o costume, vamos ver um exemplo ruim sem a utilização do pattern
+
+#codly.new(
+
+file: "editor.py",
+
+```python
+class Documento:
+  def __init__(self, titulo: str):
+    self._titulo = titulo
+    self._estado = "rascunho"  # string solta, sem tipo
+
+  def publicar(self) -> None:
+    if self._estado == "rascunho":
+      print("Rascunho enviado para moderação.")
+      self._estado = "moderacao"
+    elif self._estado == "moderacao":
+      print("Aprovado! Documento publicado.")
+      self._estado = "publicado"
+    elif self._estado == "publicado":
+      print("Documento já está publicado.")
+
+  def enviar_para_moderacao(self) -> None:
+    if self._estado == "rascunho":
+      print("Rascunho enviado para moderação.")
+      self._estado = "moderacao"
+    elif self._estado == "moderacao":
+      print("Documento já está em moderação.")
+    elif self._estado == "publicado":
+      print("Documento publicado não volta para moderação.")
+
+  def rejeitar(self) -> None:
+    if self._estado == "rascunho":
+      print("Rascunho não pode ser rejeitado.")
+    elif self._estado == "moderacao":
+      print("Rejeitado. Voltou para rascunho.")
+      self._estado = "rascunho"
+    elif self._estado == "publicado":
+      print("Documento publicado não pode ser rejeitado.")
+```
+
+)
+
+== A Solução
+O State Pattern nos permite modelar esses estados distintos como classes separadas, cada uma representando um estado específico do documento. Dessa forma, comportamentos que variam de acordo com o estado do documento são encapsulados dentro dessas classes de estado, e a classe principal `Documento` delega a responsabilidade de executar comportamentos específicos para o estado atual. Isso mantém o código organizado e facilita a manutenção, além de permitir a adição de novos estados no futuro sem modificar a estrutura existente.
+
+#codly.new(
+
+file: "editor.py",
+
+```python
+class EstadoDocumento:
+  def publicar(self, doc: "Documento") -> None:
+    pass
+
+  def enviar_para_moderacao(self, doc: "Documento") -> None:
+    pass
+
+  def rejeitar(self, doc: "Documento") -> None:
+    pass
+
+class Rascunho(EstadoDocumento):
+  def publicar(self, doc: "Documento") -> None:
+    print("Rascunho enviado para moderação.")
+    doc.set_estado(Moderacao())
+
+  def enviar_para_moderacao(self, doc: "Documento") -> None:
+    print("Rascunho enviado para moderação.")
+    doc.set_estado(Moderacao())
+
+  def nome(self) -> str:
+    return "Rascunho"
+
+
+class Moderacao(EstadoDocumento):
+  def publicar(self, doc: "Documento") -> None:
+    print("Aprovado! Documento publicado.")
+    doc.set_estado(Publicado())
+
+  def rejeitar(self, doc: "Documento") -> None:
+    print("Rejeitado. Voltou para rascunho.")
+    doc.set_estado(Rascunho())
+
+  def nome(self) -> str:
+    return "Moderação"
+
+
+class Publicado(EstadoDocumento):
+  def nome(self) -> str:
+    return "Publicado"
+
+
+class Documento:
+  def __init__(self, titulo: str):
+    self._titulo = titulo
+    self._estado: EstadoDocumento = Rascunho()  # depende da abstração
+
+  def set_estado(self, estado: EstadoDocumento) -> None:
+    self._estado = estado
+
+  def publicar(self) -> None:
+    self._estado.publicar(self)
+
+  def enviar_para_moderacao(self) -> None:
+    self._estado.enviar_para_moderacao(self)
+
+  def rejeitar(self) -> None:
+    self._estado.rejeitar(self)
+
+  @property
+  def estado_atual(self) -> str:
+      return self._estado.nome()
+```
+
+)
+
+Nesse novo código refatorado, cada estado do documento está encapsulado na própria classe representando o próprio comportamento, respeitando o _S_ e, para adicionar novos estados, basta criar uma nova classe que herde de `EstadoDocumento`, sem precisar modificar a classe `Documento`. No entanto, é importante notar que o State Pattern possui uma *limitação* no Open Closed Principle. Ao criar um novo estado, por exemplo, um `Arquivado` que eu só posso mudar se meu documento já foi publicado, eu preciso ter que modificar as classes de estado existentes para adicionar a lógica de transição para o novo estado. Querendo ou não, isso é uma violação no OCP, mas é uma violação que é *aceitável* dentro do contexto do State Pattern, pois a adição de novos estados é uma mudança de comportamento *limitada apenas ao contexto dos estados*, para adicionar um novo estado, eu *não preciso modificar a classe `Documento`*, mas eu *preciso* modificar as classes de estado existentes para adicionar a lógica de transição para o novo estado.
