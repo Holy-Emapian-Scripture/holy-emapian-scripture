@@ -93,6 +93,17 @@
 
 #pagebreak()
 
+#block(
+  width: 100%,
+  fill: rgb(255, 148, 162),
+  inset: 1em,
+  stroke: 1.5pt + rgb(117, 6, 21),
+  radius: 5pt
+)[
+  *Nota*: Os conteúdos sobre Design Patterns foram retirados e adaptados/traduzidos da página #link("https://refactoring.guru/pt-br", "Refactoring Guru") em conjunto com códigos elaborados por conta própria e/ou retirados das aulas do professor. O conteúdo sobre SOLID foi retirado e adaptado das aulas e de sites diversos na internet.
+]
+
+
 // ============================ PÁGINAS POSTERIORES =========================
 #outline(title: "Conteúdo")
 
@@ -242,12 +253,228 @@ Dessa forma, o LSP e o ISP foram corrigidos, e nosso programa agora está idealm
 #pagebreak()
 
 #align(center+horizon)[
-  = Chain of Responsibility
+  = Chain of Responsibilities Pattern
 ]
 
 #pagebreak()
 
+== O Problema
+Imagine que estamos fazendo um programa de gestão de pedidos de uma empresa. Nós temos o pedido do nosso cliente, no entanto, algumas decisões de negócio nos foram informadas. Precisamos que, antes de enviar o pedido ao sistema, alguns pré-processamentos e verificações devem ser feitos. O nosso chefe disse que devemos implementar uma verificação de que as *informações do cliente estão no pedido* e que o usuário tem permissões para realizar aquele pedido.
 
+Após algumas indagações, faz sentido implementar essas verificações sequencialmente e, se alguma falhar, nem continua!
+
+#figure(
+  image("images/A2/system-diagram-1.png"),
+  caption: [Diagrama do sistema com as verificações de negócio implementadas sequencialmente]
+)
+
+Vamos criar essa estrutura então!
+
+#codly.new(
+
+```python
+@dataclass
+class Pedido:
+  cliente: Cliente
+  itens: list[Item]
+  valor_total: float
+
+class SistemaDePedidos():
+  def verificar_informacoes_cliente(self, cliente: Cliente) -> bool:
+    # Lógica para verificar informações do cliente
+    ...
+  
+  def verificar_permissoes_usuario(self, usuario: Usuario) -> bool:
+    # Lógica para verificar permissões do usuário
+    ...
+
+  def processar_pedido(self, pedido: Pedido):
+    if not self.verificar_informacoes_cliente(pedido.cliente):
+      raise ValueError("Informações do cliente inválidas.")
+    if not self.verificar_permissoes_usuario(pedido.cliente.usuario):
+      raise ValueError("Usuário não tem permissões para realizar o pedido.")
+    ...
+```
+
+)
+
+Caraca, que código lindo... Agora vamos imaginar a seguinte situação: Imagine que, conversando com seu colega de trabalho, ele fala que faz sentido adicionar uma verificação para que o pedido não ultrapasse o limite de crédito do cliente. Porém, também faz sentido adicionar uma checagem de segurança contra brute force attacks... O que você acha que deveríamos fazer dentro dessa classe que criamos para adicionar esses pontos que nosso colega de trabalho citou? Exatamente, *modificar* a classe `SistemaDePedidos`.
+
+Pelo que já vimos desde os conceitos iniciais do SOLID, essa classe de sistema de pedidos tá uma *porcaria*. Primeiro que ela viola o _S_ ao colocar a responsabilidade de fazer as verificações no `SistemaDePedidos` e ela viola o _O_ ao fazer que, se eu quiser adicionar uma nova verificação, eu vou ter que modificar a classe `SistemaDePedidos`. Então o que cacete vamos fazer pra corrigir isso? É aí que entra o Chain of Responsibilities Pattern.
+
+== A Solução
+O design define que *cada checagem* deve ser feita de forma *independente* por uma *classe separada* chamada *handler*, de forma que existe uma função própria que, ao ser chamada, faz a checagem e, caso ela passe, chama o próximo handler da cadeia. Caso a checagem falhe, o handler lança uma exceção e a cadeia é interrompida. Dessa forma, cada handler é responsável por uma única checagem e a responsabilidade de chamar o próximo handler é delegada para o próprio handler, além de que, se um falha, a cadeia é interrompida e o pedido não é processado.
+
+#figure(
+  image("images/A2/chain-of-responsibility.png", width: 100%),
+  caption: [Diagrama do sistema com as verificações de negócio implementadas em handlers independentes]
+)
+
+Vamos então corrigir aquele código feio que fizemos anteriormente e implementar o Chain of Responsibilities Pattern.
+
+#codly.new(
+
+file: "pedido.py",
+
+```python
+@dataclass
+class Pedido:
+  cliente: Cliente
+  itens: list[Item]
+  valor_total: float
+```
+
+)
+
+#codly.new(
+
+file: "handlers.py",
+
+```python
+class Handler(ABC):
+  def __init__(self):
+    self._proximo_handler = None
+  
+  def set_proximo(self, handler: "Handler"):
+    self._proximo_handler = handler
+    return handler  # Permite fazer encadeamento de chamadas
+
+  @abstractmethod
+  def verificar(self, pedido: Pedido):
+    pass
+
+
+class InformacaoClienteHandler(Handler):
+  def verificar(self, pedido: Pedido):
+    if not condition:  # Substitua "condition" pela lógica de checagem real
+      raise ValueError("Informações do cliente inválidas.")
+    if self._proximo_handler:
+      self._proximo_handler.verificar(pedido)
+
+
+class PermissaoUsuarioHandler(Handler):
+  def verificar(self, pedido: Pedido):
+    if not condition:  # Substitua "condition" pela lógica de checagem real
+      raise ValueError("Permissão de usuário inválida.")
+    if self._proximo_handler:
+      self._proximo_handler.verificar(pedido)
+
+
+class LimiteCreditoHandler(Handler):
+  def verificar(self, pedido: Pedido):
+    if not condition:  # Substitua "condition" pela lógica de checagem real
+      raise ValueError("Limite de crédito insuficiente.")
+    if self._proximo_handler:
+      self._proximo_handler.verificar(pedido)
+
+
+class BruteForceHandler(Handler):
+  def verificar(self, pedido: Pedido):
+    if not condition:  # Substitua "condition" pela lógica de checagem real
+      raise ValueError("Possível ataque de força bruta detectado.")
+    if self._proximo_handler:
+      self._proximo_handler.verificar(pedido)
+```
+
+)
+
+Com essa nova estrutura, mantemos todos os princípios do SOLID, pois cada handler é responsável por uma única checagem e, para criar uma nova verificação, basta criar um novo handler e adicioná-lo à cadeia, sem precisar modificar nenhuma das classes existentes. Vamos ver como ficaria a lógica de negócio do nosso sistema de pedidos com essa nova estrutura.
+
+#codly.new(
+
+file: "main.py",
+
+```python
+pedido = Pedido(cliente=cliente, itens=itens, valor_total=valor_total)
+
+# Configurar a cadeia de responsabilidade
+informacao_cliente_handler = InformacaoClienteHandler()
+permissao_usuario_handler = PermissaoUsuarioHandler()
+limite_credito_handler = LimiteCreditoHandler()
+brute_force_handler = BruteForceHandler()
+
+informacao_cliente_handler.set_proximo(permissao_usuario_handler)\
+  .set_proximo(limite_credito_handler)\
+  .set_proximo(brute_force_handler)
+
+informacao_cliente_handler.verificar(pedido)  # Inicia a cadeia de verificações
+
+sistema_de_pedidos.processar_pedido(pedido)  # Processa o pedido se todas as verificações passarem
+```
+
+)
+
+Dá até uma sensação de alívio ver que agora o código está mais organizado e fácil de manter.
+
+== A Variante
+É interessante notar que o Chain of Responsibilities Pattern pode ser implementado de diferentes formas. Uma variante interessante é uma que troca a forma como a cadeia se comporta. Anteriormente, vimos que *cada handler* faz sua checagem e, caso ela passe, chama o próximo handler da cadeia. No entanto, existe uma outra abordagem em que o handler olha e diz: _"Eu posso processar? Se sim, vou processar e a cadeia *vai terminar*, se não, eu vou ver se o próximo handler consegue"_.
+
+Pra manter a simplicidade do documento, vamos imaginar o seguinte cenário e tentar implementá-lo com essa variante do Chain of Responsibilities Pattern. Imagine que temos um sistema de atendimento de reclamações de usuários, nós temos uma classe `Reclamacao` que representa as informações que um usuário trouxe sobre seu problema. Na nossa empresa, possuímos o seguinte processo de atendimento: _Se a reclamação for simples, o atendente automático vai resolver, se for um pouco mais complexa, o atendente humano vai resolver, e se for muito complexa, o gerente vai resolver_. Então vamos implementar essa lógica com a variante do Chain of Responsibilities Pattern.
+
+#codly.new(
+
+file: "reclamacao.py",
+
+```python
+@dataclass
+class Problema:
+  descricao: str
+  complexidade: int  # 1 = simples, 2 = média, 3 = complexa
+
+
+class Handler(ABC):
+  def __init__(self):
+    self._parent_handler = None
+  
+  def set_parent(self, handler: "Handler"):
+    self._parent_handler = handler
+    return handler  # Permite fazer encadeamento de chamadas
+  
+  @abstractmethod
+  def pode_processar(self, problema: Problema) -> bool:
+    pass
+
+  @abstractmethod
+  def processar(self, problema: Problema):
+    pass
+
+
+class AtendenteAutomaticoHandler(Handler):
+  def pode_processar(self, problema: Problema) -> bool:
+    return problema.complexidade == 1
+
+  def processar(self, problema: Problema):
+    if not self.pode_processar(problema) and self._parent_handler:
+      self._parent_handler.processar(problema)
+      return
+    print("Atendente automático resolveu o problema.")
+
+
+class AtendenteHumanoHandler(Handler):
+  def pode_processar(self, problema: Problema) -> bool:
+    return problema.complexidade == 2
+  
+  def processar(self, problema: Problema):
+    if not self.pode_processar(problema) and self._parent_handler:
+      self._parent_handler.processar(problema)
+      return
+    print("Atendente humano resolveu o problema.")
+
+
+class GerenteHandler(Handler):
+  def pode_processar(self, problema: Problema) -> bool:
+    return problema.complexidade == 3
+  
+  def processar(self, problema: Problema):
+    if not self.pode_processar(problema) and self._parent_handler:
+      self._parent_handler.processar(problema)
+      return
+    print("Gerente resolveu o problema.")
+```
+
+)
+
+Nessa lógica, cada um dos handlers verifica se consegue processar o problema. Caso consiga, ele processa e a cadeia termina. Caso não consiga, ele passa para o próximo handler da cadeia.
 
 #pagebreak()
 
