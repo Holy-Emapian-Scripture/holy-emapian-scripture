@@ -575,4 +575,103 @@ Já na fase de *conquista*, temos $2$ passos principais:
 
 #pagebreak()
 
+== Motivação
+Infelizmente, o mundo real é um lugar cruel. O acesso a dados rotulados é muito limitado e, a não ser que você utilize de um trabalho manual humano massivo, ter um dataset com *muitas amostras* e *todas rotuladas* é praticamente impossível. O mundo real é cheio de dados não rotulados, então precisamos nos adaptar a isso.
 
+#figure(
+  image("images/A2/espectro-de-supervisao.png"),
+  caption: [Espectro de Supervisão]
+)
+
+== Deep Clustering
+A ideia do Deep Clustering é transformar os meus dados em uma representação mais simples (latente) e aplicar algoritmos de clustering para agrupar os dados. Para isso, utilizamos de uma arquitetura com *encoder* e *decoder*, de forma que fazemos um aprendizado inicial para que essa rede possa gerar uma representação latente dos dados. Depois, aplicamos um algoritmo de clustering (K-Means, por exemplo) para agrupar os dados.
+
+#figure(
+  image("images/A2/deep-clustering-architecture.png"),
+  caption: [Arquitetura do Deep Clustering]
+)
+
+=== Deep Embedding Clustering (DEC)
+Essa abordagem é interessante, no entanto, existem algumas limitações. A principal delas, é o *hard assignment* do K-Means, que força os dados a serem agrupados em um cluster específico. Isso faz com que o modelo aprenda a gerar representações latentes que se encaixem nesse cluster, mesmo que ele não seja o mais adequado. O ideal é que a rede também aprenda a melhorar o espaço latente de acordo com os agrupamentos, e para isso ambas as etapas devem ser feitas *ao mesmo tempo*, utilizando da retropropagação. Só que o *hard assignment* do K-Means não é diferenciável, então não conseguimos fazer retropropagação. A solução para isso é utilizar de um *soft assignment*, onde cada ponto tem uma probabilidade de pertencer a cada cluster, e essa probabilidade é diferenciável. Seja $z_i$ um ponto no espaço latente e $mu_j$ o centro do cluster $j$, a probabilidade de $z_i$ pertencer ao cluster $j$ é dada por:
+$
+  q_(i j) = (1 + ||z_i - mu_j||^2\/alpha)^(-(alpha+1)/2) / (sum_(j') (1 + ||z_i - mu_(j')||^2\/alpha)^(-(alpha+1)/2))
+$
+
+Perfeito! Pela lógica, se estamos estimando uma distribuição, precisamos de uma *distribuição alvo* para comparar com a distribuição estimada. No entanto, lembre-se que estamos mexendo em dados *não-rotulados*, então não temos uma distribuição alvo. E agora? O que fazemos?
+
+A ideia é que *nós vamos criar nossa própria distribuição alvo*. A distribuição alvo é criada a *partir da distribuição estimada*, de forma que ela *reforce* os pontos que estão com alta probabilidade de pertencer a um cluster específico e *suaviza* os pontos que estão com baixa probabilidade. A distribuição alvo é definida como:
+$
+  p_(i j) = (q_(i j)^2 \/ f_j) / (sum_(j') q_(i j')^2 \/ f_(j'))    \
+
+  f_j = sum_(i) q_(i j)
+$
+
+Elevar as probabilidades ao quadrado faz com que os pontos com alta probabilidade fiquem ainda mais altos, enquanto os pontos com baixa probabilidade fiquem ainda mais baixos. A divisão por $f_j$ faz com que a distribuição alvo seja *balanceada*, ou seja, que cada cluster tenha aproximadamente o mesmo número de pontos e evite que clusters muito grandes dominem a distribuição alvo. Dessa forma, a rede aprende a gerar representações latentes que se encaixem melhor nos clusters, enquanto os clusters são ajustados de acordo com as representações latentes.
+
+Agora, com o *pseudo-gabarito* criado, podemos definir a loss como a divergência de Kullback-Leibler entre a distribuição estimada e a distribuição alvo:
+$
+  D_"KL" (P || Q) = sum_(i) sum_(j) p_(i j) log(p_(i j) / q_(i j))
+$
+
+#figure(
+  image("images/A2/dce-architecture.png", width: 100%),
+  caption: [Arquitetura do Deep Embedding Clustering]
+)
+
+O DCE pode então ser descrito em duas fases distintas:
++ *Pré-Treinamento*: Treina-se a rede para gerar representações latentes dos dados, utilizando de uma loss de reconstrução (por exemplo, MSE) para que o encoder possa gerar as representações úteis dos dados.
++ *Otimização*: Processo iterativo entre calcular a distribuição alvo $P$ e a distribuição estimada $Q$, e atualizar os pesos da rede para minimizar a divergência entre as duas distribuições.
+
+=== Deep K-Means
+No K-Means tradicional, tentamos minimizar a distância entre os pontos $z_i$ e seu centroide $C_j$. Seja $mu_j$ o centroide do cluster $C_j$, no K-Means, minimizamos a seguinte função de erro:
+$
+  cal(L) = sum_(k) II[z_k in C_j] dot ||z_k - mu_j||^2
+$
+o problema aqui é a variável indicadora $II[z_k in C_j]$, que não é diferenciável. Para solucionar isso, o Deep K-Means substitui a variável indicadora por uma *escala de temperatura softmax* $alpha$, de forma que quanto mais próximo o ponto $z_k$ estiver do centroide $mu_j$, maior será a probabilidade de pertencer ao cluster $C_j$. Essa função é dada por:
+$
+  G_j (z_k;alpha) = exp(-alpha ||z_k - mu_j||^2) / (sum_(j') exp(-alpha ||z_k - mu_(j')||^2))
+$
+Essa função é *diferenciável*. Definindo $f_theta: RR^N -> RR^D$ como o encoder, $g_theta: RR^D -> RR^N$ como o decoder, o Deep K-Means tenta minimizar a seguinte função de erro:
+$
+  L = sum_x L_"rec" (x) + lambda L_"clust" (x)    \
+
+  L_"rec" (x) = ||x - g_theta (f_theta (x))||^2 wide L_"clust" (x) = sum_(k=1)^K G_k (f_theta (x);alpha) ||f_theta (x) - mu_k||^2
+$
+
+Dependendo do valor de $alpha$, a função de distância dos clusterings pode se comportar de forma diferente
+
+- $alpha -> 0$: A função de distância se aproxima de uma distribuição uniforme, ou seja, todos os pontos têm a mesma probabilidade de pertencer a qualquer cluster.
+- $alpha -> 1$: A função de distância se aproxima de um soft assignment cru, ou seja, a probabilidade de pertencer a um cluster é proporcional à distância do ponto ao centroide.
+- $alpha -> infinity$: A função de distância se aproxima de um hard assignment, ou seja, cada ponto pertence a um único cluster.
+
+O parâmetro é ajustado durante o treinamento (anneling), de forma que vai aumentando conforme o treino vai passando, fazendo com que as representações latentes posteriores se tornem mais certas de estarem próximas dos centróides corretos.
+
+== Self-Supervised Learning
+
+=== Conceito de Tarefas Pretexto
+
+=== Taxonomia das Tarefas Pretexto
+
+== Constrative Learning
+
+=== Paradigma Constrativo
+
+=== Framework SimCLR
+
+== Aprendizado por Protótipos e Proporção de Rótulos (LLP)
+
+=== SwAV
+
+=== Prototypical Contrastive Learning com Proporções de Classes
+
+== Aprendizado com Rótulos Ruidosos
+
+=== Problema da Anotação Imperfeita em Redes Profundas
+
+=== SELFIE: Reformando Amostras Inconsistentes
+
+== Aprendizado Fracamente e Semi-Supervisionado
+
+=== Weakly-Supervised Learning e Class Activation Maps (CAM)
+
+=== Semi-Supervised Learning (SSL) e o Algoritmo FixMatch
