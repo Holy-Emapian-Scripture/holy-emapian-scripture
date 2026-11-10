@@ -1,5 +1,5 @@
 #import "@preview/ctheorems:1.1.3": *
-#import "@preview/lovelace:0.3.0": *
+#import "@preview/lovelace:0.3.1": *
 #show: thmrules.with(qed-symbol: $square$)
 
 #import "@preview/codly:1.3.0": *
@@ -461,13 +461,17 @@ não vão contribuir para o aprendizado, pois o gradiente é zero!
 
 Pela ilustração da imagem, queremos pegar exemplos *difíceis* ou *semi-difíceis*, pois eles geram os gradientes mais fortes para as losses. Um exemplo ingênuo de seleção de triplas, seria algo como:
 
-#pseudocode-list[
-  + selecionar triplas iniciais ${A_i, P_i, N_i}$
-  + *enquanto* $"condição de parada" = "false"$ {
-    + Treina por algumas épocas
-    + Escolhe triplas difíceis ${A_j, P_j, N_j}$
-  + }
-]
+#figure(
+  kind: "algorithm",
+  supplement: "Algoritmo",
+  pseudocode-list[
+    + selecionar triplas iniciais ${A_i, P_i, N_i}$
+    + *enquanto* $"condição de parada" = "false"$ {
+      + Treina por algumas épocas
+      + Escolhe triplas difíceis ${A_j, P_j, N_j}$
+    + }
+  ]
+)
 
 As triplas podem ser selecionadas de forma offline (manualmente) ou online (automaticamente). Vamos tentar pensar em algum método pra seleção de triplas online.
 
@@ -494,6 +498,7 @@ Vamos definir o processo de escolha na árvore antes de estabelecermos como ela 
     + }
   ],
 
+  kind: "algorithm",
   supplement: "Algoritmo",
   caption: [Exemplo de algoritmo para seleção de triplas na árvore]
 )
@@ -648,19 +653,42 @@ Dependendo do valor de $alpha$, a função de distância dos clusterings pode se
 
 O parâmetro é ajustado durante o treinamento (anneling), de forma que vai aumentando conforme o treino vai passando, fazendo com que as representações latentes posteriores se tornem mais certas de estarem próximas dos centróides corretos.
 
+#figure(
+  pseudocode-list(
+    booktabs: true,
+    title: [Deep K-Means Algorithm]
+  )[
+    + *function* DeepKMeans(data $cal(X)$, cluster's number $K$, balancing parameter $lambda$, scheme for $alpha$ epochs $T$, minibatches $N$, learning rate $eta$) {
+      + *for* $alpha = m_alpha$ *to* $M_alpha$ *do* {
+        + *for* $t = 1$ *to* $T$ *do* {
+          + *for* $n=1$ *to* $N$ *do* {
+            + Draw a minibatch $cal(X)_n subset cal(X)$
+            + Update $(theta, cal(R))$ using SGD
+          + }
+        + }
+      + }
+    + }
+  ],
+
+  kind: "algorithm",
+  supplement: "Algoritmo"
+)
+
 == Self-Supervised Learning
-É uma forma de aprendizado onde os dados em si fornecem informações para a supervisão do aprendizado. Existe um panorama de aplicações e agrupamento pelos métodos que elas utilizam. No entanto, essa abordagem encontra *muitos problemas* e *desafios* tanto práticos quanto teóricos dependendo da abordagem que está sendo implementada. Essas limitações são em grande parte superada nos próximos capítulos, mas vamos citar algumas delas:
+É uma forma de aprendizado onde os dados em si fornecem informações para a supervisão do aprendizado. Existe um panorama de aplicações e agrupamento pelos métodos que elas utilizam.
+
+#figure(
+  image("images/A2/self-supervised-learning-spectrum.png", width: 80%),
+  caption: [Espectro de métodos de Self-Supervised Learning]
+)
+
+No entanto, essa abordagem encontra *muitos problemas* e *desafios* tanto práticos quanto teóricos dependendo da abordagem que está sendo implementada. Essas limitações são em grande parte superada nos próximos capítulos, mas vamos citar algumas delas:
 
 - *Colapso de Representação (Representation / Dimensional Collapse)*: Sem rótulos externos para guiar o espaço latente, a rede pode encontrar "soluções triviais", mapeando todas as imagens para um vetor constante idêntico ou colapsando a representação em um subespaço de baixíssima dimensão.
 - *Aprendizado de Atalhos (Shortcut Learning)*: O modelo pode aprender a resolver a tarefa pretexto explorando atalhos superficiais (como ruído de alta frequência, continuidade de bordas ou artefatos de textura) em vez de capturar conceitos semânticos abstratos reais.
 - *Problema dos Falsos Negativos (False Negative Penalty)*: Em aprendizado contrastivo por pares (como o SimCLR), amostras distintas do mesmo batch são tratadas como pares negativos por padrão. Se duas imagens do batch pertencerem à mesma classe real (ex.: dois cachorros diferentes), o modelo é forçado incorretamente a afastar suas representações.
 - *Custo Computacional e Batches Gigantescos*: Para garantir uma amostragem rica de negativos e estabilizar o treino, modelos contrastivos exigem mini-batches massivos (de 256 até 8192 amostras), demandando infraestruturas robustas de GPUs/TPUs e otimizadores específicos (como LARS).
 - *Desconexão entre a Tarefa Pretexto e a Tarefa Final (Downstream Task Mismatch)*: As camadas finais adaptam-se fortemente ao objetivo pretexto (ex.: prever rotação ou pareamento), o que costuma exigir o descarte da camada de projeção (*projection head*) para aproveitar apenas as representações intermediárias.
-
-#figure(
-  image("images/A2/self-supervised-learning-spectrum.png"),
-  caption: [Espectro de métodos de Self-Supervised Learning]
-)
 
 == Constrative Learning
 A ideia do aprendizado contrastivo é utilizar de data augmentation para aproximar as representações de imagens que são *semânticamente* semelhantes e afastar as representações de imagens que são *semânticamente* diferentes. Para isso, pegamos uma imagem (original), uma versão dela aumentada (positiva) e uma versão de outra imagem (negativa). A rede neural recebe a imagem original e a versão aumentada e tenta gerar representações latentes próximas, enquanto que a representação da imagem negativa deve ser distante.
@@ -705,6 +733,40 @@ $
 $
 
 A lógica nessa loss, é que ao minimizar a loss, estamos maximizando a *similaridade* entre *representações positivas* e, por consequência, o *denominador* da loss, que representa a soma das similaridades entre a amostra positiva e todas as amostras negativas, é minimizado. Ou seja, estamos maximizando a *discrepância* entre *representações negativas*.
+
+#figure(
+  pseudocode-list(
+    booktabs: true,
+    title: [SimCLR Algorithm]
+  )[
+    + *function* SimCLR(data $cal(X)$, batch size $N$, constant $tau$, structure of $f$,$g$ e $cal(T)$) {
+      + *for* ${x_k}_(k=1)^N subset cal(X)$ {
+        + *for all* $k=1$ *to* $N$ {
+          + draw two augmentation functions $t, t' ~ cal(T)$
+          + First Agumentation:
+          + $tilde(x)_(2k-1) = t(x_k)$
+          + $h_(2k-1) = f(tilde(x)_(2k-1))$
+          + Second Agumentation:
+          + $z_(2k-1) = g(h_(2k-1))$
+          + $tilde(x)_(2k) = t'(x_k)$
+          + $h_(2k) = f(tilde(x)_(2k))$
+          + $z_(2k) = g(h_(2k))$
+        + }
+        + *for all* $i=1$ *and* $j=1$ *to* $2 N$ {
+          + $s_(i j) = z_i^T z_j \/ (||z_i|| ||z_j||)$
+        + }
+        + *define* $cal(l)(i, j)$ *as* $-log (exp(s_(i j) \/ tau) \/ (sum_(k=1)^(2N) II_[k != i] exp(s_(i k) \/ tau)))$
+        + *define* $cal(L)$ *as* $1/(2N) sum_(k=1)^N [cal(l)(2k-1, 2k) + cal(l)(2k, 2k-1)]$
+        + *update* $f$ *and* $g$ *to minimize* $cal(L)$
+      + }
+      + *throw away* $g$
+      + *return* $f$
+    + }
+  ],
+
+  kind: "algorithm",
+  supplement: "Algoritmo"
+)
 
 === Aprendizado por Protótipos e Proporção de Rótulos (LLP)
 Agora vamos pensar no cenário onde não temos os valores de rótulos das imagens, mas sabemos a proporção de cada classe dentro de um conjunto de imagens. Por exemplo, temos um conjunto de imagens com $1000$ imagens, e sabemos que $30%$ são cachorros, $50%$ são gatos e $20%$ são pássaros. A ideia é que, mesmo sem saber quais imagens são de qual classe, podemos utilizar essa informação para guiar o aprendizado da rede neural.
@@ -784,15 +846,191 @@ O modelo SwAV consiste em um algoritmo de 5 passos:
 
 - *Otimização*: O último passo é otimizar a loss final $L$
 
+#figure(
+  pseudocode-list(
+    booktabs: true,
+    title: [SwAV Algorithm]
+  )[
+    + *function* SwAV(data $cal(X)$, classes proportion $w$, epochs $T$, $epsilon > 0$) {
+      + *for* $t = 1$ *to* $T$ {
+        + *for each* $x_i$ *in* $cal(X)$ {
+          + Generate two random views $X_(i)^(t, s)$
+          + Obtain the feature vectors $Z_(i)^(t, s)$
+          + Compute the prototype scores $C^T Z_(i)^(t, s)$
+          + Compute the codes $Q_i^(t, s)$ through Sinkhorn constrained to $w$
+          + Convert prototype scores to probabilities $P_i^(t, s)$
+          + Compute the swapped loss $L_i^(t, s) = -(Q_i^t log(P_i^s) + Q_i^s log(P_i^t))$
+          + Update $theta$ and $C$ with a gradient step to minimize $L_i^(t, s)$
+          + Normalize prototypes $C$
+        + }
+      + }
+    + }
+  ],
+
+  kind: "algorithm",
+  supplement: "Algoritmo"
+)
+
 == Aprendizado com Rótulos Ruidosos
+Não bastando a dificuldade de anotar rótulos em dados reais, ainda existe o fator mais comum em tudo que fazemos nas nossas vidas, o *erro humano*. Em aplicações reais, pode acontecer comumente de que os rótulos anotados por humanos *esteja incorreto*.
 
+=== SELFIE
+No nosso dataset, cada amostra $x$ tem um *rótulo verdadeiro* $y$ (que não conhecemos) e um *rótulo anotado* $tilde(y)$ (que é o que temos). O rótulo $tilde(y)$ é *ruidoso* quando $y != tilde(y)$. Definimos também a taxa de ruído $eta$ como a *probabilidade de um rótulo ser incorreto* $tau = PP(tilde(y) != y)$. Um modelo padrão possui o seguinte passo de atualização dos parâmetros em um minibatch:
+$
+  theta_(t+1) = theta_t - alpha nabla_theta 1/(|B|) sum_(x in B)^B cal(L)(f_theta (x), tilde(y), theta_t)
+$
+No entanto, dentro do SELFIE, fazemos a seguinte otimização:
+$
+  theta_(t+1) = theta_t - alpha nabla (1/(|cal(R) union cal(C)|) (sum_(x in cal(R)) cal(L)(x, y^"refurb"; theta_t) + sum_(x in cal(C) inter cal(R)^(-1)) cal(L)(x, tilde(y); theta_t))
+$
 
-=== Problema da Anotação Imperfeita em Redes Profundas
+Aqui, a ideia é dividir o dataset em três grupos, as amostras confiáveis ($cal(C)$), as que dá para consertar ($cal(R)$) e as que não da pra confiar (são descartadas). Então utilizamos apenas as amostras confiáveis e as que foram consertadas e atribuídas com um novo rótulo $y^"refurb"$. No entanto, precisamos responder ainda três perguntas:
 
-=== SELFIE: Reformando Amostras Inconsistentes
+*Como escolher $cal(C)$?:* Utilizamos do *Lowest loss-based separation method*, onde selecionamos as $tau dot 100%$ amostras com menor loss. A ideia é que, quando a loss é alta, significa que o modelo não está entendendo que aquele dado pertence naquela classe, então provavelmente o rótulo está incorreto. O $tau$ é empírico ou estimado por validação cruzada.
 
-== Aprendizado Fracamente e Semi-Supervisionado
+#figure(
+  pseudocode-list(
+    booktabs: true,
+    title: [SELFIE Algorithm],
+  )[
+    + *function* SELFIE(data $cal(D)$, epochs $T$, $gamma$ warm-up, noise rate $tau$, uncertainity threshold $epsilon$, history length $q$, how many times the model will restart $r$) {
+      + $cal(R)^"tot" <- emptyset$
+      + *for* $r=1$ *to* $r$ {
+        + $p <- 1$
+        + Initialize $theta_p$
+        + *for* $t=1$ *to* $T$ {
+          + *for* $j=1$ *to* $|cal(D)|\/|cal(M)|$ {
+            + Draw minibatch $M subset D$
+            + Warm-up periods:
+            + *if* $i <= gamma$ {
+              + $theta_(p+1) = theta_p - alpha nabla(1/(|cal(M)|) sum_(x in cal(M)) cal(L)(x,tilde(y);theta_p))$
+            + } *else* {
+              + $cal(C) <- (1-tau) dot 100%$ of low loss samples in $cal(M)$
+              + $cal(R) <- emptyset$
+              + *for each* $x$ *in* $cal(M)$ {
+                + *if* $F(x,q) <= epsilon$ *or* $x in cal(R)^"tot"$ {
+                  + $cal(R) <- cal(R) union (x, y^"refurb")$
+                + }
+              + }
+              + $cal(R)^"tot" <- cal(R)^"tot" union cal(R)$
+              + $theta_(p+1) = theta_p - alpha nabla(
+                1/(|cal(R) union cal(C)|) (
+                  sum_(x in cal(R)) cal(L) (x, y^"refurb";theta_p) + sum_(x in cal(C) inter cal(R)^(-1)) cal(L)(x, tilde(y);theta_p)
+                )
+              )$
+            + }
+          + }
+        + }
+        + $p <- p+1$
+      + }
+      + *return* $theta_p$, $cal(R)^"tot"$
+    + }
+  ],
 
-=== Weakly-Supervised Learning e Class Activation Maps (CAM)
+  kind: "algorithm",
+  supplement: "Algoritmo"
+)
 
-=== Semi-Supervised Learning (SSL) e o Algoritmo FixMatch
+*Como escolher $cal(R)$?:* Para cada amostra do modelo, guardamos o histórico $H_x (q)$ das últimas $q$ previsões do modelo. Definimos então a *probabilidade* de que o rótulo correto seja $j$ dado que minha amostra é $x$ e que eu fiz $q$ predições como:
+$
+  PP(j | x, q) = (sum_(tilde(y) in H_x (q)) II[tilde(y) = j]) / (|H_x (q)|)
+$
+ou seja, a proporção de vezes que o modelo previu a classe $j$ para a amostra $x$. Definimos então a *incerteza* dessa previsão como a *entropia normalizada* dessa distribuição que acabamos de definiir:
+$
+  F(x;q) = (1/delta) "entropy"(PP(y | x, q))    \
+
+  "entropy"(PP(y | x, q)) = - sum_(j=1)^C PP(j | x, q) log PP(j | x, q)   \
+
+  delta = - sum_(j=1)^C (1/C) log (1/C)
+$
+onde o $delta$ serve para normalizar e a incerteza ficar entre $0$ e $1$. Com essas definições, finalmente podemos criar a definição de *o que é uma amostra consertável*. Definimos uma amostra como *refurbishable* quando a incerteza preditiva ($F$) é tal que:
+$
+  F(x;q) < epsilon quad (0 < epsilon < 1)
+$
+
+*Como corrigir as amostras consertáveis?:* Para as amostras com rótulos erados, vamos assinalar os rótulos *que o modelo mais previu dentro do histórico de $q$ predições*.
+$
+  y^"refurb" = "argmax"_(1<=j<=C) PP(j | x, q)
+$
+
+== Aprendizado Fracamente Supervisionado
+Vamos supor que temos um conjunto de dados com $N$ amostras. Vamos supor também que nos foi dada a tarefa de aplicar um modelo de *segmentação semântica* no meu conjunto. Parece uma tarefa tranquila! Mas quando você vai olhar os dados, eles não tem máscaras que indicam a posição real dos objetos, mas sim, pontos onde os objetos ficam... E agora? Será que existe uma forma de ainda fazer um modelo que aprende o formato dos objetos mesmo que meu ground truth seja só o ponto do centro do objeto e mais nada? É aí que entra o aprendizado fraco supervisionado.
+
+#figure(
+  image("images/A2/weakly-supervised-comparison.png", width: 67.1%),
+  caption: [Gráfico comparativo da saída do teste em função da complexidade do rótulo fornecido]
+)
+
+O ponto do aprendizado fracamente supervisionado é você utilizar rótulos *menos informativos* do que a tarefa que você vai resolver exige.
+
+=== Class Activation Mapping (CAM)
+Como exemplo de modelo que utiliza dessa abordagem, o CAM se destaca bastante. Ele utiliza apenas de labels anotadas e como saída gera um *bouding box* que indica a posição do objeto na imagem.
+
+A técnica utilizada é treinar uma rede de classificação e, dentro dos seus feature maps, localizar *onde* ela olhou para gerar o rótulo de classificação.
+
+#figure(
+  image("images/A2/cam-architecture.png", width: 90%),
+  caption: [Arquitetura do CAM]
+)
+
+Vamos definir $w_k^c$ como o peso que liga o mapa $k$ à classe $c$ na camada de classificação. Ou seja, ele dita o quão importante aquela *feature* específica influencia na decisão de classificar a imagem como pertencente à classe $c$. Definimos também $f_k (i, j)$ como o valor do feature map $k$ na posição $(i, j)$ *antes* do *global average pooling* (GAP). Defina também $F_k = sum_(i, j) f_k (i, j)$, de forma que o score da classe $C$ na sa´ida softmax é dada por
+$
+  S_c = sum_k w_k^c F_k = sum_k w_k^c sum_(i, j) f_k (i, j) = sum_(i, j) sum_k w_k^c f_k (i, j)
+$
+Se pegarmos a parte interna da soma e chamarmos de $M_c (i, j) = sum_k w_k^c f_k (i, j)$, então $M_c (i, j)$ representa a importância da feature na posição $(i, j)$ para a classe $c$, então posições com $M_c$ alto puxam a probabilidade da classe $c$ para cima.
+
+Para selecionar a bouding box, pegamos a região $M_c (i, j)$ maior que $20$% do valor máximo de $M_c (i, j)$ e escolhemos a componente conexa maior. Essa região é a nossa bouding box. Fazemos isso para as $5$ classes mais prováveis.
+
+== Aprendizado Semi-Supervisionado
+Imagine agora que nós temos um conjunto com várias imagens e precisamos fazer uma detecção de objetos (aplicar bouding boxes e ver onde estão os objetos). Começamos com os dados sem rótulo nenhum, mas isso não é problema! Você tirou algum tempo e criou as bouding boxes reais de algumas imagens, mas são muitas... Será que da pra aproveitar o pouco que você fez e ainda sim conseguir prever do resto que você ainda não tem rótulo? É aí que entra o aprendizado semi-supervisionado.
+
+#figure(
+  image("images/A2/semi-supervised-learning.png", width: 90%),
+  caption: [Tipos de aprendizado]
+)
+
+=== FixMatch
+O artigo do FixMatch diz que ele é simplesmente a unificação de dois conceitos já bastante aplicados:
++ *Regularização por consistência:* o modelo deve dar predições parecidas para versões perturbadas da mesma imagem;
++ *Pseudo-rotulagem:* o próprio modelo gera rótulos artificiais para os dados sem rótulo, e depois treina com eles.
+
+Ela gera duas versões, uma com augmentation fraca (por exemplo flip e pequenos deslocamentos) e outra com augmentation forte (distorções agressivas de cor e forma). A versão fraca passa pelo modelo e produz uma predição. Se essa predição for confiante, vira um pseudo-rótulo. A versão forte passa pelo mesmo modelo, e a cross-entropy $H(p,q)$ força a predição da versão forte a coincidir com o pseudo-rótulo.
+
+#figure(
+  image("images/A2/fixmatch-architecture.png", width: 90%),
+  caption: [Arquitetura do FixMatch]
+)
+
+A intuição é que a versão fraca é mais fácil, então a predição dela é mais confiável. Ela ensina a versão forte, que é difícil de classificar. Assim o modelo aprende a ser invariante a perturbações pesadas.
+
+A loss geral é a soma de duas
+$
+  L = cal(l)_s + lambda cal(l)_u
+$
+$cal(l)_s$ é a loss sobre os meus dados rotulados com augmentation fraca, e $cal(l)_u$ é a loss sobre os meus dados não rotulados com augmentation forte. Em questão de notação, considere $alpha$ como a função de augmentation fraca e $cal(A)$ como a função de augmentation forte.
+$
+  cal(l)_s = 1/B sum_(b=1)^B H(p_b, p_m (y|alpha(x_b);theta))    \
+
+  cal(l)_u = 1/(mu B) sum_(b=1)^(mu B) II[max(p_m (y|alpha(u_b);theta))] >= tau] H(hat(p_b), p_m (y|cal(A)(u_b);theta))
+$
+
+#figure(
+  pseudocode-list(
+    booktabs: true,
+    title: [FixMatch Algorithm]
+  )[
+    + *function* FixMatch(labeled batch $cal(X) = {(x_b, p_b): b = 1, ..., B}$, unlabeled batch $cal(U) = {(u_b): b = 1, ..., mu B}$, confidence threshold $eta$, unlabeled data ratio $mu$, unlabeled loss weight $lambda_b$) {
+      + $cal(l)_s = 1/B sum_(b=1)^B H(p_b, p_m (y|alpha(x_b);theta))$
+      + *for* $b=1$ *to* $mu B$ {
+        + Strong augmentation in $u_b$:
+        + $tilde(u)_b = cal(A)(u_b)$
+        + $q_b = p_m (y|alpha(u_b);theta)$
+      + }
+      + $cal(l)_u = 1/(mu B) sum_(b=1)^(mu B) II[max(q_b) >= tau] H("argmax"(q_b), tilde(u)_b)$
+      + *return* $cal(l)_s + lambda_b cal(l)_u$
+    + }
+  ],
+
+  kind: "algorithm",
+  supplement: "Algoritmo"
+)
