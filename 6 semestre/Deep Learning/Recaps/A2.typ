@@ -592,7 +592,9 @@ A ideia do Deep Clustering é transformar os meus dados em uma representação m
 )
 
 === Deep Embedding Clustering (DEC)
-Essa abordagem é interessante, no entanto, existem algumas limitações. A principal delas, é o *hard assignment* do K-Means, que força os dados a serem agrupados em um cluster específico. Isso faz com que o modelo aprenda a gerar representações latentes que se encaixem nesse cluster, mesmo que ele não seja o mais adequado. O ideal é que a rede também aprenda a melhorar o espaço latente de acordo com os agrupamentos, e para isso ambas as etapas devem ser feitas *ao mesmo tempo*, utilizando da retropropagação. Só que o *hard assignment* do K-Means não é diferenciável, então não conseguimos fazer retropropagação. A solução para isso é utilizar de um *soft assignment*, onde cada ponto tem uma probabilidade de pertencer a cada cluster, e essa probabilidade é diferenciável. Seja $z_i$ um ponto no espaço latente e $mu_j$ o centro do cluster $j$, a probabilidade de $z_i$ pertencer ao cluster $j$ é dada por:
+Essa abordagem é interessante, no entanto, existem algumas limitações. A principal delas, é o *hard assignment* do K-Means, que força os dados a serem agrupados em um cluster específico. Isso faz com que o modelo aprenda a gerar representações latentes que se encaixem nesse cluster, mesmo que ele não seja o mais adequado. O ideal é que a rede também aprenda a melhorar o espaço latente de acordo com os agrupamentos, e para isso ambas as etapas devem ser feitas *ao mesmo tempo*, utilizando da retropropagação. Queremos isso pois não queremos que a rede coloque viezes no espaço latente. Por exemplo, o modelo pode aprender que, todas as imagens com um *deserto* no fundo são de *camelos*, mas isso *não é verdade*, pois existem outros animais que vivem em desertos. O ideal é que a rede aprenda a gerar representações latentes que separem os camelos de outros animais, mesmo que eles estejam no mesmo ambiente.
+
+Só que o *hard assignment* do K-Means não é diferenciável, então não conseguimos fazer retropropagação. A solução para isso é utilizar de um *soft assignment*, onde cada ponto tem uma probabilidade de pertencer a cada cluster, e essa probabilidade é diferenciável. Seja $z_i$ um ponto no espaço latente e $mu_j$ o centro do cluster $j$, a probabilidade de $z_i$ pertencer ao cluster $j$ é dada por:
 $
   q_(i j) = (1 + ||z_i - mu_j||^2\/alpha)^(-(alpha+1)/2) / (sum_(j') (1 + ||z_i - mu_(j')||^2\/alpha)^(-(alpha+1)/2))
 $
@@ -614,7 +616,7 @@ $
 $
 
 #figure(
-  image("images/A2/dce-architecture.png", width: 100%),
+  image("images/A2/dce-architecture.png", width: 80%),
   caption: [Arquitetura do Deep Embedding Clustering]
 )
 
@@ -647,24 +649,143 @@ Dependendo do valor de $alpha$, a função de distância dos clusterings pode se
 O parâmetro é ajustado durante o treinamento (anneling), de forma que vai aumentando conforme o treino vai passando, fazendo com que as representações latentes posteriores se tornem mais certas de estarem próximas dos centróides corretos.
 
 == Self-Supervised Learning
+É uma forma de aprendizado onde os dados em si fornecem informações para a supervisão do aprendizado. Existe um panorama de aplicações e agrupamento pelos métodos que elas utilizam. No entanto, essa abordagem encontra *muitos problemas* e *desafios* tanto práticos quanto teóricos dependendo da abordagem que está sendo implementada. Essas limitações são em grande parte superada nos próximos capítulos, mas vamos citar algumas delas:
 
-=== Conceito de Tarefas Pretexto
+- *Colapso de Representação (Representation / Dimensional Collapse)*: Sem rótulos externos para guiar o espaço latente, a rede pode encontrar "soluções triviais", mapeando todas as imagens para um vetor constante idêntico ou colapsando a representação em um subespaço de baixíssima dimensão.
+- *Aprendizado de Atalhos (Shortcut Learning)*: O modelo pode aprender a resolver a tarefa pretexto explorando atalhos superficiais (como ruído de alta frequência, continuidade de bordas ou artefatos de textura) em vez de capturar conceitos semânticos abstratos reais.
+- *Problema dos Falsos Negativos (False Negative Penalty)*: Em aprendizado contrastivo por pares (como o SimCLR), amostras distintas do mesmo batch são tratadas como pares negativos por padrão. Se duas imagens do batch pertencerem à mesma classe real (ex.: dois cachorros diferentes), o modelo é forçado incorretamente a afastar suas representações.
+- *Custo Computacional e Batches Gigantescos*: Para garantir uma amostragem rica de negativos e estabilizar o treino, modelos contrastivos exigem mini-batches massivos (de 256 até 8192 amostras), demandando infraestruturas robustas de GPUs/TPUs e otimizadores específicos (como LARS).
+- *Desconexão entre a Tarefa Pretexto e a Tarefa Final (Downstream Task Mismatch)*: As camadas finais adaptam-se fortemente ao objetivo pretexto (ex.: prever rotação ou pareamento), o que costuma exigir o descarte da camada de projeção (*projection head*) para aproveitar apenas as representações intermediárias.
 
-=== Taxonomia das Tarefas Pretexto
+#figure(
+  image("images/A2/self-supervised-learning-spectrum.png"),
+  caption: [Espectro de métodos de Self-Supervised Learning]
+)
 
 == Constrative Learning
+A ideia do aprendizado contrastivo é utilizar de data augmentation para aproximar as representações de imagens que são *semânticamente* semelhantes e afastar as representações de imagens que são *semânticamente* diferentes. Para isso, pegamos uma imagem (original), uma versão dela aumentada (positiva) e uma versão de outra imagem (negativa). A rede neural recebe a imagem original e a versão aumentada e tenta gerar representações latentes próximas, enquanto que a representação da imagem negativa deve ser distante.
 
-=== Paradigma Constrativo
+#figure(
+  image("images/A2/contrastive-learning-illustration.png", width: 70%),
+  caption: [Ilustração do Aprendizado Contrastivo]
+)
 
-=== Framework SimCLR
+A rede é então trainada para maximizar a concordância (agreement) entre as representações de imagens *positivas* e repelir (repel) as representações de imagens *negativas*.
 
-== Aprendizado por Protótipos e Proporção de Rótulos (LLP)
+=== Simple Framework for Contrastive Learning of Visual Representations (SimCLR)
+Esse framework se baseia em $4$ componentes sequenciais. Dada uma imagem $x$, aplicamos duas transformações (uma em cada) de uma família $cal(T)$ e gero duas versões transformadas $tilde(x)_i$ e $tilde(x)_j$. Depois, passamos essas imagens em uma CNN $f(dot)$ para gerar as representações latentes $h_i = f(tilde(x)_i)$ e $h_j = f(tilde(x)_j)$. Em seguida, passamos essas representações em uma *projection head* $g(dot)$, uma pequena rede MLP com uma camada oculta e ativação não-linear ReLU que projeta $h_i$ no espaço onde a *loss contrastiva* é calculada.
+$
+  z_i = g(h_i) = W^((2)) sigma(W^((1)) h_i)
+$
 
-=== SwAV
+É intuitivo pensarmos o porquê temos que adicionar essa *projection head*. Por que não fazer a loss já dentro do espaço latente $h_i$? A ideia é que, na nossa loss, vamos *forçar* com que as representações com transformações aplicadas sejam idênticas às originais, e para isso, utilizamos justamente a projection head para que a rede aprenda a perder informações irrelevantes para a tarefa de classificação. No entanto, posteriormente, podemos *descartar* a projection head e utilizar apenas o espaço latente $h_i$ para as tarefas downstream.
 
-=== Prototypical Contrastive Learning com Proporções de Classes
+#figure(
+  image("images/A2/simclr-architecture.png", width: 70%),
+  caption: [Arquitetura do SimCLR]
+)
+
+#figure(
+  image("images/A2/simclr-cycle.png", width: 60%),
+  caption: [Ciclo do SimCLR]
+)
+
+A transformação inicial $cal(T)$ é composta por três augmentations simples sequenciais:
++ *Random Crop*: recorta aleatoriamente uma região da imagem e redimensiona para o tamanho original.
++ *Random Color Distortion*: aplica distorções de cor aleatórias, como ajuste de brilho, contraste, saturação e matiz.
++ *Random Gaussian Blur*: aplica um desfoque gaussiano aleatório à imagem, simulando variações de foco.
+
+Nesse cenário, utilizamos a *Normalized Temperature-Scaled Cross Entropy Loss (NT-Xent)*, que é uma loss contrastiva baseada na entropia cruzada. Para um mini-batch de tamanho $N$, temos $2N$ amostras (cada imagem original gera duas amostras transformadas). As outras $2(N-1)$ amostras são tratadas como *negativas*. A loss para uma amostra positiva $(i,j)$ é definida como:
+$
+  cal(l)_(i j) = -log (exp("sim"(z_i, z_j) / tau) / (sum_(k=1)^(2N) II_[k != i] exp("sim"(z_i, z_k) / tau)))
+$
+onde $"sim"$ representa a similaridade entre os vetores $z_i$ e $z_j$, tipicamente calculada como a similaridade cosseno, e $tau$ é um hiperparâmetro de temperatura que controla a suavidade da distribuição de probabilidade. A loss final é a média sobre todos os pares positivos no mini-batch:
+$
+  L = 1/(2N) sum_(k=1)^N [cal(l)_(2k-1, 2k) + cal(l)_(2k, 2k-1)]
+$
+
+A lógica nessa loss, é que ao minimizar a loss, estamos maximizando a *similaridade* entre *representações positivas* e, por consequência, o *denominador* da loss, que representa a soma das similaridades entre a amostra positiva e todas as amostras negativas, é minimizado. Ou seja, estamos maximizando a *discrepância* entre *representações negativas*.
+
+=== Aprendizado por Protótipos e Proporção de Rótulos (LLP)
+Agora vamos pensar no cenário onde não temos os valores de rótulos das imagens, mas sabemos a proporção de cada classe dentro de um conjunto de imagens. Por exemplo, temos um conjunto de imagens com $1000$ imagens, e sabemos que $30%$ são cachorros, $50%$ são gatos e $20%$ são pássaros. A ideia é que, mesmo sem saber quais imagens são de qual classe, podemos utilizar essa informação para guiar o aprendizado da rede neural.
+
+A ideia inicial já vimos, utilizar de *contrastive learning* para aprender boas representações latentes das imagens. No entanto, o SimCLR necessita de batches enormes e não cria grupos, só afasta ou aproxima as representações. É aí que entra a nova abordagem do SwAV.
+
+#figure(
+  image("images/A2/swav-illustration.png"),
+  caption: [Ilustração do Aprendizado por Protótipos e Proporção de Rótulos (SwAV)]
+)
+
+Em vez de apenas as features, o SwAV utiliza de *protótipos*. Utilizamos $K$ protótipos $C = {c_1,...,c_K}$. O modelo aprende que as duas versões da mesma imagem devem cair no mesmo protótipo.
+
+#figure(
+  image("images/A2/simclr-vs-swav.png"),
+  caption: [SimCLR v.s SwAV]
+)
+
+O modelo SwAV consiste em um algoritmo de 5 passos:
+
+#figure(
+  image("images/A2/data-augmentation.png", width: 50%),
+  caption: [Highlight da parte de Data Augmentation do SwAV]
+)
+
+- *Data Augmentation*: Para cada imagem $x$, aplicamos duas transformações aleatórias $tilde(x)_1$ e $tilde(x)_2$ da família de augmentations $cal(T)$, gerando duas versões aumentadas da mesma imagem.
+
+#figure(
+  image("images/A2/projections.png", width: 50%),
+  caption: [Hightlight da parte de Projeções do SwAV]
+)
+
+- *Extração de Features*: Extraímos as features das imagens aumentadas utilizando uma CNN $f(dot)$, resultando em representações latentes $h_1 = f(tilde(x)_1)$ e $h_2 = f(tilde(x)_2)$. Como comportamente desejável, também tentamos limitar os valores das features pra ficarem dentro da esfera unitária.
+
+#figure(
+  image("images/A2/prototypes.png", width: 50%),
+  caption: [Hightlight da parte de Prototypes do SwAV]
+)
+
+- *Formação de Protótipos*: Utilizamos as representações latentes para formar protótipos usando de *transporte ótimo*. Dadas $B$ amostras $z_1, z_2, ..., z_B$, e os $K$ protótipos $c_1,...,c_K$, defina a matriz $Z$ onde a $j$-ésima coluna é a representação latente $z_j$ e a matriz $C$ onde a $k$-ésima coluna é o protótipo $c_k$, então $C^T Z in RR^(K times B)$ guarda as *similaridades cosseno*. Com isso definido, precisamos de uma matriz $Q in RR^(K times B)$ que responda a seguinte pergunta: _Qual protótipo é o mais próximo de cada amostra?_ Para isso, definimos a seguinte otimização:
+  $
+    Q^* = "argmax"_(Q in cal(Q)) "Tr"(Q^T C^T Z) + epsilon H(Q)
+  $
+  o traço faz com que pesos maiores sejam assinalados para similaridades maiores, e a entropia faz com que a distribuição de pesos seja mais uniforme. Também limitamos os valores que $Q$ pode assumir:
+  $
+    cal(Q) = {Q in RR^(K times B) | Q 1_B = 1/K 1_K, Q^T 1_K = 1/B 1_B}
+  $
+  ela obriga as amostras a se dividirem igualmente entre os protótipos. Sem ela, a solução trivial seria todo mundo no mesmo cluster. $epsilon$ controla o quanto a entropia vai suavizar a distribuição de pesos. A otimização é feita utilizando o algoritmo *Sinkhorn-Knopp* e da uma solução *aproximada fechada* para a matriz $Q$
+  $
+    Q^* = "diag"(u) exp(C^T Z / epsilon) "diag"(v)    \
+
+    "diag"(u) = Q 1_B wide "diag"(v) = Q^T 1_K
+  $
+  É nessa etapa que utilizamos das *proporções dos rótulos* para contribuir no aprendizado. Implementamos isso *modificando a restrição de equipartição*. Definimos o vetor $w$ que tem as proporções de cada classe e modificamos a restrição de equipartição para:
+  $
+    cal(C) = {Q in RR^(K times B) | Q 1_B = w, Q^T 1_K = 1/B 1_B}   \
+
+    w = (w_1, w_2, ..., w_K)^T wide sum_(k=1)^K w_k = 1
+  $
+  a ideia é que os clusters gerados vão ser proporcionais aos rótulos que temos e podemos associar cada cluster a uma classe específica com base na proporção.
+
+#figure(
+  image("images/A2/loss-swav.png", width: 50%),
+  caption: [Hightlight da parte de Loss do SwAV]
+)
+
+- *Swapped Prediction*: Cada view que geramos vai tentar prever o code da outra. A ideia é que, se $z_t$ e $z_s$ são duas views da mesma imagem, então a distribuição de protótipos $q_t$ e $q_s$ devem ser semelhantes. Definimos então a probabilidade de que a view $z_t$ pertença ao protótipo $c_k$ como:
+  $
+    p_(t k) = PP(z_t in c_k) = exp(z_(t)^T c_k \/ tau) / (sum_(k') exp(z_(t)^T c_k' \/ tau))
+  $
+  e a swapped loss como
+  $
+    cal(l) (z_t, q_s) = - sum_(k=1)^K q_(s k) log p_(t k)   \
+
+    L = 1/B sum_(b=1)^B [cal(l) (z_t, q_s) + cal(l) (z_s, q_t)]
+  $
+
+- *Otimização*: O último passo é otimizar a loss final $L$
 
 == Aprendizado com Rótulos Ruidosos
+
 
 === Problema da Anotação Imperfeita em Redes Profundas
 
