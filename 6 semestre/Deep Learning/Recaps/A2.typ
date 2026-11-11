@@ -1034,3 +1034,126 @@ $
   kind: "algorithm",
   supplement: "Algoritmo"
 )
+
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Self-Attention
+]
+
+#pagebreak()
+
+== Introdução
+Um conceito amplamente estudado pela psicologia é a capacidade que o ser humano tem de *prestar atenção apenas naquilo que lhe interessa*. Um belo exemplo já documentado é o *Efeito Coquitel* (cocktail effect), onde em uma festa com muito barulho, conseguimos prestar atenção em uma conversa específica e ignorar o resto.
+
+Com base nesse conceito de atenção, será que conseguimos fazer com que redes neurais consigam prestar atenção apenas em informações relevantes para uma determinada tarefa? A resposta é sim, e é aí que entra o conceito de *Self-Attention*. Resumidamente, podemos definir a atenção como *um conjunto de pesos que diz o quanto cada parte da entrada importa*.
+
+No entanto, a atenção vai muito além, por conta do que chamamos de *contexto*. Dependendo de *o que está no input* e *como está organizado*, os pesos associados para cada parte da entrada pode mudar. Vamos tomar como exemplo a frase _"I swam across the river to get to the other side of the bank"_. A nossa tarefa é classificar qual é o significado da palavra _bank_ na frase. A palavra _bank_ pode significar _banco_ ou _margem do rio_, e para descobrir qual é o significado correto, precisamos olhar para o contexto da frase.
+
+#figure(
+  image("images/A2/self-attention-illustration.png", width: 90%),
+  caption: [Ilustração do Self-Attention]
+)
+
+Nesse caso, podemos ver como as palavras _swam_ e _river_ são mais importantes para determinar o significado da palavra _bank_, enquanto que as palavras _get_ e _other_ são menos importantes. Ou seja, a atenção é *contextual*, e depende de *o que está no input* e *como está organizado*.
+
+Outro bom exemplo é a utilização de mecanismos de atenção em *séries temporais*. Dada uma série temporal ruidosa $x = [x_1, x_2, ..., x_n]$, $w=[w_j]$ é um vetor de pesos e queremos utilizar do mecanismo de atenção para *remover a influência dos ruídos*. Para isso, podemos modificar nossos pesos de forma que, quanto mais distante esteja o valor da série do meu $i$ atual, menor sua influência
+
+#figure(
+  image("images/A2/self-attention-time-series.png", width: 100%),
+  caption: [Ilustração do Self-Attention em séries temporais]
+)
+
+== Self Attention para Processamento de Linguagem Natural
+A ideia aqui é de transformar nossas palavras em uma representação vetorial, que permite realizar operações e comparações. Por um exemplo, nessa forma vetorial, poderiamos fazer algo do tipo:
+$
+  "King" - "Man" + "Woman" = "Queen"
+$
+Melhor ainda, utilizando dessas representações vetoriais, podemos aplicar operações para contribuir com *mais contexto* para minha palavra. Vamos tomar por exemplo as seguintes frases:
+- _A manga da minha camisa sujou_
+- _Tirei uma manga do pé ontem e comi na salada de frutas_
+
+Aqui, se transformássemos manga em uma representação vetorial, ela seria a mesma para as duas frases. No entanto, o contexto da frase é diferente, e a palavra _manga_ tem significados diferentes. Então utilizando de pesos e operações entre as representações vetoriais de cada uma das palavras, seria possível obter uma representação vetorial diferente para cada uma das palavras _manga_ dependendo do contexto da frase. Nesse cenário, por exemplo, o peso que liga _manga_ com _camisa_ sera *muito forte*, pois a palavra manga contribui para indicar o significado da palavra _manga_ na frase.
+
+Dentro dos nossos mecanismos, precisamos de uma ferramenta para medir a similaridade entre o embedding de duas palavras. Para isso, vamos utilizar do produto escalar (dot product) entre os embeddings das palavras. A intuição aqui é que o *tamanho* do vetor indica a força semântica dele, enquanto a direção indica o significado. Se dois vetores são grandes e estão próximos, o seu produto interno vai ser grande, e o contrário se eles forem muito diferentes.
+
+=== Mecanismo Inicial
+Vamos imaginar um mecanismo bem básico dado tudo que falamos. Vamos pensar numa frase com $4$ palavras (podem ser $n$). Eu quero saber o peso de importância para o significado da *palavra $3$* na frase (que foi transformada no vetor $v_3$), ela é a chamada *query*. Eu faço então o produto interno com cada uma das outras palavras da frase (que foram transformadas nos vetores $v_1$, $v_2$, $v_3$ e $v_4$), que são as chamadas *keys*. O resultado do produto interno é um vetor de pesos não normalizados $s = [s_1,...,s_4]$. Eu então normalizo esses pesos (com a normalização $"softmax"$) para que fiquem entre $0$ e $1$ e somem $1$.
+
+#figure(
+  image("images/A2/self-attention-mechanism.png", width: 60%),
+  caption: [Ilustração do mecanismo inicial de Self-Attention]
+)
+
+Então fazemos uma multiplicação entre pesos normalizados e os vetores das palavras (que são as chamadas *values*), e somamos o resultado. O resultado final é um vetor que representa a palavra $3$ com mais contexto, pois ele leva em consideração o significado das outras palavras da frase.
+
+Resumidamente e de forma mais matemática e genérica, podemos resumir dessa forma:
++ Conjunto de embeddings de palavras: $V={v_1,...,v_n}$
++ Palavra de interesse: $v_i$
++ Fazemos o produto interno de $v_i$ com cada um dos embeddings (inclusive o próprio embedding da query) de palavras:
+  $
+    S_i = (s_(i 1),...,s_(i n): s_(i j) = v_i^T v_j)
+  $
++ Pegamos os pesos gerados e normalizamos:
+  $
+    W_i = (w_(i 1),...,w_(i n): w_(i j) = exp(s_(i j)) / (sum_(k=1)^n exp(s_(i k))))
+  $
++ Geramos os novos embeddings contextualizados a partir dos pesos
+  $
+    y_i = sum_(j=1)^n w_(i j) v_j
+  $
+
+Algo interessante de fazermos nesse momento é formalizar isso tudo em notações matriciais! Isso vai ajudar a gente a entender todos os conceitos mais complexos e notações matemáticas posteriores.
+
+Se nosso conjunto de embeddings de palavras é $V={v_1,...,v_n}$, podemos organizar esses vetores em uma matriz $V in RR^(n times d)$, onde cada linha é um embedding de palavra. Com essa notação, podemos obter uma matriz $S$ tal que:
+$
+  S = V V^T =
+
+  mat(
+    -,v_1^T,-;
+    ,dots.v,-;
+    -,v_n^T,-
+  )
+
+  mat(
+    |,,|;
+    v_1,...,v_n;
+    |,,|
+  )
+
+  =
+
+  mat(
+    v_1^T v_1,...,v_1^T v_n;
+    dots.v,dots.down,dots.v;
+    v_n^T v_1,...,v_n^T v_n
+  )
+
+  =
+
+  mat(
+    s_(1 1),...,s_(1 n);
+    dots.v,dots.down,dots.v;
+    s_(n 1),...,s_(n n)
+  )
+$
+
+Dessa forma, a matriz $S$ é uma matriz de similaridade entre os embeddings das palavras. Cada elemento $s_(i j)$ representa a similaridade entre a palavra $i$ e a palavra $j$ e a linha $k$ da matriz $S$ representa a similaridade da palavra $k$ com todas as palavras da frase (com ela mesma inclusa). Depois aplicamos $"softmax"$ na matriz $S$ para obter a matriz de pesos $W$ (linha a linha).
+$
+  W = mat(
+    w_(1 1),...,w_(1 n);
+    dots.v,dots.down,dots.v;
+    w_(n 1),...,w_(n n)
+  )
+$
+Por fim, obtemos as novas representações enriquecidas com contexto multiplicando a matriz de pesos $W$ pela matriz de embeddings $V$:
+$
+  Y = W V
+$
+onde a linha $i$ de $Y$ é $y_i^T = sum_(j=1)^n w_(i j) v_j^T$
+
+Perceba, no entanto, o problema desse mecanismo inicial. Ele não possui *pesos aprendíveis*, ou seja, não permite que minha máquina aprenda!
+
+== Mecanismo Aprendível
+Perceba que nesse nosso mecanismo, tanto os *values*, quanto os *keys* e as *queries* são os mesmos embeddings das palavras. Mas seria interessante que a máquina conseguisse modificar todos esses valores de acordo com o que ela aprendeu. Para isso, vamos criar três matrizes de pesos aprendíveis $M_Q$, $M_K$ e $M_V$, além de renomear a nossa matriz de embeddings $V$ para $X$. Dessa forma, podemos definir:
