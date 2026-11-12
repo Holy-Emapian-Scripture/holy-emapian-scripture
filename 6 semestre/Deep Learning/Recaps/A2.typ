@@ -1155,5 +1155,115 @@ onde a linha $i$ de $Y$ é $y_i^T = sum_(j=1)^n w_(i j) v_j^T$
 
 Perceba, no entanto, o problema desse mecanismo inicial. Ele não possui *pesos aprendíveis*, ou seja, não permite que minha máquina aprenda!
 
-== Mecanismo Aprendível
-Perceba que nesse nosso mecanismo, tanto os *values*, quanto os *keys* e as *queries* são os mesmos embeddings das palavras. Mas seria interessante que a máquina conseguisse modificar todos esses valores de acordo com o que ela aprendeu. Para isso, vamos criar três matrizes de pesos aprendíveis $M_Q$, $M_K$ e $M_V$, além de renomear a nossa matriz de embeddings $V$ para $X$. Dessa forma, podemos definir:
+=== Mecanismo Aprendível
+Perceba que nesse nosso mecanismo, tanto os *values*, quanto os *keys* e as *queries* são os mesmos embeddings das palavras. Mas seria interessante que a máquina conseguisse modificar todos esses valores de acordo com o que ela aprendeu. Para isso, vamos criar três matrizes de pesos aprendíveis $M_Q in RR^(d times d)$, $M_K in RR^(d times d)$ e $M_V in RR^(d times d)$, além de renomear a nossa matriz de embeddings $V$ para $X$. Dessa forma, podemos definir as matrizes das seguintes formas:
+- *Queries*: $Q = X M_Q$
+- *Keys*: $K = X M_K$
+- *Values*: $V = X M_V$
+Aplicando essas matrizes de peso, conseguimos fazer com que nosso modelo possa aprender o que é mais importante para o contexto da palavra, e não apenas utilizar do embedding da palavra como estava sendo feito anteriormente. A partir disso, podemos reescrever a equação de atenção como:
+$
+  S = Q K^T = X M_Q M_K^T X^T   \
+
+  W = "softmax"(S / sqrt(d))   \
+
+  Y = W V = "softmax"(S / sqrt(d)) X M_V
+$
+Aqui, o fator $1/sqrt(d)$ é utilizado para evitar que os valores do produto interno fiquem muito grandes, o que poderia prejudicar a normalização com $"softmax"$ e o gradiente na hora de treinar o modelo.
+
+#figure(
+  image("images/A2/self-attention-learnable.png", width: 60%),
+  caption: [Ilustração do mecanismo de Self-Attention Aprendível]
+)
+
+A ideia de duas matrizes de pesos diferentes, é que a matriz de *keys* e a matriz de *queries* podem aprender diferentes representações da mesma palavra, dependendo do contexto. Por exemplo, em uma frase, podemos ter a palavra _ferramenta_ e a palavra _martelo_. A palavra _martelo_ está *fortemente* ligada com a palavra ferramenta, mas a palavra _ferramenta_ pode não está tão fortemente ligada, pois existem *vários tipos de ferramenta*. Ou seja, não temos uma relação de pesos *simétrica*, e é por isso que precisamos de duas matrizes de pesos *diferentes*, de forma que $S$ não seja simétrica.
+
+=== Multihead Self Attention
+Quando estamos tratando de *linguagem natural*, é muito normal que, dentro de uma frase, a mesma palavra esteja associada de *formas diferentes* com a *mesma palavra*. Vamos pegar por exemplo a frase _"She had already eaten the apple"_. Para se ter uma boa representação de *eaten*, temos que prestar atenção em *duas coisas*:
+- A relação gramatical ligada ao tempo verbal _had_ (junto com _eaten_, indica passado perfeito, uma ação que aconteceu antes de outra ação no passado);
+- A relação semântica ligada ao objeto _apple_ (o que foi comido);
+
+Só que isso são dois padrões distintos que dão pesos diferentes à palavras diferentes. O que fazer então? Se lembra que em redes convolucionais, utilizávamos vários filtros para características diferentes? Um para narizes, outro para bocas, e assim vai? Aqui é a mesma ideia, vamos utilizar *mútiplas* "cabeças" de atenção, cada uma com seus próprios pesos aprendíveis. Suponha que tenhamos $H$ cabeças de atenção indexadas de $h=1,...,H$ da seguinte forma:
+$
+  H_h = "Attention"(Q_h, K_h, V_h) = "Softmax"((Q_h K_h^T) / sqrt(d)) V_h   \
+$
+
+Aqui porém, nós geramos uma única matriz concatenada de todas as nossas cabeças de atenção, e aplicamos uma matriz de pesos aprendível $M_O$ para gerar a saída final:
+$
+  Y = "Concat"(H_1,...,H_H) M_O
+$
+onde temos que $"Concat"(H_1,...,H_H) in RR^(N times H dot d)$, $M_O in RR^(H dot d times d)$, logo, $Y in RR^(N times d)$
+
+#figure(
+  image("images/A2/multihead-self-attention.png", width: 50%),
+  caption: [Concatenação para obter $Y$]
+)
+
+== Transformers
+Introduzidos no famoso paper do Google _"Attention is All You Need"_, traz uma arquitetura de modelo desenvolvido para *tradução de textos*. A arquitetura é composta de dois blocos principais, o *encoder* e o *decoder*. O encoder é responsável por gerar uma representação vetorial do texto de entrada, enquanto o decoder é responsável por gerar a tradução do texto de entrada para o texto de saída. Na @transformer-architecture, o bloco da esquerda é o *encoder* e o da direita é o *decoder*. Em ambos os blocos é utilizada das camadas de *multihead attention*. Dando um focono encoder, podemos ver algumas branches residuais, que, como já discutimos anteriormente, ajudam a evitar o problema de *vanishing gradient*. Algo interessante de se notar é que ao receber os embeddings do input, aplicamos nele o chamado *positional encoding*, que é uma forma de adicionar informação de posição para o modelo, pois, como já discutimos, a atenção é *contextual*, e a posição das palavras na frase é importante para o significado da frase. Fazemos algo como:
+$
+  v'_i = v_i + p_i
+$
+onde $v_i$ é o embedding da palavra $i$ e $p_i$ é o encoding de posição da palavra $i$. Existem várias formas de se definir $p_i$, pode ser uma função fixa, pode ser aprendido, ou até *ignorado*.
+
+#figure(
+  image("images/A2/transformer-architecture.png", width: 60%),
+  caption: [Arquitetura do Transformer]
+)<transformer-architecture>
+
+Já o decoder segue a mesma linha, no entanto, ele recebe os outputs anteriores e, no final, retorna as probabilidade de qual será a próxima palavra a ser adicionada na frase. Ele também utiliza de *multihead attention*, mas com uma diferença, ele utiliza de *masked attention*, que é uma forma de impedir que o modelo olhe para as palavras futuras na hora de gerar a próxima palavra. Isso é feito para evitar *vazamento de informação*.
+
+== Transformers vão substituir RNNs?
+Podemos citar logo de cara algumas limitações que as RNNs possuem e que os Transformers não possuem:
+- *Paralelização*: RNNs são sequenciais, ou seja, para processar a palavra $i$, precisamos processar todas as palavras anteriores. Já os Transformers podem processar todas as palavras de uma vez, o que permite uma paralelização muito maior.
+- *Longo Alcance*: RNNs possuem dificuldade em capturar dependências de longo alcance, ou seja, quando a palavra $i$ depende de uma palavra muito distante na frase. Já os transformers, dado poder computacional suficiente, teoricamente, tem uma janela de captura de dependência *infinita*, ou seja, a palavra $i$ pode depender de qualquer palavra na frase, independente da distância.
+
+Ainda podemos utilizar de RNNs em tarefas menores, mas para tarefas maiores e mais complexas, os Transformers trazem muitas vantagens em cima das RNNs.
+
+== Stand-Alone Self Attention
+Introduzido no paper _"Stand-Alone Self-Attention in Vision Models"_, o Stand-Alone Self Attention (SASA) é um novo tipo de camada desenvolvida para *visão computacional*. Vimos em CNNs que, para capturar dependências espaciais que estão, de certa forma, distantes, utilizamos algumas gambiarras, como as atrous convolutions, que aumentam o tamanho do campo receptivo sem aumentar o número de parâmetros. No entanto, isso não é suficiente para capturar dependências espaciais mais complexas. O SASA utiliza de *multihead self attention* para capturar dependências espaciais de forma mais eficiente.
+
+Vamos dar uma revisada rapidinho em como funciona a convolução em si. Dado um input (imagem) $V in RR^(H times W times d_"in")$ e um filtro $W in RR^(k times k times d_"in")$, o output $y_(i j) in RR$ é dado por
+$
+  y_(i j) = sum_(|a-i| <= floor(k/2), |b-j| <= floor(k/2)) W_(i - a, j-b)^T V_(a b)
+$
+
+#figure(
+  image("images/A2/convolution.png", width: 80%),
+  caption: [Ilustração da convolução]
+)
+
+A convolução faz isso para todo $i$ e $j$.
+
+#figure(
+  image("images/A2/convolution-2.png", width: 80%),
+  caption: [Ilustração da convolução]
+)
+
+Em texto, todas as palavras podem se relacionar com as outras, mas aqui, nós vamos selecionar apenas uma região $k times k$ para cada pixel $v_(i j) in RR^(d_"in")$. Chamamos essa região de *bloco de memória* e denotamos como $cal(N)_k (i,j)$. Definimos então a saída $y_(i j) in RR^(d_"out")$ como:
+$
+  y_(i j) = sum_((a, b) in cal(N)_k (i,j)) "softmax"(Q_(i j)^T K_(a b)) V_(a b)    \
+
+  Q_(i j) = W_Q^T v_(i j)    \
+
+  K_(a b) = W_K^T v_(a b)    \
+
+  V_(a b) = W_V^T v_(a b)
+$
+
+onde $W_Q, W_K, W_V in RR^(d_"in" times d_"out")$.
+
+No entanto, na fórmula acima, a soma sobre a janela não sabe onde cada vizinho está. Se você embaralhar os pixels da janela, *o resultado é o mesmo*. Uma convolução não tem esse problema, porque cada posição da janela tem o seu próprio peso. Por isso é preciso informar a posição de alguma forma. A solução é então adicionar um termo $p_(a-i,b-j)$ que depende da posição relativa do pixel vizinho $(a,b)$ em relação ao pixel central $(i,j)$. A equação final fica então:
+$
+  y_(i j) = sum_((a,b) in cal(N)_k (i,j)) "softmax"[Q_(i j)^T (K_(a b) + p_(a-i,b-j))] V_(a b)
+$
+
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Visual Foundation Models (Visual FM)
+]
+
+#pagebreak()
+
+
