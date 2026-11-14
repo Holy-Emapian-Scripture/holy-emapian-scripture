@@ -66,6 +66,9 @@
     it
   }
 }
+#set heading(
+  supplement: "Seção",
+)
 
 
 // ============================ PRIMEIRA PÁGINA =============================
@@ -768,7 +771,7 @@ A lógica nessa loss, é que ao minimizar a loss, estamos maximizando a *similar
   supplement: "Algoritmo"
 )
 
-=== Aprendizado por Protótipos e Proporção de Rótulos (LLP)
+=== Aprendizado por Protótipos e Proporção de Rótulos (LLP) <llp>
 Agora vamos pensar no cenário onde não temos os valores de rótulos das imagens, mas sabemos a proporção de cada classe dentro de um conjunto de imagens. Por exemplo, temos um conjunto de imagens com $1000$ imagens, e sabemos que $30%$ são cachorros, $50%$ são gatos e $20%$ são pássaros. A ideia é que, mesmo sem saber quais imagens são de qual classe, podemos utilizar essa informação para guiar o aprendizado da rede neural.
 
 A ideia inicial já vimos, utilizar de *contrastive learning* para aprender boas representações latentes das imagens. No entanto, o SimCLR necessita de batches enormes e não cria grupos, só afasta ou aproxima as representações. É aí que entra a nova abordagem do SwAV.
@@ -1266,4 +1269,173 @@ $
 
 #pagebreak()
 
+== Introdução
+Foundation Models são modelos de aprendizado bem definidos com algumas características:
+- Pré-treinados em diferentes tipos de bancos não-rotulados;
+- Estratégias de Aprendizado Auto-Supervisionado;
+- Deriva representações generalizadas de dados para tarefas de downstream;
 
+Com isso definido, os *Visual Foundation Models* são modelos de foundation focados em produzir representações generalizadas de *dados visuais* para tarefas de downstream (classificação de imagens, detecção de objetos, etc) e tarefas pixel-level (segmentação de imagens, segmentação de instâncias, etc).
+
+== Vision Transformer Backbone
+=== Vision Transformer
+Utiliza uma arquitetura *muito* similar ao *transformer*, mas adaptado para o contexto de imagens.
+
+#figure(
+  image("images/A2/vision-transformer.png", width: 90%),
+  caption: [Arquitetura do Vision Transformer]
+)<vision-transformer-architecture>
+
+Aqui, dividimos a imagem em *patches* (pequenos blocos da imagem, normalmente $16 times 16$) e transformamos cada patch em um vetor de características. Alternativamente, também podemos utilizar, em vez da imagem em si, feature maps finais de uma CNN que roda antes do Vision Transformer. Os vetores então são projetados e passam por uma camada de position embedding para adicionar informação de posição. Além disso, um embedding de *classe* é adicionado. Ele é como um vetor qualquer, inicialmente pode ser associado com uma *página em branco*. Conforme ele vai tendo as informações combinadas com os outros vetores na camada de self-attention, ele vai aprendendo a representar a *classe* da imagem. Por fim, o vetor de classe é passado por uma *camada linear* para gerar a predição final (os outros vetores, nessa tarefa, não importam).
+
+==== Fine-tuning de um ViT pré-treinado
+Ainda olhando a @transformer-architecture, podemos ver que, após a camada do encoder transformer, temos uma *MLP head* que gera a predição final. Para *fine-tuning*, podemos simplesmente substituir essa MLP head por uma nova MLP head sem nenhum treino, com o número de classes da nossa tarefa de downstream. A ideia é que o *ViT backbone* já aprendeu a gerar representações generalizadas da imagem, então precisamos apenas retreinar o modelo com um parâmetro de aprendizado menor para que ele se adapte à nossa tarefa de downstream.
+
+==== Imagens de Alta Resolução
+Para imagens de alta resolução, podemos simplesmente manter o tamanho dos patches, o que vai acontecer é que a sequência de patches vai ser maior, e o *ViT backbone* vai ter que lidar com mais informações. No entanto, isso não é um problema, pois o *ViT backbone* é capaz de lidar com qualquer tamanho de sequência (limitado apenas por questões de hardware).
+
+=== Shifted Window Vision Transformer (Swin Transformer)
+Em backbones comuns, as camadas de features são *hierárquicas*, ou seja, cada camada a resolução das features vai diminuindo, e a quantidade de canais vai aumentando. Isso traz uma consequência ruim quando aplicado para o modelo ViT:
+
+Imagine que vamos fazer classificação de imagens. Se nossa imagem tem tamanho $256 times 256$ e dividimos ela em patches de tamanho $16 times 16$, vamos ter $16 times 16 = 256$ patches, ou seja, $256$ tokens de entrada para o modelo. Se aumentamos a resolução para $1920 times 1920$, vamos ter $120 times 120 = 14400$ patches, ou seja, $14400$ tokens de entrada para o modelo. Perceba que isso é bastante coisa, mas é razoável. No entanto, imagine o cenário de *segmentação semântica*, cada pixel da imagem precisa ser classificado, então a saída do modelo precisa ter o mesmo tamanho da entrada. Se nossa entrada tem tamanho $256 times 256$, a saída do modelo precisa ter tamanho $256 times 256$, ou seja, $65536$ pixels. Se aumentamos a resolução para $1920 times 1920$, a saída do modelo precisa ter tamanho $1920 times 1920$, ou seja, $3686400$ pixels. Esse aumento de tamanho da saída dificulta *muito* a aplicabilidade do ViT backbone para tarefas de segmentação semântica, pois o modelo precisa lidar com uma quantidade muito maior de informações.
+
+Não só isso, como em backbones comuns, o fato de ocorrer a diminuição da resolução da imagem torna inviável o uso do ViT para tarefas com alta densidade de informação, como segmentação semântica, pois a saída do modelo precisa ter o mesmo tamanho da entrada.
+
+É aqui que entra a nova arquitetura, o Swin Transformer. Ele é um backbone hierárquico. Ele mantém a resolução da imagem, e vai criando feature maps hierárquicos modificando o tamanho dos patches da imagem, unificando os patches das camadas anteriores.
+
+#figure(
+  image("images/A2/swin-transformer.png", width: 90%),
+  caption: [Arquitetura do Swin Transformer]
+)
+
+#figure(
+  image("images/A2/swin-transformer-architecture.png", width: 90%),
+  caption: [Arquitetura do Swin Transformer]
+)<swin-transformer-architecture>
+
+Na @swin-transformer-architecture, vamos analisar o primeiro estágio. Suponha uma imagem RGB $8 times 8 times 3$, após o _*Patch Partition*_, vamos dividir a imagem em patches de tamanho $4 times 4$. Pela equação descrita também na @swin-transformer-architecture, $W/4 = 8/4 = 2$, ou seja, cabem $2$ patches na largura e na altura da imagem. Como o patch tem tamanho $4 times 4 times 3$, são no total $48$ números. Os tokens gerados desses $48$ números ficam organizados ainda na grade $4 times 4$ do patch.
+
+#figure(
+  image("images/A2/swin-transformer-patch-partition.png", width: 90%),
+  caption: [Ilustração do Patch Partition do Swin Transformer]
+)
+
+Depois aplicamos um *linear embedding*, que é uma camada linear que transforma o vetor de $48$ números em um vetor de $C$ números, onde $C$ é o número de canais da feature map.
+
+#figure(
+  image("images/A2/swin-transformer-linear-embedding.png", width: 90%),
+  caption: [Ilustração do Linear Embedding do Swin Transformer]
+)
+
+Após o embedding, aplicamos o *Swin Transformer Block*, que é composto por duas camadas de *multihead self attention* e duas camadas de *MLP*. A diferença é que a primeira camada de *multihead self attention* é aplicada em *janelas* (windows) da feature map, enquanto a segunda camada é aplicada em *janelas deslocadas* (shifted windows).
+
+No Swin, o mapa de tokens é dividido em janelas (windows) de $M times M$ tokens, sem sobreposição, e a atenção é calculada separadamente dentro de cada janela. Para uma janela com $M^2$ tokens, com $Q,K,V in RR^(M^2 times d)$ (uma linha por token):
+
+$
+  "Attention"(Q,K,V)="softmax"((Q K^top)/(sqrt(d)))V
+$
+
+Os pesos $M_Q$, $M_K$, $M_V$ (e as cabeças) são os mesmos para todas as janelas. Só os tokens que participam de cada conta mudam. Os tipos que comentei antes nada mais são que
+- *Window-based Multihead Self Attention (W-MSA)*: atenção calculada dentro de cada janela;
+- *Shifted Window-based Multihead Self Attention (SW-MSA)*: atenção calculada dentro de uma janela deslocada;
+
+#figure(
+  image("images/A2/swin-transformer-block.png", width: 40%),
+  caption: [Ilustração do Swin Transformer Block]
+)
+
+Depois de aplicar esse bloco, enviamos para a próxima camada, que recebe a feature map e aplcia o *Patch Merging*, que é uma forma de reduzir a resolução da feature map e aumentar o número de canais. Tome o mapa de tokens $8 times 8 times C$: uma grade $8 times 8$, em que cada posição tem um vetor de $C$ números. Dividir a grade em blocos de $2 times 2$ tokens vizinhos (as linhas vermelhas do slide). Como $8/2=4$, sobram $4 times 4=16$ blocos. Dentro de cada bloco, pegar os 4 vetores (cada um com $C$ números) e concatená-los num vetor só, com $4C$ números. Passar cada vetor de $4C$ por uma camada linear que o reduz para $2C$ números (o artigo coloca uma LayerNorm antes). O resultado é uma grade $4 times 4$ em que cada posição tem um vetor de $2C$ números, ou seja, $4 times 4 times 2C$. Então cada merging joga fora metade dos números, mas de forma aprendida (a camada linear decide o que manter), e não simplesmente descartando pixels.
+
+#figure(
+  image("images/A2/swin-transformer-patch-merging.png", width: 90%),
+  caption: [Ilustração do Patch Merging do Swin Transformer]
+)
+
+==== Swin U-Net
+É uma variação da Swin que utiliza de *skip connections* para recuperar a resolução dos blocos internos.
+
+#figure(
+  image("images/A2/swin-unet.png", width: 90%),
+  caption: [Arquitetura do Swin U-Net]
+)
+
+== Visual Representation Learning Models
+=== Masked Autoencoders (MAE)
+O *Masked Autoencoder* (MAE) é um modelo de aprendizado auto-supervisionado que utiliza de uma técnica bem simples, mas bastante eficaz, para gerar representações generalizadas de imagens. Dado uma imagem, dividimos ela em patches e aplicamos um *masking* aleatório, ou seja, escondemos alguns patches da imagem. O modelo então recebe apenas os patches visíveis e precisa reconstruir os patches escondidos. A ideia é que, para reconstruir os patches escondidos, o modelo precisa aprender a entender a estrutura da imagem e as relações entre os patches visíveis e escondidos.
+
+#figure(
+  image("images/A2/mae.png", width: 90%),
+  caption: [Arquitetura do Masked Autoencoder]
+)
+
+Mesmo sendo parecido com o BERT, existem alguns pontos que fazem o MAE ser muito eficiente em imagens.
+
+Para o BERT, mascarar $15%$ das palavras já faz o processo ser *bem difícil* para as previsões, mas para o MAE, mascarar $75%$ dos patches é o ideal, pois a imagem tem muito mais informação do que uma frase, e mascarar poucos patches não força o modelo a aprender a estrutura da imagem;
+
+O BERT passa todos os tokens, inclusive os [MASK], pelo mesmo encoder. O MAE separa em duas partes:
+- Encoder grande, só nos tokens visíveis: os patches escondidos nem entram nele.
+- Decoder pequeno, em todos os tokens: depois do encoder, os tokens visíveis (já codificados) são combinados com mask tokens (marcadores das posições escondidas), e o decoder usa isso para reconstruir a imagem.
+- Camada de projeção (projection layer) entre os dois, para adaptar o vetor de saída do encoder à dimensão que o decoder espera (o decoder costuma ser mais estreito que o encoder).
+
+=== Masked Siamese Networks (MSN)
+As Masked Siamese Networks (MSN) são uma variação do MAE, que utiliza de *Siamese Networks* para gerar representações generalizadas de imagens. Não só isso, como também utilizam da mesma ideia que as Swapping Assignments between Views (SwAV) apresentada na @llp.
+
+A ideia é que pegamos nossa imagem original, criamos uma versão não-modificada que é divida em patches e tem *masking* aplicado, e uma versão *augmentada* da imagem original, que é divida em patches e não tem *masking* aplicado. O modelo então recebe as duas versões da imagem e precisa gerar representações similares para os patches correspondentes das duas versões. A ideia é que, para gerar representações similares, o modelo precisa aprender a entender a estrutura da imagem e as relações entre os patches visíveis e escondidos.
+
+#figure(
+  image("images/A2/msn.png", width: 90%),
+  caption: [Arquitetura do Masked Siamese Networks]
+)
+
+== Visual Prompt Learning
+Como vimos antes, podemos pegar um modelo pré-treinado e utilizar ele em nossas downstream tasks. Com fine-tuning, utilizamos a saída no nosso modelo menor e retreinamos ele para nossa tarefa, como ele já está treinado, precisamos fazer alterações mínimas, apenas o necessário para os parâmetros se adaptarem para a nossa tarefa. No entanto, no prompt, você passa, junto da imagem, uma dica do que ela é e *não mexe nos parâmetros do modelo pré-treinado*.
+
+#figure(
+  image("images/A2/visual-prompt-learning.png", width: 60%),
+  caption: [Arquitetura do Visual Prompt Learning]
+)
+
+=== Segment Anything Model (SAM)
+Nosso objetivo é construir um Foundation Model para segmentação de imagens. Divide a tarefa em três partes:
+
+*Qual tarefa permite generalização até para imagens nunca vistas no treino?*: Segmentação de objetos com prompt, pois, com um prompt, o modelo consegue segmentar qualquer objeto na imagem, mesmo que ele nunca tenha visto aquele objeto antes;
+
+s#figure(
+  image("images/A2/sam.png", width: 90%),
+  caption: [Arquitetura do Segment Anything Model]
+)
+
+*Qual a arquitetura do modelo correspondente?*: A arquitetura é modelada para atender três requisitos:
+- Uso interativo em tempo real: o modelo é desacoplado em duas partes. Um image encoder pesado roda uma única vez por imagem (é um ViT pré-treinado com MAE). Depois, um prompt encoder e um mask decoder leves rodam em poucos milissegundos por prompt. O mesmo image embedding pode ser reaproveitado, e o custo do encoder fica amortizado entre vários prompts na mesma imagem.
+- Prompts flexíveis: permite você utilizar pontos, caixas, máscaras e texto. Os pontos e caixas passam pelo prompt encoder. Uma máscara passa por uma convolução e é somada ao image embedding.
+- Ciente de ambiguidade: para cada prompt, o SAM prevê 3 máscaras (inteiro, parte e sub-parte), cada uma com um score. Isso resolve a ambiguidade em vez de escolher uma interpretação só.
+
+#figure(
+  image("images/A2/sam-architecture.png", width: 100%),
+  caption: [Arquitetura do Segment Anything Model]
+)
+
+*Quais dados podem alimentar esse modelo?*: Utilizaram o dataset SA-1B, que contém 1 bilhão de máscaras de objetos em 11 milhões de imagens. Ele passa por três estágios de treino:
++ anotação manual assistida pelo modelo;
++ semi-automático: mistura de máscaras previstas pelo modelo com anotação assistida;
++ totalmente automático.
+
+#figure(
+  image("images/A2/sam-training.png", width: 90%),
+  caption: [Treinamento do Segment Anything Model]
+)
+
+=== Matcher
+Imagine que você possui uma imagem de referência com um objeto já marcado e outra imagem alvo, e você quer aplicar a máscara no mesmo objeto na imagem alvo. No entanto, a gente quer fazer isso *sem treinamento* e em *one-shot*.
+
+#figure(
+  image("images/A2/matcher.png", width: 90%),
+  caption: [Arquitetura do Matcher]
+)
+
+A primeira etapa gera uma matriz de corresponência entre ambas as imagens. Essa matriz então é enviada para um gerador de prompt, que gera as informaçẽos de apoio para a etapa de geração de máscara. Nessa última etapa, o prompt é utilizado para geração de várias máscaras candidatas, que são então comparadas com a matriz de correspondência para gerar a máscara final.
+
+#figure(
+  image("images/A2/matcher-example.png", width: 90%),
+  caption: [Arquitetura do Matcher]
+)

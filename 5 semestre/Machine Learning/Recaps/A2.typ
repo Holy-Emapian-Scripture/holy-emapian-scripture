@@ -679,7 +679,7 @@ Podemos ver da @convolution-representation que a feature map $C$ é menor que a 
 == Convoluções com Stride
 Além do padding, outra técnica importante em CNNs é o *stride*, que é o passo. O stride define quantos pixels o filtro se move a cada aplicação da convolução. Por exemplo, se o stride for $1$, o filtro se move um pixel de cada vez, enquanto se o stride for $2$, o filtro se move dois pixels de cada vez. O uso do stride permite que a rede aprenda padrões em diferentes escalas e resoluções, além de reduzir o tamanho da feature map resultante. Se minha imagem $I$ tem dimensões $H times W$ e o filtro $K$ tem dimensões $M times M$, e eu aplico o mesmo passo $S$ tanto verticalmente quanto horizontalmente, e eu apliquei um *padding completo*, então a dimensão do feature map será:
 $
-  floor((H+2P-M)/S -1) times floor((W+2P-M)/S -1)
+  floor((H+2P-M)/S + 1) times floor((W+2P-M)/S + 1)
 $
 
 
@@ -803,43 +803,51 @@ $
 
 #theorem("Gradiente da Imagem")[
   O gradiente da perca em relação à imagem $X$ é dado por:
-  $
-    (partial L) / (partial X_(i j)) = sum_(m=0)^(M-1) sum_(n=0)^(N-1) delta_(i-m, j-n) K_(m n)
-  $
+$
+(partial L) / (partial X_(i j)) = sum_(m=0)^(M-1) sum_(n=0)^(N-1) delta_(i-m, j-n) K_(m n)
+$
   para
-  $
-    0 <= i <= H-1 wide 0<=j<=W-1
-  $
-  ou, equivalentemente, podemos escrever de forma matricial como:
-  $
-    nabla_X L = delta * K^"flip"
-  $
-  onde $delta in RR^(H-M+1 times W-N+1)$ e $K^"flip"$ é a imagem da kernel $K$ rotacionada por 180 graus, ou seja:
-  $
+$
+    0 <= i <= H-1 wide 0 <= j <= W-1
+$
+  onde convencionamos $delta_(i j) = 0$ fora de $0 <= i <= H-M$ e $0 <= j <= W-N$.
+
+  Equivalentemente, podemos escrever de forma matricial como:
+$
+nabla_X L = tilde(delta) * K^"flip"
+$
+  onde $K^"flip"$ é a imagem do kernel $K$ rotacionada por 180 graus, ou seja:
+$
     K^"flip"_(m n) = K_(M-1-m, N-1-n)
-  $
+$
+  e $tilde(delta) in RR^((H+M-1) times (W+N-1))$ é o $delta in RR^((H-M+1) times (W-N+1))$ com $M-1$ linhas e $N-1$ colunas de zeros em cada lado, isto é, $tilde(delta)_(p q) = delta_(p-(M-1), q-(N-1))$. Aqui $*$ é a correlação cruzada da Definição 5.9.1.1.
 ]
 #proof[
   Vamos fixar uma coordenada $(a,b)$ e calcular o gradiente da perca em relação à imagem $X$ nessa coordenada. Pela regra da cadeia, temos que:
-  $
-    (partial L) / (partial X_(a b)) = sum_(i, j) (partial L) / (partial Y_(i j)) (partial Y_(i j)) / (partial X_(a b))
-  $
-  como vimos anteriormente, pela definição, temos que
-  $
-    Y_(i j) = sum_(u, v) X_(i+u, j+v) K_(u v) + "bias"
-  $
-  temos então que
-  $
-    (partial Y_(i j)) / (partial X_(a b)) = K_(a-i, b-j)
-  $
-  sempre que os índices estão no suporte do kernel. Logo,
-  $
-    (partial L) / (partial X_(a b)) = sum_(i, j) delta_(i j) K_(a-i, b-j)
-  $
-  e por que essa expressão equivale a $K^"flip"$? Pois, se definirmos $K^"flip"_(i j) = K_(M-1-i, N-1-j)$, então podemos reescrever a expressão acima como:
-  $
-    (partial L) / (partial X_(a b)) = sum_(i, j) delta_(a-i, b-j) K^"flip"_(i j)
-  $
+$
+(partial L) / (partial X_(a b)) = sum_(i, j) (partial L) / (partial Y_(i j)) (partial Y_(i j)) / (partial X_(a b)) = sum_(i, j) delta_(i j) (partial Y_(i j)) / (partial X_(a b))
+$
+  Pela definição, temos que
+$
+    Y_(i j) = sum_(u, v) X_(i+u, j+v) K_(u v) + b
+$
+  Logo, $X_(a b)$ só aparece em $Y_(i j)$ quando $i+u = a$ e $j+v = b$, isto é, $u = a-i$ e $v = b-j$, o que exige $0 <= a-i <= M-1$ e $0 <= b-j <= N-1$. Portanto
+$
+(partial Y_(i j)) / (partial X_(a b)) = K_(a-i, b-j)
+$
+  dentro desse suporte, e $0$ fora dele. Substituindo,
+$
+(partial L) / (partial X_(a b)) = sum_(i, j) delta_(i j) K_(a-i, b-j)
+$
+  Fazendo a mudança de variável $m = a-i$ e $n = b-j$, obtemos a forma do enunciado:
+$
+(partial L) / (partial X_(a b)) = sum_(m=0)^(M-1) sum_(n=0)^(N-1) delta_(a-m, b-n) K_(m n)
+$
+  Note que aqui o índice de $delta$ anda para trás enquanto o de $K$ anda para frente, e a correlação cruzada anda para frente nos dois. Para corrigir isso, fazemos $p = M-1-m$ e $q = N-1-n$. Então $K_(m n) = K^"flip"_(p q)$ e $delta_(a-m, b-n) = delta_(a-(M-1)+p, b-(N-1)+q) = tilde(delta)_(a+p, b+q)$. Logo
+$
+(partial L) / (partial X_(a b)) = sum_(p=0)^(M-1) sum_(q=0)^(N-1) tilde(delta)_(a+p, b+q) K^"flip"_(p q) = (tilde(delta) * K^"flip")_(a b)
+$
+  que é a forma matricial. Como conferência de tamanho, $tilde(delta)$ tem $H+M-1$ linhas e o kernel tem $M$, então a saída tem $(H+M-1) - M + 1 = H$ linhas, o mesmo tamanho de $X$.
 ]
 
 === Convolução com Padding e Stride
@@ -874,7 +882,7 @@ $
       ,|, , |,
     )
   $
-  esses novos $0$ são bloco de matrizes de zeros de tamanho $H times P$. Logo, temos que:
+  esses novos $0$ são bloco de matrizes de zeros de tamanho $(H+2P) times P$. Logo, temos que:
   $
     T(X) = mat(
       bold(0), M, bold(0)
@@ -1036,7 +1044,7 @@ $
 #theorem("Gradiente da Convolução Discreta 2D com padding e stride")[
   O gradiente da perca em relação ao coeficiente $K_(m n)$ é dado por:
   $
-    (partial L) / (partial K_(m n)) = sum_(i=0)^(H-M) sum_(j=0)^(W-N) delta_(i j) tilde(X)_(i dot S+m, j dot S+n)
+    (partial L) / (partial K_(m n)) = sum_(i=0)^(H'-1) sum_(j=0)^(W'-1) delta_(i j) tilde(X)_(i dot S+m, j dot S+n)
   $
   para
   $
@@ -1044,9 +1052,8 @@ $
   $
   ou, equivalentemente, podemos escrever de forma matricial como:
   $
-    nabla_K L = tilde(X) * delta
+    nabla_K L = tilde(X) * U_S (delta)
   $
-  onde $*$ denota a convolução cruzada com stride $S$
 ]
 #proof[
   Pela regra da cadeia, temos que
@@ -1070,7 +1077,7 @@ $
 #theorem("Gradiente da Entrada com Stripe")[
   Defina o operador de expansão
   $
-    U_S (delta): RR^(H times W) -> RR^((H-1) dot (S-1) + 1 times (W-1) dot (S-1) + 1)
+    U_S (delta): RR^(H' times W') -> RR^((H'-1) dot S + 1 times (W'-1) dot S + 1)
   $
   obtido inserindo $S-1$ linhas e colunas de zeros entre cada linha e coluna de $delta$. Então, o gradiente da perca em relação à imagem $X$ é dado por:
   $
