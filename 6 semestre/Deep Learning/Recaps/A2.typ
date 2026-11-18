@@ -1436,6 +1436,6 @@ Imagine que você possui uma imagem de referência com um objeto já marcado e o
 A primeira etapa gera uma matriz de corresponência entre ambas as imagens. Essa matriz então é enviada para um gerador de prompt, que gera as informaçẽos de apoio para a etapa de geração de máscara. Nessa última etapa, o prompt é utilizado para geração de várias máscaras candidatas, que são então comparadas com a matriz de correspondência para gerar a máscara final.
 
 #figure(
-  image("images/A2/matcher-example.png", width: 90%),
+  image("images/A2/matcher-example.png", width: 70%),
   caption: [Arquitetura do Matcher]
 )
