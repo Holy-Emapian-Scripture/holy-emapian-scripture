@@ -1,16 +1,25 @@
 #import "@preview/ctheorems:1.1.3": *
+#import "@preview/lovelace:0.3.0": *
 #show: thmrules.with(qed-symbol: $square$)
 
+#import "@preview/codly:1.3.0": *
+#import "@preview/codly-languages:0.1.1": *
+#show: codly-init.with()
+#codly(languages: codly-languages, stroke: 1pt + luma(100))
+
+#import "@preview/tablex:0.0.9": tablex, rowspanx, colspanx, cellx
+
 #set page(width: 21cm, height: 30cm, margin: 1.5cm)
-#set heading(numbering: "1.1.")
 
 #set par(
   justify: true
 )
-#set page(numbering: "1")
 
-#let theorem = thmbox("theorem", "Teorema", fill: rgb("#ab343447"))
+#set figure(supplement: "Figura")
 
+#set heading(numbering: "1.1.1")
+
+#let theorem = thmbox("theorem", "Teorema")
 #let corollary = thmplain(
   "corollary",
   "Corolário",
@@ -18,14 +27,8 @@
   titlefmt: strong
 )
 #let definition = thmbox("definition", "Definição", inset: (x: 1.2em, top: 1em))
-#let example = thmplain("example", "Exemplo").with(numbering: "1.")
-#let property = thmplain("property", "Propriedade").with(numbering: "1.")
-#let proposition = thmplain("proposition", "Proposição").with(numbering: "1.")
+#let example = thmplain("example", "Exemplo").with(numbering: none)
 #let proof = thmproof("proof", "Demonstração")
-
-// A bunch of lets here
-#let int = $integral$
-#let Expo = "Expo"
 
 #set math.equation(
   numbering: "(1)",
@@ -35,681 +38,356 @@
   // provide custom reference for equations
   if it.element != none and it.element.func() == math.equation {
     // optional: wrap inside link, so whole label is linked
-    link(it.target)[eq.~(#it)]
+    link(it.target)[(#it)]
   } else {
     it
   }
 }
 
-//atalhos
+#set text(
+  font: "Atkinson Hyperlegible",
+  size: 12pt,
+)
 
-#let inv(var) = $var^(-1)$
+#show heading: it => {
+  if it.level == 1 {
+    [
+      #block(
+        width: 100%,
+        height: 1cm,
+        text(
+          size: 1.5em,
+          weight: "bold",
+          it.body
+        )
+      )
+    ]
+  } else {
+    it
+  }
+}
 
-#align(center, text(17pt)[
-  Teoria da Probabilidade, Resumo da A2
-])
 
-#align(center, text(15pt)[
-  jãopredo e artu\
-  #datetime.today().display("[day]/[month]/[year]")
-])
+// ============================ PRIMEIRA PÁGINA =============================
+#align(center + top)[
+  FGV EMAp
 
-#outline()
+  João Pedro Jerônimo
+]
+
+#align(horizon + center)[
+  #text(17pt)[
+    Probabilidade
+  ]
+  
+  #text(14pt)[
+    Revisão para A2
+  ]
+]
+
+#align(bottom + center)[
+  Rio de Janeiro
+
+  2026
+]
 
 #pagebreak()
 
-= Variáveis Aleatórias Contínuas
-== Definições
+// ============================ PÁGINAS POSTERIORES =========================
+#outline(title: "Conteúdo")
 
-Definimos aqui o necessário sobre variáveis aleatórias contínuas para a compreensão dos conteúdos do teste:
+#pagebreak()
 
-#definition[(V.A Contínua)\
-  Uma v.a $X: Omega -> RR$ é dita contínua se e somente se sua CDF $F_X$ for derivável
-]<definiticao_variavel_aleatoria_continua>
+#align(center+horizon)[
+  = Variáveis Aleatórias Contínuas
+]
 
-#definition[(Função de Distribuição - CDF)\
-  A função de distribuição de uma v.a contínua $X$ é dada por:
+#pagebreak()
+
+== O Problema da abordagem Discreta
+Até o momento, vimos as variáveis discretas, que assumem valores que *podem ser contados*. A quantidade de caras e coroas numa série de jogadas, quantas jogadas são necessárias até que eu consiga obter um sucesso em um experimento, assim por diante.
+
+No entanto, considere que queremos saber a probabilidade de um *ser humano* ter *$1,80$m* de altura. Nós *não conseguimos representar esse experimento usando variáveis discretas*, já que a altura do ser humano não é um valor discreto, mas um valor *contínuo*.
+
+É nesse contexto que introduzimos as variáveis aleatórias *contínuas*
+
+#definition("Variável Aleatória Contínua")[
+  Uma variável aleatória contínua é uma função
   $
-    F_X (phi) = P(X <= phi)
+    X: S -> RR
   $
-]<definicao_CDF>
+  que associa a cada resultado do espaço amostral $S$ um número real, tal que seu conjunto de valores assumidos ($"Im"(X)$) é *não enumerável*
+]
 
-#definition[(Função de Densidade - PDF)\
-  Calculamos a densidade de probabilidade calculando a probabilidade de $X$ estar num intervalo, e dividimos pelo tamanho do intervalo:
-
+#example[
+  Dado um experimento que queremos saber em quanto tempo um carro leva para chegar do local $A$ ao local $B$, o tempo é uma medida *contínua*, logo:
   $
-    (P(X in I = [psi,psi + epsilon])) / (norm(I) = epsilon) = (P(psi <= X <= psi + epsilon)) / epsilon = (F_X (psi + epsilon) - F_X (psi)) / epsilon
+    X = "tempo para o carro sair do ponto A ao B"
   $
+  é uma variável contínua
+]
 
-  Tomando o limite quando $epsilon -> 0$, obtemos a _função de densidade de probabilidade_ PDF no ponto $psi$:
-
-  $
-    lim_(epsilon -> 0) (F_X (psi + epsilon) - F_X (psi)) / epsilon = F'_X (psi) = f_X (psi)
-  $
-
-  É importante notar que a PDF não é uma probabilidade, mas sim uma densidade de probabilidade. Veja:
-
-  $
-    P(X in I) = P(a <= X <= b) = F_X (b) - F_X (a)
-  $
-
-  Usamos a PDF e o teorema fundamental do cálculo para calcular a probabilidade de $X$ estar em um intervalo $I = [a,b]$:
-
-  $
-    P(X in I) = F_X (b) - F_X (a) = int_(a)^(b) f_X (phi) d phi
-  $
-
-  Logo a *a integral definida* da PDF é de fato uma probabilidade.
-] <definicao_PDF>
-
-== Propriedades da CDF e PDF
-<secao_propriedades_CDF_PDF>
-
-Dada uma v.a contínua $X$ com PDF $f_X$ e CDF $F_X$, é intuitivo que com $phi -> oo$, $P(X <= phi) = F_X (phi) -> 1$, e analogamente com $phi -> -oo$, $P(X <= phi) = F_X (phi) -> 0$. Então enunciamos as seguintes propriedades:
-
-#property[
-  $
-    lim_(phi -> oo) F_X (phi) = 1\
-    lim_(phi -> -oo) F_X (phi) = 0\
-  $
-
-Logo, $F_X (phi)$ é uma função crescente, e $F_X (phi) in [0,1]$.
-] <propriedade_cdf_crescente>
-
-#property[
-
-  $
-    F_X (phi) = int_(-oo)^(phi) f_X (psi) d psi\
-    int_(-oo)^(oo) f_X (psi) d psi = 1\
-  $
-] <propriedade_pdf_integra_1>
-
-#property[
-  Seja $X$ uma v.a contínua com PDF $f_X$ e CDF $F_X$, tome $h:RR -> RR$ crescente e $Y = g(X)$ com PDF e CDF $f_Y, F_Y$, respectivamente. Então:
-
-  $
-    f_Y (y) = (f_X (phi)) / (h^' (phi))
-  $
-
-  Com $phi = inv(h)(y)$
-
-  Caso $h$ seja decrescente:
-
-  $
-    f_Y (y) = - (f_X (phi)) / (h^' (phi))
-  $
-
-  Caso seja injetiva (pode ser crescente e decrescente em lugares diferentes):
-
-  $
-    f_Y (y) = (f_X (phi)) / (abs(h^' (phi)))
-  $
-
-  Caso seja uma função fudida quem nem injetiva é, mas pelo menos derivável, defina $forall y in "Im"(h)$:
-
-  $
-    I_y = {x in RR | h(x) = y}
-  $
-
-  Contendo um número finito de elementos $x_1 (y), dots, x_(k(y)) (y)$. Então a densidade de $Y$ é dada por:
-
-  $
-    f_Y (y) = sum_(i=1)^(k(y)) (f_X (x_i (y))) / (abs(h^' (x_i (y))))
-  $
-] <propriedade_derivada_inversa>
-
-
-
-== LOTUS (Law of The Unconscious Statistician)
-<secao_lotus>
-
-Se $X$ é uma v.a contínua com PDF $f_X (phi)$ e $g: RR -> RR$ é contínua, então a esperança de $Y = g(X)$ é dada por:
-
+== Função de Massa Acumulada
+Lembra que nas variáveis discretas, tinhamos definido a função de massa como sendo a probabilidade de cada valor que $X$ pode assumir?
 $
-  E(g(X)) = int_(-oo)^(oo) g(phi) f_X (phi) d phi
+  PP(X=x)
+$
+acontece que essa definição é *inútil* dentro das variáveis contínuas. Por quê? Pela definição básica de probabilidade, nós fazemos
+$
+  PP(X=x) = ("Quando X assume x")/("Todos os valores possíveis de X")
+$
+no entanto, como a quantidade de valores que $X$ pode assumir é *infinita*, acaba que, por definição:
+$
+  PP(X=x) = 0
+$
+Como podemos trabalhar com essas variáveis então? É aí que entra a *função de massa acumulada*, em vez de pegarmos quando o valor específico acontece, pegamos a probabilidade de obter *valores menores ou iguais a ele*.
+$
+  F_X (x) = PP(X<=x)
 $
 
-== Variância e Esperança
+Imagine o intervalo $[0,100)$. Queremos sortear um valor desse intervalo ($X in [0,100)$). Como já falamos, se formos falar, por exemplo, de $PP(X=2)=0$ por definição de variável contínua. Vamos supor que cada um dos valores desse intervalo tem igual chance de ser sorteado.
 
-#definition[(Esperança)\
-  Dada uma v.a contínua $X$ com PDF $f_X (phi)$, a esperança de $X$ é dada por:
+Levando isso em conta e que a função de massa acumulada de $X$ deve seguir as seguintes propriedades:
+- $F_X (x)$ é não-decrescente
+- $lim_(x->-infinity) F_X (x) = 0$ e $lim_(x->infinity) F_X (x) = 1$
 
+Podemos idealizar uma função acumulada para esse cenário (de forma intuitiva). Como cada valor é igualmente provável, então faz sentido que, conforme a gente vai aumentando $x$ em $F_X (x)$ a função vai seguindo linearmente pra cima, já que é como se, a cada valor, a mesma proabilidade vai se somando com as anteriores. Dessa forma bem intuitiva de se pensar, podemos chegar na seguinte função:
+$
+  F_X (x) = cases(
+    0 "se" x < 0,
+    x/100 "se" 0 <= x <= 100,
+    1 "se" x > 100
+  )
+$
+
+Mas antes de prosseguirmos, eu enunciei as propriedades anteriores, mas por que elas são válidas? A primeira propriedade diz que $F_X (x)$ deve ser não-crescente, mas por quê? De uma forma intuitiva *(para ficar matematicamente correta, tem que ter algumas modificações)*, é como se $F_X (x)$ pudesse ser reescrita assim:
+$
+  PP(X<=x) &= PP(X<=x-1) + PP(X=x)   \
+
+  F_X (x) &= F_X (x-1) + PP(X=x)
+$
+
+Então a cada novo valor que eu adiciono, a função cresce, do contrário, eu precisaria que $PP(X=x)$ fosse *negativo*, o que é impossível. Reforçando que isso é uma abordagem intuitiva e não está matematicamente correta.
+
+A segunda propriedade fala sobre a função ser limitada em $1$ superiormente e em $0$ inferiormente. Seguindo na mesma lógica de uma argumentação não-rigorosa e intuitiva, em um experimento, temos o espaço amostral dos nossos eventos. A probabilidade de que *algum evento ocorra* é sempre $1$, e essa probabilidade pode ser representada como a soma das probabilidades de todos os eventos possíveis no meu espaço amostral (algo como _ou valor $x$, ou valor $y$, ou valor $z$, ..._ para todos os valores do espaço amostral). Aqui é a mesma lógica, conforme nós aumentamos o $x$ em $F_X (x)$, estamos cada vez mais, entre várias aspas, "chegando no limite do espaço amostral", então a função acumulada vai se aproximar cada vez mais de $1$, a mesma lógica vale para conforme diminuímos o valor de $x$.
+
+== Função de Densidade
+A visão intuitiva é muito legal, mas temos que começar a ver definições mais rigorosas. Uma definição muito importante é a *função de densidade* (que nada mais é que a derivada da função acumulada)
+
+#definition("Função de Densidade de Probabilidade")[
+  Seja $X$ uma variável aleatória contínua, definimos sua função de densidade de probabilidade como:
   $
-    E(X) = int_(-oo)^(oo) phi  f_X (phi) d phi
+    f_X (x) = dif / (dif x) F_X (x)
   $
-]<definicao_esperanca>
-
-#definition[(Variância, Desvio-Padrão)\
-  A variância de uma v.a contínua $X$ com PDF $f_X (phi)$ e esperança $mu = E(X)$ é dada por:
-
+]
+#example[
+  Usando o exemplo do início do capítulo
   $
-    V(X) = E[(X - E(X)^2] = int_(-oo)^(oo) [phi - mu]^2 f_X (phi) d phi
+    F_X (x) = cases(
+      0 "se" x < 0,
+      x/100 "se" 0 <= x <= 100,
+      1 "se" x > 100
+    )
+  $
+  temos que a sua fdp é dada por
+  $
+    f_X (x) = cases(
+      0 "se" x < 0,
+      1/100 "se" 0 <= x <= 100,
+      0 "se" x > 100
+    )
+  $
+]
+
+Essa definição é interessante pois nos permite trazer outra definição de variável aleatória contínua.
+
+#definition("Variável Aleatória Absolutamente Contínua")[
+  Dizemos que $X$ é uma variável aleatória absolutamente contínua quando $exists f_X : RR -> RR$ com $f_X (x) >= 0 space forall x$ tal que:
+  $
+    F_X (x) = PP(X<=x) = integral_(-infinity)^(x) f_X (t) dif t
+  $
+]
+
+Aqui nesses resumos, utilizaremos apenas variáveis contínuas que se encaixen na definição de *absolutamente* contínuas, o que facilita bastante nossa vida.
+
+Por conta dessa definição, temos algumas propriedades que derivam diretamente dela:
+
+#theorem[
+  $
+    integral_(-infinity)^(+infinity) f_X (t) dif t = 1
+  $
+]
+
+#theorem[
+  $
+    f_X (x) >= 0
+  $
+]
+
+#theorem[
+  $
+    PP(a<=X<=b) = integral_(a)^(b) f_X (t) dif t
+  $
+]
+
+Podemos agora nos perguntar se $f_X (x_0)$ tem algum significado! Afinal, $F_X (x_0)$ traz uma interpretação diretamente da definição. Primeira coisa, podemos reescrever o seguinte:
+$
+  f_X (x_0) dot Delta x approx integral_(x_0)^(x_0+Delta x) f_X (t) dif t = PP(X in [x_0, x_0+Delta x])
+$
+
+Ou seja, como $f_X$ representa a taxa de crescimento da função acumulada, ela indica *quais valores são mais prováveis*. Como assim? Se temos que $f_X (a)$ é relativamente baixo, no entanto, com um $epsilon > 0$, temos que $f_X (a+epsilon)$ já é um valor grande, isso indica que os números entre $a$ e $a+epsilon$ são mais prováveis (pois a taxa ser grande, quer dizer que a função acumulada ta aumentando muito rápido).
+
+== Valor Esperado
+Também temos a definição de valor esperado para variáveis contínuas!
+
+#definition("Valor Esperado para Variáveis Contínuas")[
+  Dado uma variável contínua $X$, temos que a esperança de $X$, denotada por $EE[X]$ é dada por:
+  $
+    EE[X] = integral_(-infinity)^(infinity) x f_X (x) dif x
+  $
+  desde que a integral seja bem definida (pode divergir)
+]
+
+Dessa definição, há paralelos que conseguimos fazer das definições e teoremas que vimos para variáveis discretas.
+
+#theorem([LOTUS])[
+  Seja $X$ uma variável aleatória discreta, $h$ uma função e $Y = h(X)$:
+  $
+    EE[Y] = EE[h(X)] = integral_(-infinity)^(infinity) y g(y) dif y = integral_(-infinity)^(infinity) h(x) f_X (x) dif x
+  $
+]<lotus>
+
+Com o teorema do LOTUS, a definição de variância para $X$ sai facilmente.
+
+#definition("Variância para Variáveis Contínuas")[
+  Seja $X$ uma variável aleatória contínua, temos que sua variância é definida como
+  $
+    VV[X] = EE[(X - EE[X])^2] = integral_(-infinity)^infinity (x - EE[X])^2 f_X (x) dif x
+  $
+]
+
+
+== Quantis
+Também podemos definir os famosos *quantis*, que nada mais são que a definição inversa da probabilidade
+
+#definition([q-quantil])[
+  O $q$-quantil de uma variável aleatória contínua $X$ (com $q in (0,1)$), é qualquer valor $x_q$ tal que
+  $
+    F_X (x_q) = q
+  $
+]
+
+== Moda
+Outra definição interessante é a de *moda*. Para variáveis aleatórias discretas, a definição é bem direta, o valor de $X$ que maximiza $PP(X=x)$. No entanto, levar essa definição para as variáveis contínuas é meio impossível, como fazemos então?
+
+#definition("Moda para Variáveis Contínuas")[
+  A moda de uma variável contínua $X$ é o valor $x$ onde *$f_X (x)$ é máximo*, ou seja:
+  $
+    x "tal que" f'_X (x) = 0
+  $
+]
+
+A ideia por trás dessa definição pode ser entendia na mesma ideia da explicação não-rigorosa do significado de $f_X (x_0)$. Se $f_X (x_0)$ indica como os valores próximos de $x_0$ contribuem para a probabilidade, eu quero pegar o valor que *mais contribui*, que seria justamente o que *maximiza* $f_X (x)$
+
+== Densidades de Transformações
+Em problemas reais, é muito comum acontecer de termos uma variável aleatória $X$ com uma densidade $f_X$, no entanto, queremos descobrir a densidade de uma transformação $Y = h(X)$, como fazemos?
+
+#theorem([Densidade de uma transformação monotônica])[
+  Se $X$ é uma v.a contínua com densidade $f_X (x)$ e $Y=h(X)$ com $h$ sendo uma função monotônica, então temos que a densidade de $Y$ é dada por:
+  $
+    f_Y (y) = (f_X (x)) / (|h'(x)|)
+  $
+]
+#proof[
+  Seja $F_X (x) = PP(X<=x)$, então $PP(Y<=y) = PP(h(X) <= h(x))$. Como $h$ é monotônica, vamos analisar ambos os casos:
+
+  Se $h$ é *crescente*, então temos:
+  $
+    PP(h(X)<=h(x)) = PP(X<=x) = F_X (x) => F_X (x) = F_Y (y)
+  $
+  então derivando ambos os lados em relação a $x$, temos:
+  $
+    f_Y (h(x)) dot h'(x) = f_X (x)    \
+
+    <=> f_Y (y) = (f_X (x)) / (h'(x))
   $
 
-  O desvio padrão é:
-
+  Se $h$ é *decrescente*, então temos:
   $
-    sigma(X) = sqrt(V(X))
+    PP(h(X)<=h(x)) = PP(X>=x) = 1 - F_X (x) => 1 - F_X (x) = F_Y (y)
   $
-] <definicao_variancia_desviopadrao>
+  então derivando ambos os lados em relação a $x$, temos:
+  $
+    f_Y (h(x)) dot h'(x) = -f_X (x)    \
 
-== Propriedades da Esperança e Variância
-<secao_propriedades_esperanca_variancia>
+    <=> f_Y (y) = (f_X (x)) / (|h'(x)|)
+  $
+  Aqui eu posso colocar o módulo pois $h'(x)$ é negativo sempre ($h$ é decrescente)
+]
 
-Dadas v.a's contínuas $X, Y$ com PDF $f_X (phi), f_Y (phi)$ e $a,b in RR$, temos:
+== Desigualdade de Chebyshev
+Já discorremos sobre essa desigualdade no resumo da A1, então vou apeans enunciar o teorema e sua demonstração para variáveis aleatórias contínuas.
 
-#property[
+#theorem([Desigualdade de Chebyshev])[
+  Seja $X$ uma v.a contínua com valor esperado $mu = EE[X]$ e desvio-padrão $sigma = sigma(X)$, então:
+  $
+    PP(mu - k sigma < X < mu + k sigma) >= 1 - 1/k^2
+  $
+  ou
+  $
+    PP(|X - mu| > k sigma) <= 1/k^2
+  $
+]
+#proof[
+  $
+    VV[X] = integral_(-infinity)^(infinity) (x - mu)^2 f(x) dif x    \
+
+    = integral_(-infinity)^(mu - k sigma) (x - mu)^2 f(x) dif x + integral_(mu - k sigma)^(mu + k sigma) (x - mu)^2 f(x) dif x + integral_(mu + k sigma)^infinity (x - mu)^2 f(x) dif x     \
+
+    >= integral_(-infinity)^(mu - k sigma) (k sigma)^2 f(x) dif x + integral_(mu + k sigma)^infinity (k sigma)^2 f(x) dif x     \
+
+    = (k sigma)^2 (integral_(-infinity)^(mu - k sigma) f(x) dif x + integral_(mu + k sigma)^infinity f(x) dif x)    \
+
+    = k^2 sigma^2 [ PP(X<=mu-k sigma) + PP(X>= mu + k sigma) ]    \
+
+    = k^2 sigma^2 [ PP(|X-mu| >= k sigma) ]     \
+
+    => 1 / k^2 >= PP(|X-mu| >= k sigma)
+  $
+]
+
+#pagebreak()
+
+#align(center+horizon)[
+  = Distribuições de Variáveis Aleatórias Contínuas
+]
+
+#pagebreak()
+
+== Distribuições
+Assim como em variáveis aleatórias discretas, as contínuas também possuem distribuições pré-definidas e conhecidas. Nessa seção, vamos comentar sobre elas e suas propriedades
+
+== Uniforme
+É a distribuição contínua base, já falamos sobre ela no início do capítulo anterior! Ela é definida sobre um intervalo e a ideia é que todos os valores são igualmente prováveis de sair em um sorteio.
+
+#definition([Distribuição Uniforme])[
+  Uma variável aleatória contínua $U$ tem distribuição uniforme no intervalo $(a,b)$ se sua fdp é dada por:
+  $
+    f_U (u) = cases(
+      1/(b-a) "se" a < x < b,
+      0 "caso contrário"
+    )
+  $
+  ou seja, $f_U (u)$ é constante. Denotamos $U ~ "Unif"(a,b)$
+]
+
+#theorem[
+  Seja $U ~ "Unif"(a,b)$ e $(c,d)$ um subintervalo de $(a,b)$ com tamanho $l = d - c$, então $PP(c < U < d) prop l$
+]
+#proof[
+  Como a fdp de $U$ é constante $1/(b-a)$, a área da fdp em baixo de $(c,d)$ é $l/(b-a)$, que é $l$ vezes a constante.
+]
+
+#theorem[
   
-  $
-    E(a X + b) = a E(X) + b\
-    E(X + Y) = E(X) + E(Y)\
-    V(a X + b) = a^2 V(X)\
-  $
-
-  E caso $X, Y$ sejam independentes:
-
-  $
-    E(X Y) = E(X) E(Y)\
-    V(X + Y) = V(X) + V(Y)
-  $
-
-]<propriedade_esperanca_variancia>
-
-#property[
-  Podemos calcular a variância de $X$ usando a esperança:
-
-  $
-    V(X) = E(X^2) - E(X)^2\
-  $
-
-] <propriedade_varianca_via_esperanca>
-
-= Distribuições Contínuas
-== Distribuição Uniforme
-<secao_dist_uniforme>
-
-Uma v.a contínua $X$ tem distribuição uniforme no intervalo $[a,b]$ se sua PDF for da forma:
-
-$
-  f_X (phi) = cases(0"," "se" phi < a, 1/(b-a)"," "se" a <= phi <= b )
-$
-
-Desta forma sua CDF é:
-
-$
-  F_X (phi) = cases(0"," "se" phi < a, (phi - a)/(b-a)"," "se" a <= phi <= b, 1"," "se" phi > b )
-$
-
-O seguinte teorema é extremamente importante:
-
-#theorem[(Universalidade da Uniforme)\
-  Se $X$ é uma v.a contínua com PDF $f_X$ e CDF $F_X$, então $Y = F_X (X)$ é uma uniforme em $[0,1]$, ou seja: $Y ~ U[0,1]$
-] <teorema_universalidade_uniforme>
-
-#proof[
-
-  $
-    F_Y (y) = P(Y <= y) = P(F_X (X) <= y) = P(X <= F_X^(-1)(y)) = F_X (F_X^(-1)(y)) = y
-  $
-
-  Logo $Y$ é uma uniforme em $[0,1]$.
 ]
-
-=== Esperança
-
-Com $X ~ U[a,b]$, temos
-
-$
-  E(X) = int_(-oo)^(oo) phi f_X (phi) d phi = int_(a)^(b) phi (1/(b-a)) d phi = (a + b) /2 
-$
-
-=== Variância
-
-Com $X ~ U[a, b]$, temos:
-
-$
-  E(X^2) = int_(-oo)^(oo) phi^2 f_X (phi) d phi = int_(a)^(b) phi^2 (1/(b-a)) d phi = (1/(b-a)) int_(a)^(b) phi^2 d phi\
-
-  = (1/(b-a)) [phi^3/3]_(a)^(b) = (1/(b-a)) [(b^3 - a^3)/3] = (b^2 + a b + a^2)/3
-$ <esperanca_uniforme>
-
-E a variância fica:
-
-$
-  V(X) = E(X^2) - E(X)^2 = (b^2 + a b + a^2)/3 - ((a + b)/2)^2 = (b-a)^2 / 12
-$ <variancia_uniforme>
-
-== Distribuição Exponencial
-<secao_dist_exponencial>
-
-Uma v.a contínua $X$ tem distribuição exponencial se sua PDF for da forma:
-
-$
-  f_X (phi) = cases(0"," "se" phi < 0, lambda e^(-lambda phi)"," "se" phi >= 0 )
-$
-
-$lambda > 0$ é o parâmetro da distribuição. A CDF é dada por:
-
-$
-  F_X (phi) = cases(0"," "se" phi < 0, 1 - e^(-lambda phi)"," "se" phi >= 0 )
-$
-
-#figure(
-  image("images/pdf_cdf_expo.png", width: 70%),
-  caption: [
-    PDF e CDF Da Exponencial com $lambda = 2$
-  ]
-)
-
-Isto também é útil:
-
-#proposition[
-  Se $X ~ Expo(lambda)$, $Y = a X$, então $Y ~ Expo(lambda / a)$
-]
-
-#proof[
-  Pela @propriedade_derivada_inversa, temos:
-
-  $
-    f_Y (y) = (f_X (phi)) / (h^' (phi))\
-    h^' (phi) = a\
-    phi = inv(h)(y) = y/a
-  $
-
-  Então:
-
-  $
-    f_Y (y) = (lambda e^(-lambda (y/a))) / a = (lambda / a) e^(-lambda (y/a))\
-    F_Y (y) = 1 - e^(-lambda (y/a))
-  $
-
-  O que conclui a prova.
-] <proposicao_exponencial>
-
-#corollary[
-  Se $X ~ Expo(lambda)$, então $lambda X ~ Expo(1)$
-] <corolario_exponencial>
-
-=== Esperança
-
-Com $X ~ Expo(lambda)$
-
-$
-  E(X) = int_(-oo)^(oo) phi f_X (phi) d phi = int_(0)^(oo) phi lambda e^(-lambda phi) d phi = 1/lambda
-$
-
-=== Variância
-
-Com $X ~ Expo(lambda)$, temos:
-
-$
-  E(X^2) = int_(-oo)^(oo) phi^2 f_X (phi) d phi = int_(0)^(oo) phi^2 lambda e^(-lambda phi) d phi = 2/lambda^2  
-$ <esperanca_exponencial>
-
-E a variância fica:
-
-$
-  V(X) = E(X^2) - E(X)^2 = 2/lambda^2 - (1/lambda)^2 = 1/lambda^2
-$ <variancia_exponencial>
-
-=== Perda de Memória
-
-Uma v.a $X$ tem a propriedade de *perda de memória* se:
-$
-  P(X > s + t | X > s) = P(X > t)
-$
-Isto é, a probabilidade de $X$ ser maior que $s + t$, dado que já passou $s$, é a mesma que a probabilidade de $X$ ser maior que $t$.
-
-*A distribuição exponencial é a única distribuição contínua que tem a propriedade de perda de memória.*
-
-== Distribuição Gamma
-<secao_dist_gamma>
-
-=== A função Gamma
-
-A função $Gamma$ é definida como:
-
-$
-  Gamma(phi) = int_(0)^(oo) t^(phi - 1) e^(-t) d t
-$
-
-As propriedades abaixo serão muito úteis:
-
-#property[
-  $
-    n in NN => Gamma(n) = (n - 1)!
-  $
-] <propriedade_natural_funcao_gamma>
-
-#property[
-  $
-    Gamma(phi + 1) = phi Gamma(phi), forall phi > 0.
-  $
-] <propriedade_funcao_gamma_phimaisum>
-
-Alguns valores úteis de $Gamma$ são:
-
-$
-  Gamma(1/2) = sqrt(pi)\
-  Gamma(3/2) = (1/2) sqrt(pi)\
-  Gamma(5/2) = 3/4 sqrt(pi)\
-  Gamma(7/2) = 15/8 sqrt(pi)\
-  Gamma(1) = 1\
-  Gamma(2) = 1\
-  Gamma(3) = 2\
-  Gamma(4) = 6\
-  Gamma(5) = 24\
-  dots.v
-$
-
-=== A distribuição Gamma
-
-Uma variável aleatória $X$ tem distribuição gamma com parâmetros $alpha, lambda > 0$ se sua PDF é dada por:
-
-$
-  f_X (phi) = cases(0"," "se" phi < 0, lambda^alpha / Gamma(alpha) phi^(alpha - 1) e^(-lambda phi)"," "se" phi >= 0 )
-$
-
-==== Esperança
-
-A esperança de $Z ~ Gamma(alpha, lambda)$ é:
-
-$
-  E(Z) = int_(-oo)^(oo) phi f_Z (phi) d phi = int_(0)^(oo) phi lambda^alpha / Gamma(alpha) phi^(alpha - 1) e^(-lambda phi) d phi = 1 / Gamma(alpha) int_(0)^(oo) (lambda phi)^alpha e^(-lambda phi) d phi
-$
-
-Fazendo $x = lambda phi$, temos:
-
-$
-  E(Z) = 1 / Gamma(alpha) int_(0)^(oo) x^alpha e^(-x) (d x)/lambda = 1 /( lambda Gamma(alpha)) Gamma(alpha + 1) = alpha / lambda\
-$
-
-==== Variância
-
-Dada $Z ~ Gamma(alpha, lambda)$:
-
-$
-  E(Z^2) = 1 / (lambda Gamma(alpha)) int_(0)^(oo) (lambda x)^(alpha + 1) e^(-lambda x) d x = (1 / lambda^2 Gamma(alpha)) int_(0)^(oo) x^(alpha + 1) e^(-x) d x\
-  
-  = (1 / lambda Gamma(alpha)) Gamma(alpha + 2) = (alpha (alpha + 1)) / lambda^2
-$
-
-E a variância fica:
-
-$
-  V(Z) = E(Z^2) - E(Z)^2 = (alpha (alpha + 1)) / lambda^2 - (alpha / lambda)^2 = alpha / lambda^2
-$
-
-Isso também pode ser útil:
-
-#proposition[
-  Se $X ~ Gamma(alpha, lambda)$ e $Z = lambda X$, então $Z ~ Gamma(alpha, 1)$
-]
-
-#proof[
-  Pela @propriedade_derivada_inversa, temos:
-
-  $
-    f_Z (z) = (f_X (phi)) / (h^' (phi))\
-    h^' (phi) = lambda\
-    phi = inv(h)(z) = z/lambda
-  $
-
-  Então:
-
-  $
-    f_Z (z) = (lambda^alpha / Gamma(alpha) (z/lambda)^(alpha - 1) e^(-lambda (z/lambda))) / lambda = (1 / Gamma(alpha)) z^(alpha - 1) e^(-z)
-  $
-
-  Assim $Z ~ Gamma(alpha, 1)$.  
-]
-
-== Distribuição Normal
-<secao_dist_normal>
-
-$X$ v.a contínua tem distribuição normal com média $mu$ e variância $sigma^2$ se sua PDF é dada por:
-
-$
-  f_X (phi) = 1 / (sigma sqrt(2 pi)) e^(- ((phi - mu)^2) / (2 sigma^2))
-$
-
-Note que $f(mu + a) = f(mu - a)$, então a PDF é simétrica em torno de $mu$ (a média).
-
-A PROPOSIÇÃO ABAIXO É MUITO IMPORTANTE PARA RESOLVER PROBLEMS COM A NORMAL:
-
-#proposition[
-  Se $X ~  N(mu, sigma^2)$, então $Z = (X - mu) / sigma ~ N(0, 1)$
-] <proposicao_magia_normal>
-
-#proof[
-  Pela @propriedade_derivada_inversa, temos:
-
-  $
-    f_Z (z) = (f_X (phi)) / (h^' (phi))\
-    h^' (phi) = 1/sigma\
-    phi = inv(h)(z) = mu + sigma z
-  $
-
-  Então:
-
-  $
-    f_Z (z) = (1 / (sigma sqrt(2 pi))) e^(- ((mu + sigma z - mu)^2) / (2 sigma^2)) / (1/sigma)\
-    = 1 / sqrt(2 pi) e^(- z^2 / 2)
-  $
-
-  Logo $Z ~ N(0,1)$.
-]
-
-
-A @proposicao_magia_normal é muito útil para resolver problemas com uma tabela de valores da FDA de $N(0,1)$.
-
-=== Esperança
-
-Com $X ~ N(mu, sigma^2)$, temos:
-
-$
-  E(X) = int_(-oo)^(oo) phi f_X (phi) d phi = int_(-oo)^(oo) phi (1 / (sigma sqrt(2 pi))) e^(- ((phi - mu)^2) / (2 sigma^2)) d phi = mu
-$
-
-=== Variância
-
-Com $X ~ N(mu, sigma^2)$, temos:
-$
-  E(X^2) = int_(-oo)^(oo) phi^2 f_X (phi) d phi = int_(-oo)^(oo) phi^2 (1 / (sigma sqrt(2 pi))) e^(- ((phi - mu)^2) / (2 sigma^2)) d phi = mu^2 + sigma^2
-$
-
-Logo a variância fica:
-
-$
-  V(X) = E(X^2) - E(X)^2 = mu^2 + sigma^2 - mu^2 = sigma^2
-$
-
-== Taxa de Falhas
-<secao_taxa_falhas>
-
-#definition[
-  Seja $T$ o tempo de vida de um equipamento, ou seja o instante da sua primeira falha, cuja FDS é $F(t)$. A *confiabilidade* do equipamento é dada por:
-
-  $
-    R(t) = P(T > t) = 1 - F(t)
-  $
-] <definicao_confiabilidade>
-
-#definition[
-  A *taxa média de falhas* de um equipamento num intevalo $[t, t + Delta t]$, é a probabilidade de ele falhar nos próximos $Delta t$, dado que ainda não falhou:
-
-  $
-    "TMF" = (P(T <= t + Delta t | T > t)) / Delta t = P(T <= t + Delta t) / (Delta t dot P(T > t)) = (F(t + Delta t) - F(t)) / (Delta t [1 - F(t)])\
-
-    = (R(t + Delta t) - R(t)) / (R(t) dot Delta t)
-  $
-
-  Quando $Delta t -> 0$, obtemos a *taxa de falhas*:
-  $
-    "TF" = lim_(Delta t -> 0) (R(t + Delta t) - R(t)) / (R(t) dot Delta t) = (-R'(t)) / R(t)
-  $
-]
-
-= Variáveis Aleatórias Contínuas Bidimensionais
-== Função de Densidade Conjunta
-<secao_fdc>
-
-#definition[(Função de Densidade Conjunta)\
-
-  Uma função de densidade conjunta $f(x,y)$ das variáveis $X$ e $Y$ é uma função com a seguinte propriedade:
-
-  $
-    P((X,Y) in R) = integral.double_(R) f(x,y) d A
-  $
-
-  Onde $R subset RR^2$. Por conseguinte, $f$ deve satisfazer:
-
-  $
-    f(x,y) >= 0, forall (x,y) in RR^2\
-    int_(-oo)^(oo) int_(-oo)^(oo) f(x,y) d x d y = 1\
-  $
-] <definicao_conjunta>
-
-=== Esperança, Variância e Desvio-Padrão
-
-#definition[(Esperança)\
-  Dadas $X, Y$ com densidade conjunta $f(x,y)$, a esperança de $X$ é:
-
-  $
-    E(X) = integral.double_(RR^2) x f(x,y) d A
-  $
-] <definicao_esperanca_conjunta>
-
-#definition[(Variância, Desvio-Padrão)\
-  A variância de $X$ é análoga ao caso anterior:
-
-  $
-    V(X) = E(X^2) - E(X)^2
-  $
-
-  O desvio padrão é:
-
-  $
-    sigma(X) = sqrt(V(X))
-  $
-] <definicao_variancia_desviopadrao_conjunta>
-
-=== LOTUS 2
-
-Dadas $X, Y$ com densidade conjunta $f(x,y)$, o valor esperado de uma função qualquer $g(X,Y)$ é:
-
-$
-  E(g(X,Y)) = integral.double_(RR^2) g(x,y) f(x,y) d A
-$ <lotus2>
-
-Quando a densidade conjunta é constante em $S subset RR^2$ e $0$ fora de $S$, dizemos que $f(x,y)$ é uma função de densidade uniforme em $S$:
-
-$
-  f(x,y) = cases(0"," "se" (x,y) in.not S, 1/"Área"(S)"," "se" (x,y) in S )
-$
-
-== Distribuições Marginais e Condicionais
-<secao_distr_marginais_condicionais>
-
-Lembrando o caso discreto, dadas $X, Y$ v.a's discretas com densidade conjunta $p(x,y) = P(X = x inter Y = y)$, temos os conceitos e covariância e correlação:
-
-$
-  "Cov"(X,Y) = E(X Y) - E(X) E(Y)\
-  rho(X, Y) = "Cov"(X,Y) / (sigma(X) sigma(Y))\
-$
-
-Também temos as distribuições marginais e condicionais (Pelo teorema de Bayes e a Lei da Probabilidade Total):
-
-$
-  p_X (x) = P(X = x) = sum_(y) p(x,y)\
-  p_Y (y) = P(Y = y) = sum_(x) p(x,y)\
-  p_(X|Y) (x|y) = P(X = x | Y = y) = p(x,y) / (p_Y (y))\
-$
-
-Com $f(x,y)$ sendo uma densidade conjunta, a diferença agora é a transição de $sum -> int$:
-
-#definition[(Distribuição Marginal)\
-  A distribuição marginal de $X$ é dada por:
-
-  $
-    f_X (x) = int_(-oo)^(oo) f(x,y) d y
-  $
-] <definicao_distr_marginal>
-
-#definition[(Distribuição Condicional)\
-  A distribuição condicional de $X$ dado $Y$ é dada por:
-
-  $
-    f_(X|Y) (x|y) = f(x,y) / (f_Y (y))
-  $
-] <definicao_distr_condicional>
-
-
-== Covariância e Correlação
-<secao_covariancia_correlacao>
-
-A Covariância e correlação são *análogas* ao caso discreto:
-
-#definition[(Covariância)\
-  A covariância de $X$ e $Y$ é dada por:
-
-  $
-    "Cov"(X,Y) = E(X Y) - E(X) E(Y)
-  $
-] <definicao_covariancia>
-
-#definition[(Correlação)\
-  A correlação de $X$ e $Y$ é dada por:
-
-  $
-    rho(X,Y) = "Cov"(X,Y) / (sigma(X) sigma(Y))
-  $
-] <definicao_correlacao>
-
-== Esperança Condicional
-
-Isso é bem útil:
-
-#definition[
-  A esperança condicional de $X$ na certeza de $Y = y$ é:
-
-  $
-    E(X | Y = y) = int_(-oo)^(oo) x f_(X|Y) (x|y) d x 
-  $
-
-  (As vezes denotado por $E[X|y]$).
-]
-
-Os teoremas da gênesis também são úteis:
-
-#theorem[(Lei de Adão)\
-  $forall$ v.a's $X, Y$ temos:
-
-  $
-    E(E(X|Y)) = E(X)
-  $
-]
-
-#proof[
-  Trivial
-]
-
-#theorem[(Lei de Eva)\
-  $forall$ v.a's $X, Y$, temos:
-
-  $
-    V(Y) = E(V(Y|X)) + V(E(Y|X))
-  $
-]
-
-#proof[
-  Trivial
-]
-
-== Independência
-
-As v.a's contínuas $X$ e $Y$ são ditas *independentes* se e somente se a densidade conjunta $f(x,y)$ for o produto das marginais:
-
-$
-  f(x,y) = f_X (x) f_Y (y)
-$
