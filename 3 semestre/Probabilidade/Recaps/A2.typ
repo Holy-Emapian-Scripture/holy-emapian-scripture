@@ -297,7 +297,7 @@ Em problemas reais, é muito comum acontecer de termos uma variável aleatória 
   $
     f_Y (y) = (f_X (x)) / (|h'(x)|)
   $
-]
+]<monotonic-transformation-density>
 #proof[
   Seja $F_X (x) = PP(X<=x)$, então $PP(Y<=y) = PP(h(X) <= h(x))$. Como $h$ é monotônica, vamos analisar ambos os casos:
 
@@ -389,5 +389,181 @@ Assim como em variáveis aleatórias discretas, as contínuas também possuem di
 ]
 
 #theorem[
-  
+  Seja $U ~ "Unif"(a,b)$ e $(c,d)$ é um subintervalo contido em $(a,b)$, então a distribuição de $U$ dado que $U in (c,d)$ é uma $"Unif"(c,d)$
 ]
+#proof[
+  Para $u in (c,d)$:
+  $
+    PP(U<=u|U in (c,d)) &= PP(U <= u, U < d, U > c) / PP(U in (c,d))    \
+
+    &= PP(U in (c, u]) / PP(U in (c,d))     \
+
+    &= (u - c)/(d - c)
+  $
+]
+
+#theorem([Esperança e Variância])[
+  Seja $U ~ "Unif"(a,b)$, temos que
+  $
+    EE[U] = (a+b)/2   \
+
+    VV[U] = (b-a)^2/12
+  $
+]
+#proof[
+  $
+    EE[U] = integral_(a)^b x f_X (x) dif x = integral_a^b x 1/(b-a) dif x = 1/(b-a) (b^2/2 - a^2/2) = (a+b)/2
+  $
+  $
+    VV[U] = EE[U^2] - (EE[U])^2 &= 1/3 (b^3 - a^3)/(b-a) - (a+b)^2/2    \
+
+    &= (a^2 + a b + b^2)/3 - (a^2 + 2 a b + b^2)/4    \
+
+    &= (4 a^2 + 4 a b + 4b^2 - 3 a^2 - 6 a b - 3b^2) / 12   \
+
+    &= (b-a)^2/12
+  $
+]
+
+== Exponencial
+Essa é a primeira distribuição que vamos conseguir ver aplicada com uma pequena história. Ela é como uma *extensão da gemométrica para variáveis contínuas*. Lembrando que a geométrica mede a probabilidade de cair um acerto depois de $r$ fracassos.
+
+Considere o cenário onde temos que $X$ é a quantidade de vezes que um evento ocorre dentro de um intervalo de tempo específico (por exemplo, quantos clientes chegam em uma loja dentro de $1$ dia).
+
+Sabemos que $X$ ocorre em média $lambda$ vezes por unidade de tempo (nesse nosso exemplo, a unidade de tempo seria os dias).
+
+Considere agora um intervalo de tempo $[0,t]$, nesse nosso exemplo, seria um intervalo de dias (pode ser fracionário, um dia e meio, um quarto de dia, assim por diante).
+
+Se em $1$ dia eu sei que $lambda$ pessoas chegam na minha loja, então em um intervalo $[0,t]$, vai ter uma média de $lambda t$ pessoas chegando. Se eu tenho uma média de $lambda t$, eu posso dizer que a quantidade de pessoas que chega dentro desse intervalo *também* é uma Poisson $Y ~ "Poisson"(lambda t)$ (assim como $X$, mas o $X$ foi utilizado mais para não se estranhar que $Y$ é uma Poisson durante a construção do raciocínio). Temos então:
+$
+  PP(X=k) = (lambda t)^k / k! e^(-lambda t)
+$
+
+Defina agora $T$ como sendo o exato momento no tempo *quando* a *primeira pessoa chegou na loja*. A variável aleatória $T$ é dita ter uma distribuição *exponencial*
+
+#definition([Distribuição Exponencial])[
+  Uma variável aleatória contínua tem distribuição exponencial com parâmetro $lambda > 0$ se sua fdp é dada por
+  $
+    f_X (x) = lambda e^(-lambda x)
+  $
+  e sua fda é dada por
+  $
+    F_X (x) = 1 - e^(-lambda x)
+  $
+]
+
+Perceba que, para a conclusão dessa fda, podemos utilizar a história que estávamos vendo. Dado que $T$ é o momento que o primeiro evento ocorreu, temos que, se $T > t$, então $Y = 0$, dessa forma, temos:
+$
+  PP(T<=t) = 1 - PP(T > t) = 1 - PP(X=0) = 1 - (lambda t)^0 / 0! e^(-lambda t) = 1 - e^(-lambda t)
+$
+
+#theorem([Média e Variância])[
+  Seja $T ~ "Exp"(lambda)$, temos que
+  $
+    EE[T] = 1/lambda    \
+
+    VV[T] = 1/lambda^2
+  $
+]
+#proof[
+  $
+    EE[T] = integral_(0)^(infinity) t lambda e^(-lambda t) dif t = lr((-t e^(-lambda t) - e^(-lambda t)/lambda)|)^(infinity)_(0) = 1/lambda
+  $
+  Podemos agora descobrir $EE[T^2]$. Temos então
+  $
+    EE[T^2] = integral_0^infinity t^2 lambda e^(-lambda t) dif t
+  $
+  Utilizando de integral por partes, temos que
+  $
+    EE[T^2] = lr((-t^2 e^(-lambda t))|)_0^infinity + 2 integral_0^infinity t e^(-lambda t) dif t = 2/lambda EE[T]
+  $
+  logo, temos que
+  $
+    VV[T] = 2/lambda^2 - 1/lambda^2 = 1/lambda^2
+  $
+]
+
+#theorem([])[
+  Se $T ~ "Exp"(lambda)$ e $Y = a T$, então $Y ~ "Exp"(lambda/a)$
+]
+#proof[
+  Utilizando do @monotonic-transformation-density
+  $
+    f_Y (y) = (f_T (t)) / a = (lambda e^(-lambda t)) / a = (lambda / a) e^(-(lambda / a) y)
+  $
+]
+
+#corollary[
+  Se $T ~ "Exp"(lambda)$, então $lambda T ~ "Exp"(1)$
+]
+
+A ideia desse teorema é bem intuitiva. Se $T$ consiste no momento em que o primeiro evento ocorreu, e são em média $lambda$ eventos a cada unidade, se eu multiplico o momento $T$, por $a$, eu estou distanciando o momento $T$ em $a$ vezes, é como se eu estivesse fazendo com que o evento acontecesse menos vezes por unidade de tempo, acaba que, por consequência que já vimos, é como se alterássemos a média de eventos dividindo por $a$ também.
+
+Outra propriedade *muito interessante* da exponencial é uma que chamamos de *falta de memória*, vamos enunciar ela e demonstrá-la, depois discorremos
+
+#theorem([Propriedade da Irracionalidade da Exponencial (Memoryless)])[
+  Uma distribuição de probabilidade tem a propriedade da irracionalidade se uma variável aleatória $X$ com essa distribuição satisfaz:
+  $
+    PP(X >= s+t | X>=s) = PP(X >= t) quad forall s,t>0
+  $
+  A função exponencial satisfaz essa propriedade
+]
+#proof[
+  $
+    PP(X >= s+t | X>=s) &= PP(X>=s+t,X>=s)/PP(X>=s)     \
+
+    &= PP(X>=s+t)/PP(X>=s)    \
+
+    &= e^(-(s+t) lambda) / e^(-s lambda)    \
+
+    &= e^(-t lambda) = PP(X>=t)
+  $
+]
+
+Suponha que você tem uma lâmpada perfeita, ela não se desgasta sozinha e só queima por conta de acidentes elétricos, curtos e afins. A fabricante disse que a vida útil dessa lâmpada segue uma distribuição exponencial com média de $1000$ horas. Considere que nossa lâmpada já está acessa há $800$ horas, qual seria a probabilidade de a lâmpada durar mais $500$ horas? Pela propriedade memoryless, *foda-se* essas $800$ horas, nossa lâmpada perfeita não se desgasta por conta própria, então o fato de ela já estar acessa por $800$ horas não quer dizer absolutamente nada, então ela vai ser a *exata mesma probabilidade* se eu nem tivesse ligado a lâmpada ainda e perguntasse _"*qual a probabilidade de ela durar $500$ horas?*"_. Perceba que esse modelo é ruim para lâmpadas reais, pois elas se desgastam por conta própria.
+
+Outro ponto interessante é que a exponencial é a *única distribuição contínua que tem essa propriedade*
+
+#theorem()[
+  Se $X$ é uma variável aleatória contínua com a propriedade memoryless, então $X$ segue uma distribuição exponencial
+]
+#proof[
+  Deixe $F_X (x)$ ser a fda de $X$ e $G_X (x)$ sua função de sobrevivência. A propreidade irracional diz que:
+  $
+    G(s+t) = G(s)G(t)
+  $
+
+  Se aplicarmos repetidamente a equação a um $x$ (ou seja, $x$, depois $2x$ e assim por diante) $n$ vezes, temos
+  $
+    G(n x) = G(x)^n
+  $
+  tomando $x=1/n$, temos $G(1) = G(1/n)^n$ ou seja, $G(1/n)=G(1)^(1/n)$
+
+  Combinando ambos os passos acima, para qualquer racional $q=m/n>0$, temos que
+  $
+    G(q) = G(1)^q
+  $
+
+  Para um real $x>=0$, tome uma sequência decrescente que converge para $x$ por cima
+  $
+    q_1 >= q_2 >= ... >= x quad lim_(k->infinity) q_k = x
+  $
+  como $G$ é contínua à direita, temos que
+  $
+    G(x) = lim_(k->infinity) G(q_k) = lim_(k->infinity) G(1)^(q_k) = G(1)^x
+  $
+
+  Sabendo que essa propriedade se extende desde os inteiros até os reais, conseguimos agora achar quem é $G(x)$.
+  $
+    G(x) &= G(1)^x    \
+
+    &= e^(ln G(1) x)
+  $
+  Como $G(x)$ está entre $0$ e $1$, definimos $lambda = -ln G(1)$, logo
+  $
+    G(x) = e^(-lambda x) => F(x) = 1-e^(-lambda x)
+  $
+]
+
+== Gamma
+Antes de entrar em detalhes da distribuição em si, precisamos antes definir uma função que vamos utilizar bastante e algumas de suas propriedades.
